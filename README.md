@@ -1,6 +1,6 @@
 # fair-networks
 
-Let us consider a matrix $\matrix{X} \in \mathbb{R}^{n \times m}$, and two vectors $\vec{y} \in \mathbb{R}^n$ and $\vec{g} \in \mathbb{R}^n$. We consider the problem of building a model $M$ such that $M(\matrix{X}) \simeq \vec{y}$, with the constraint that model $M$ does not use any information useful to predict $\vec{g}$.
+Let us consider a matrix $X \in \mathbb{R}^{n \times m}$, and two vectors $\vec{y} \in \mathbb{R}^n$ and $\vec{g} \in \mathbb{R}^n$. We consider the problem of building a model $M$ such that $M(X) \simeq \vec{y}$, with the constraint that model $M$ does not use any information useful to predict $\vec{g}$.
 
 Let us then consider the network architecture shown below:
 
