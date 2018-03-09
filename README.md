@@ -23,10 +23,11 @@ The idea is to:
 3. now we want to give a chance to $g-predictor$ to exploit the remaining information in $N$ to predict $g$ so we re-train only y-predictor and g-predictor and in both cases we try to maximizes the performances.
 4. we repeat 2 and 3 until step-3 is unable to find a good predictor for $g$.
 
-**TO BE THINK UPON**: probably in step 1 we do not need to train the network also to predict g, we might just attach $g-predictor$ after the fact. Yet, I don't know if this might be detrimental to our argument that the final network does not use any $g$ information... If we leave it as it is we might argue that the initial network did try to use information about $g$ and then we remove it all... I'm really too tired to think it through though, it really seems that it should not make any difference and this second way may:
+**NOTE -- TO BE EXPANDED**: probably in step 1 we do not need to train the network also to predict g, we might just attach $g-predictor$ after the fact. Yet, I don't know if this might be detrimental to our argument that the final network does not use any $g$ information... If we leave it as it is we might argue that the initial network did try to use information about $g$ and then we remove it all... I'm really too tired to think it through though, it really seems that it should not make any difference and this second way may:
 
   - lead to a better prediction on $g$;
   - make our approach more general (we might apply it to any pre-trained network
+**NOTE END**
 
 Upon convergence we conclude that:
 
