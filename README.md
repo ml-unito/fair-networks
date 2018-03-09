@@ -18,10 +18,15 @@ Let us then consider the network architecture shown below:
 
 The idea is to:
 
-- train N,y-predictor, g-predictor so to optimize the predictions about $y$ and $g$. In this phase the network strives to predict $g$ as well as possible.
-- we want now to tweak things so that g-predictor cannot predict $g$ any more. To do so, we tweak N weights so to maintain high accuracy on $y$ while making g-predictor to be indistinguishable from a random guess.
-- now we want to give a chance to $g-predictor$ to exploit the remaining information in $N$ to predict $g$ so we re-train only y-predictor and g-predictor and in both cases we try to maximizes the performances.
-- we repeat 2 and 3 until step-3 is unable to find a good predictor for $g$.
+1. train N,y-predictor, g-predictor so to optimize the predictions about $y$ and $g$. In this phase the network strives to predict $g$ as well as possible.
+2. we want now to tweak things so that g-predictor cannot predict $g$ any more. To do so, we tweak N weights so to maintain high accuracy on $y$ while making g-predictor to be indistinguishable from a random guess.
+3. now we want to give a chance to $g-predictor$ to exploit the remaining information in $N$ to predict $g$ so we re-train only y-predictor and g-predictor and in both cases we try to maximizes the performances.
+4. we repeat 2 and 3 until step-3 is unable to find a good predictor for $g$.
+
+**TO BE THINK UPON**: probably in step 1 we do not need to train the network also to predict g, we might just attach $g-predictor$ after the fact. Yet, I don't know if this might be detrimental to our argument that the final network does not use any $g$ information... If we leave it as it is we might argue that the initial network did try to use information about $g$ and then we remove it all... I'm really too tired to think it through though, it really seems that it should not make any difference and this second way may:
+
+  - lead to a better prediction on $g$;
+  - make our approach more general (we might apply it to any pre-trained network
 
 Upon convergence we conclude that:
 
