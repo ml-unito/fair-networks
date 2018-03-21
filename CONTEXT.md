@@ -4,7 +4,7 @@ output:
   pdf_document: default
   word_document: default
 ---
-# fair-networks
+# fair-networks - FAIRNESS AWARE LEARNING
 
 
 ## Context Introduction
@@ -20,6 +20,13 @@ In particular the process have to guarantee:
 
 - Right explanation: standard supervised machine learning algorithms for regression or classification are inherently based on discovering reliable associations / correlations to aid in accurate out-of-sample prediction, with no concern for causal reasoning or "explanation" beyond the statistical sense in which it is possible to measure the amount of variance explained by a predictor.
 
-##Different approach
+##Introduction
+Algorithmic decision making process becoming increasingly automated and data-driven; often to support human supervision in decision making decisions, but sometimes also to replace them (e.g. in Big Data scenarios). There are growing concerns about potential loss of transapercy, accountability and fairness.
+Discrimination and unfair treatment of people based on certain attributes (e.g. sensitive attributes such generd or race)  are  are to be avoid.
+[Barocas and Selbst 2016]Fairness of a decision making process could be defined with two different notions: disaparate treatment and disparate impact.
+A decision making suffers from disparate treatment if its decision are based on the subject's sensitivie attribute information and it has disparate impact if its outcomes disproportionately hurf (or benefit) people with certain sensitive attribute values.
+It's desiderable to design decision making system free of disparate treatment.
+
+
 
 
