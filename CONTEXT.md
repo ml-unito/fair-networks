@@ -20,7 +20,8 @@ In particular the process have to guarantee:
 
 - Right explanation: standard supervised machine learning algorithms for regression or classification are inherently based on discovering reliable associations / correlations to aid in accurate out-of-sample prediction, with no concern for causal reasoning or "explanation" beyond the statistical sense in which it is possible to measure the amount of variance explained by a predictor.
 
-##Introduction
+## Introduction
+
 Algorithmic decision making process becoming increasingly automated and data-driven; often to support human supervision in decision making decisions, but sometimes also to replace them (e.g. in Big Data scenarios). There are growing concerns about potential loss of transapercy, accountability and fairness.
 Discrimination and unfair treatment of people based on certain attributes (e.g. sensitive attributes such generd or race)  are  are to be avoid.
 [Barocas and Selbst 2016]Fairness of a decision making process could be defined with two different notions: disaparate treatment and disparate impact.
