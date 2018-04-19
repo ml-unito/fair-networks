@@ -5,10 +5,15 @@ import csv
 import requests
 import os.path
 import tensorflow as tf
+import numpy as np
+
 from tqdm import tqdm
 
 
 class AdultDataset:
+    """
+    Helper class allowing to download and load into memory the adult dataset
+    """
     TRAINURL = 'https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data'
     TESTURL = 'https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test'
     TRAINPATH = 'data/adult.data'
@@ -30,13 +35,17 @@ class AdultDataset:
         self.load_all()
 
     def one_hot(self, value, dictionary):
+        """
+        Returns a one-hot-encoding of the given value. The hot encoding is based
+        on the list of possibible values specified by the dictionary parameter.
+        """
         vector = [0 for x in range(len(dictionary))]
         vector[ dictionary.index(value) ] = 1.0
         return vector
 
     def remove_dot(self, line):
         """
-        Remove a dot at the end of the line.
+        Removes a dot at the end of the line.
         This function is needed because lines in the test set
         ends with a '.' (this is not true of lines in the training set)
         """
@@ -46,6 +55,12 @@ class AdultDataset:
             return line
 
     def mapline(self, line):
+        """
+        given a vector of string attributes read from the adult dataset maps
+        them into numeric features (using one_hot_encoding for categorical attributes).
+        It returs a pair (x,y) where x is the encoding of the example and y is the
+        associated label.
+        """
         if line == [] or line[0][0] == '|':
             return ([],[])
 
@@ -71,7 +86,12 @@ class AdultDataset:
 
         return (sum(result, []), labels)
 
-    def load_dataset(self, path):
+    def load_data(self, path):
+        """
+        Loads the file specified by the path parameter, parses it
+        according to the Adult file format and returns a pair of
+        lists containing the resulting examples and labels (xs,ys)
+        """
         print("Importing %s" % (path))
         num_lines = num_lines = sum(1 for line in open(path))
         xs = []
@@ -85,14 +105,26 @@ class AdultDataset:
                     xs.append(x)
                     ys.append(y)
 
-        return tf.data.Dataset.from_tensor_slices((xs, ys))
+        return (xs,ys)
 
     def load_all(self):
-        self.traindataset = self.load_dataset(self.TRAINPATH)
-        self.testdataset = self.load_dataset(self.TESTPATH)
+        """
+        loads into memory the training and the test sets (it needs to
+        be called before accessing to them using other methods that
+        access to the train and the test set)
+        """
+        self._traindata = self.load_data(self.TRAINPATH)
+        self._testdata = self.load_data(self.TESTPATH)
+
+        self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
+        self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 
 
     def download(self, url, filename):
+        """
+        downloads the file pointed by the given url and saves it using
+        the given filename
+        """
         if os.path.isfile(filename):
             return
 
@@ -104,11 +136,34 @@ class AdultDataset:
                 file.write(data)
 
     def download_all(self):
+        """
+        download the trainig set and the test set if needed
+        """
         self.download( self.TRAINURL, self.TRAINPATH)
         self.download( self.TESTURL, self.TESTPATH)
 
-    def traindata(self):
-        return self.traindataset
+    def train_dataset(self):
+        """
+        returns a tf.data.Dataset built from the training set
+        """
+        return self._train_dataset
 
-    def testdata(self):
-        return self.testdataset
+    def test_dataset(self):
+        """
+        returns a tf.data.Dataset built from the test set
+        """
+        return self._test_dataset
+
+    def train_all_data(self):
+        """
+        returns the whole training set as a pair of numpy arrays (xs,ys)
+        """
+        xs,ys = self._traindata
+        return (np.array(xs), np.array(ys))
+
+    def test_all_data(self):
+        """
+        returns the whole test set as a pair of numpy arrays (xs,ys)
+        """
+        xs,ys = self._testdata
+        return (np.array(xs), np.array(ys))
