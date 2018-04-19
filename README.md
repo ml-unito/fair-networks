@@ -41,8 +41,8 @@ More in the language of the neural networks. We envision an algorithm working li
         L^*_s(\theta_0 | \theta_s) + \alpha L(\theta_0, \theta_y).
       $$
       In this description the hard part is defining $L^*_s$. One possibility is to define it as the distance to a random bit vector. If this implies changing $\theta_0$ to harshly we might try to change it in the smallest way possible while satisfying some minimum fairness contraint.
-  - let $\theta^{(n)}_s = \arg\min_\theta_s L(\theta_s|\theta^{(n)}_0)$
-  - let $\theta^{(n)}_y = \arg\min_\theta_y L(\theta_y|\theta^{(n)}_0)$
+  - let $\theta^{(n)}_s = \arg\min_{\theta_s} L(\theta_s|\theta^{(n)}_0)$
+  - let $\theta^{(n)}_y = \arg\min_{\theta_y} L(\theta_y|\theta^{(n)}_0)$
   - (note that the previous two points can be changed by combining learning $\theta_0$ with learning $\theta_y$ and only then optimize only for $\theta_s$ -- they appear almost the same thing, but in NN it is often the case that little differences produces vast changes in the outputs);
 
 
