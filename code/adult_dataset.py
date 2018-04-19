@@ -5,6 +5,7 @@ import csv
 import requests
 import os.path
 import tensorflow as tf
+from tqdm import tqdm
 
 
 class AdultDataset:
@@ -22,19 +23,31 @@ class AdultDataset:
     RACE = ['White', 'Asian-Pac-Islander', 'Amer-Indian-Eskimo', 'Other', 'Black']
     SEX = ['Female', 'Male']
     NATIVE_COUNTRY = [ 'United-States', 'Cambodia', 'England', 'Puerto-Rico', 'Canada', 'Germany', 'Outlying-US(Guam-USVI-etc)', 'India', 'Japan', 'Greece', 'South', 'China', 'Cuba', 'Iran', 'Honduras', 'Philippines', 'Italy', 'Poland', 'Jamaica', 'Vietnam', 'Mexico', 'Portugal', 'Ireland', 'France', 'Dominican-Republic', 'Laos', 'Ecuador', 'Taiwan', 'Haiti', 'Columbia', 'Hungary', 'Guatemala', 'Nicaragua', 'Scotland', 'Thailand', 'Yugoslavia', 'El-Salvador', 'Trinadad&Tobago', 'Peru', 'Hong', 'Holand-Netherlands', '?']
+    LABELS = ['>50K', '<=50K']
 
     def __init__(self):
         self.download_all()
-        self.load()
+        self.load_all()
 
     def one_hot(self, value, dictionary):
         vector = [0 for x in range(len(dictionary))]
         vector[ dictionary.index(value) ] = 1.0
         return vector
 
+    def remove_dot(self, line):
+        """
+        Remove a dot at the end of the line.
+        This function is needed because lines in the test set
+        ends with a '.' (this is not true of lines in the training set)
+        """
+        if line[-1] == '.':
+            return line[0:-1]
+        else:
+            return line
+
     def mapline(self, line):
         if line == [] or line[0][0] == '|':
-            return []
+            return ([],[])
 
         result = []
 
@@ -53,18 +66,30 @@ class AdultDataset:
         result.append([int(line[12])])
         result.append(self.one_hot(line[13], self.NATIVE_COUNTRY))
 
-        return sum(result, [])
+        label = self.remove_dot(line[14])
+        labels = self.one_hot(label, self.LABELS)
 
-    def load(self):
-        with open(self.TRAINPATH,'r') as file:
-            reader = csv.reader(file, skipinitialspace=True)
-            self.data = [x for x in [self.mapline(x) for x in reader] if x != []]
-            self.traindataset = tf.data.Dataset.from_tensor_slices(self.data)
+        return (sum(result, []), labels)
 
-        with open(self.TESTPATH,'r') as file:
+    def load_dataset(self, path):
+        print("Importing %s" % (path))
+        num_lines = num_lines = sum(1 for line in open(path))
+        xs = []
+        ys = []
+
+        with open(path,'r') as file:
             reader = csv.reader(file, skipinitialspace=True)
-            self.test = [x for x in [self.mapline(x) for x in reader] if x != []]
-            self.testdataset = tf.data.Dataset.from_tensor_slices(self.test)
+            for line in tqdm(reader, total=num_lines):
+                x,y  = self.mapline(line)
+                if x != []:
+                    xs.append(x)
+                    ys.append(y)
+
+        return tf.data.Dataset.from_tensor_slices((xs, ys))
+
+    def load_all(self):
+        self.traindataset = self.load_dataset(self.TRAINPATH)
+        self.testdataset = self.load_dataset(self.TESTPATH)
 
 
     def download(self, url, filename):
@@ -73,8 +98,9 @@ class AdultDataset:
 
         dataset = requests.get(url)
 
+        print("Downloading %s" % (url))
         with open(filename, 'wb') as file:
-            for data in dataset:
+            for data in tqdm(dataset):
                 file.write(data)
 
     def download_all(self):
@@ -86,5 +112,3 @@ class AdultDataset:
 
     def testdata(self):
         return self.testdataset
-
-dataset = AdultDataset()
