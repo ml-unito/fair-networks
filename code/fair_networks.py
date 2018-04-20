@@ -32,28 +32,45 @@ def build_model(layers, optimizer):
         accuracy = tf.cast(tf.reduce_mean(correct_predictions), "float")
         accuracy_stat = tf.summary.scalar("Accuracy", accuracy)
 
+    with tf.name_scope("confusion_matrix"):
+        predicted = tf.argmax(out, 1)
+        actual = tf.argmax(y,1)
+        TP = tf.count_nonzero(predicted * actual)
+        TN = tf.count_nonzero((predicted - 1) * (actual - 1))
+        FP = tf.count_nonzero(predicted * (actual - 1))
+        FN = tf.count_nonzero((predicted - 1) * actual)
+        confusion_matrix = (TP,TN,FP,FN)
+
     train_step = optimizer.minimize(loss)
 
-    return (x,y,train_step,is_training,loss,accuracy)
+    return (x,y,train_step,is_training,loss,accuracy,confusion_matrix)
 
 def eval_loss_and_accuracy(session, loss, accuracy, xs, ys):
     loss_val = session.run(loss, feed_dict={x: xs, y: ys, is_training: False})
     accuracy_val = session.run(accuracy, feed_dict={x: xs, y: ys, is_training: False})
     return (loss_val, accuracy_val)
 
+def print_confusion_matrix(tp, tn, fp, fn):
+    print(" |%6s%s%6s|" % ("","predicted",""))
+    print(" |%10s|%10s|" % ("+","-"))
+    print(" |----------|----------|")
+    print("+|%10d|%10d|" % (tp,fn))
+    print("-|%10d|%10d|" % (fp,tn))
+    print(" |----------|----------|")
+
 # --------------------------------------------------------------------------------
 # main
 # --------------------------------------------------------------------------------
 
-x,y,train_step,is_training,loss,accuracy = build_model([
-    (10, tf.nn.sigmoid, tf.random_normal_initializer)],
+x,y,train_step,is_training,loss,accuracy, confusion_matrix = build_model([
+    (10, tf.nn.sigmoid, tf.random_normal_initializer) # first layer
+    ],
     tf.train.GradientDescentOptimizer(3.0))
 
 dataset = ds.AdultDataset()
 
 train_xs, train_ys = dataset.train_all_data()
 test_xs, test_ys = dataset.test_all_data()
-
 
 trainset = dataset.train_dataset().batch(100)
 train_it = trainset.make_initializable_iterator()
@@ -85,5 +102,9 @@ for _ in range(NUM_EPOCHS):
 
     loss_test_val, accuracy_test_val = eval_loss_and_accuracy(session, loss, accuracy, test_xs, test_ys)
 
+    (TP_val,TN_val,FP_val,FN_val) = session.run(confusion_matrix, feed_dict = {x:train_xs, y:train_ys})
 
+    print("")
     print("%6d|%6d|%2.8f|%2.8f|%2.8f|%2.8f" % (last_epoch, count, accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
+    print_confusion_matrix(TP_val,TN_val,FP_val,FN_val)
+    print("")
