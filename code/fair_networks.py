@@ -51,12 +51,10 @@ def eval_loss_and_accuracy(session, loss, accuracy, xs, ys):
     return (loss_val, accuracy_val)
 
 def print_confusion_matrix(tp, tn, fp, fn):
-    print(" |%6s%s%6s|" % ("","predicted",""))
-    print(" |%10s|%10s|" % ("+","-"))
-    print(" |----------|----------|")
-    print("+|%10d|%10d|" % (tp,fn))
-    print("-|%10d|%10d|" % (fp,tn))
-    print(" |----------|----------|")
+    print("|        |predicted +|predicted -|")
+    print("|:------:|----------:|----------:|")
+    print("|actual +|%11d|%11d|" % (tp,fn))
+    print("|actual -|%11d|%11d|" % (fp,tn))
 
 # --------------------------------------------------------------------------------
 # main
