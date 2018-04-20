@@ -7,34 +7,38 @@ import adult_dataset as ds
 
 NUM_EPOCHS = 1000
 
-
 # Building model
 
-x = tf.placeholder(tf.float32, shape=[None, 108], name="x")
-y = tf.placeholder(tf.float32, shape=[None, 2], name="y")
-is_training = tf.placeholder(tf.bool, None)
+def build_model():
+    x = tf.placeholder(tf.float32, shape=[None, 108], name="x")
+    y = tf.placeholder(tf.float32, shape=[None, 2], name="y")
+    is_training = tf.placeholder(tf.bool, None)
 
-with tf.name_scope("layer-1"):
-    l1 = tf.layers.dense(x, 20, activation=tf.nn.sigmoid, kernel_initializer = tf.random_normal_initializer())
-    # l1 = tf.layers.dropout(l1, rate = 0.5, training = is_training)
+    with tf.name_scope("layer-1"):
+        l1 = tf.layers.dense(x, 100, activation=tf.nn.sigmoid, kernel_initializer = tf.random_normal_initializer())
+        # l1 = tf.layers.dropout(l1, rate = 0.5, training = is_training)
 
-# with tf.name_scope("layer-2"):
-#     l2 = tf.layers.dense(l1, 25, activation=tf.nn.sigmoid, kernel_initializer = tf.random_normal_initializer())
-#     # l2 = tf.layers.dropout(l2, rate = 0.5, training = is_training)
+    # with tf.name_scope("layer-2"):
+    #     l2 = tf.layers.dense(l1, 25, activation=tf.nn.sigmoid, kernel_initializer = tf.random_normal_initializer())
+    #     # l2 = tf.layers.dropout(l2, rate = 0.5, training = is_training)
 
-with tf.name_scope("out"):
-    out = tf.layers.dense(l1, 2, activation=tf.nn.sigmoid, kernel_initializer = tf.random_normal_initializer())
+    with tf.name_scope("out"):
+        out = tf.layers.dense(l1, 2, activation=tf.nn.sigmoid, kernel_initializer = tf.random_normal_initializer())
 
-with tf.name_scope("loss"):
-    loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=out))
-    loss_stat = tf.summary.scalar("softmax_loss", loss)
+    with tf.name_scope("loss"):
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=out))
+        loss_stat = tf.summary.scalar("softmax_loss", loss)
 
-with tf.name_scope("accuracy"):
-    correct_predictions = tf.cast(tf.equal(tf.argmax(out,1), tf.argmax(y,1)), "float")
-    class_accuracy_op = tf.cast(tf.reduce_mean(correct_predictions), "float")
-    accuracy_stat = tf.summary.scalar("Accuracy", class_accuracy_op)
+    with tf.name_scope("accuracy"):
+        correct_predictions = tf.cast(tf.equal(tf.argmax(out,1), tf.argmax(y,1)), "float")
+        accuracy = tf.cast(tf.reduce_mean(correct_predictions), "float")
+        accuracy_stat = tf.summary.scalar("Accuracy", accuracy)
 
-train_step = tf.train.GradientDescentOptimizer(3.0).minimize(loss)
+    train_step = tf.train.GradientDescentOptimizer(100.0).minimize(loss)
+
+    return (x,y,train_step,is_training,loss,accuracy)
+
+x,y,train_step,is_training,loss,accuracy = build_model()
 
 dataset = ds.AdultDataset()
 
@@ -68,10 +72,10 @@ for _ in range(NUM_EPOCHS):
     last_epoch += 1
 
     loss_train_val = session.run(loss, feed_dict={x: train_xs, y: train_ys, is_training: False})
-    accuracy_train_val = session.run(class_accuracy_op, feed_dict={x: train_xs, y: train_ys, is_training: False})
+    accuracy_train_val = session.run(accuracy, feed_dict={x: train_xs, y: train_ys, is_training: False})
 
     loss_test_val = session.run(loss, feed_dict={x: test_xs, y: test_ys, is_training: False})
-    accuracy_test_val = session.run(class_accuracy_op, feed_dict={x: test_xs, y: test_ys, is_training: False})
+    accuracy_test_val = session.run(accuracy, feed_dict={x: test_xs, y: test_ys, is_training: False})
 
 
     print("%6d|%6d|%2.8f|%2.8f|%2.8f|%2.8f" % (last_epoch, count, accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
