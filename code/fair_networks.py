@@ -61,11 +61,11 @@ def print_confusion_matrix(tp, tn, fp, fn):
 # --------------------------------------------------------------------------------
 
 x,y,train_step,is_training,loss,accuracy, confusion_matrix = build_model([
-    (10, tf.nn.sigmoid, tf.random_normal_initializer) # first layer
+    (100, tf.nn.sigmoid, tf.random_normal_initializer) # first layer
     ],
     tf.train.GradientDescentOptimizer(3.0))
 
-dataset = ds.AdultDataset()
+dataset = ds.AdultDataset(balance_trainset=True)
 
 train_xs, train_ys = dataset.train_all_data()
 test_xs, test_ys = dataset.test_all_data()

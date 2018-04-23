@@ -1,6 +1,3 @@
-# class AdultDataset:
-#     PATH='/data/adultdata'
-
 import csv
 import requests
 import os.path
@@ -30,7 +27,13 @@ class AdultDataset:
     NATIVE_COUNTRY = [ 'United-States', 'Cambodia', 'England', 'Puerto-Rico', 'Canada', 'Germany', 'Outlying-US(Guam-USVI-etc)', 'India', 'Japan', 'Greece', 'South', 'China', 'Cuba', 'Iran', 'Honduras', 'Philippines', 'Italy', 'Poland', 'Jamaica', 'Vietnam', 'Mexico', 'Portugal', 'Ireland', 'France', 'Dominican-Republic', 'Laos', 'Ecuador', 'Taiwan', 'Haiti', 'Columbia', 'Hungary', 'Guatemala', 'Nicaragua', 'Scotland', 'Thailand', 'Yugoslavia', 'El-Salvador', 'Trinadad&Tobago', 'Peru', 'Hong', 'Holand-Netherlands', '?']
     LABELS = ['>50K', '<=50K']
 
-    def __init__(self):
+    def __init__(self, balance_trainset=True):
+        """
+        Downloads and load into memory the dataset. If balance_trainset is True then
+        the negative examples are oversampled so to get a 50/50 split between the positive
+        and the negative class.
+        """
+        self.balance_trainset = balance_trainset
         self.download_all()
         self.load_all()
 
@@ -107,18 +110,57 @@ class AdultDataset:
 
         return (xs,ys)
 
+    def sample_examples(self, xs, ys, class_vec, num_elems):
+        class_examples = np.where(ys == class_vec)[0]
+        extracted = np.random.choice(class_examples, num_elems, replace=True)
+
+        return (xs[extracted], ys[extracted])
+
+
+    def balance(self, data):
+        if not self.balance_trainset:
+            return data
+
+        xs,ys = data
+        xs, ys = np.array(xs), np.array(ys)
+        neg_count = np.count_nonzero(ys[:,0])
+        pos_count = np.count_nonzero(ys[:,1])
+
+        diff_count = pos_count - neg_count
+
+        if diff_count == 0:
+            return
+
+        if diff_count > 0:
+            (sampled_xs, sampled_ys) = self.sample_examples(xs, ys, [1.0, 0.0], diff_count)
+        else:
+            (sampled_xs, sampled_ys) = self.sample_examples(xs, ys, [0.0, 1.0], -diff_count)
+
+        return (list(xs) + list(sampled_xs), list(ys) + list(sampled_ys))
+
+
     def load_all(self):
         """
         loads into memory the training and the test sets (it needs to
         be called before accessing to them using other methods that
         access to the train and the test set)
         """
-        self._traindata = self.load_data(self.TRAINPATH)
+        self._traindata = self.balance(self.load_data(self.TRAINPATH))
         self._testdata = self.load_data(self.TESTPATH)
 
-        self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
-        self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
+        print(np.count_nonzero(np.array(self._traindata[1])[:,0]))
+        print(np.count_nonzero(np.array(self._traindata[1])[:,1]))
+        print("|Train| = %d" % len(self._traindata[0]))
+        print("|Test| = %d" % len(self._testdata[0]))
 
+        train_xs = np.array(self._traindata[0])
+        train_ys = np.array(self._traindata[1])
+        test_xs = np.array(self._testdata[0])
+        test_ys = np.array(self._testdata[1])
+
+        self._train_dataset = tf.data.Dataset.from_tensor_slices((train_xs, train_ys))
+        self._test_dataset = tf.data.Dataset.from_tensor_slices((test_xs, test_ys))
+        print("Imported")
 
     def download(self, url, filename):
         """
