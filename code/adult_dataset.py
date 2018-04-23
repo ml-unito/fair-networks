@@ -57,7 +57,34 @@ class AdultDataset:
         else:
             return line
 
-    def mapline(self, line):
+    def mapline_simple(self, line):
+        if line == [] or line[0][0] == '|':
+            return ([],[])
+
+        result = []
+
+        result.append([int(line[0])])
+        result.append([line[1]])
+        result.append([int(line[2])])
+        result.append([line[3]])
+        result.append([int(line[4])])
+        result.append([line[5]])
+        result.append([line[6]])
+        result.append([line[7]])
+        result.append([line[8]])
+        result.append([line[9]])
+        result.append([int(line[10])])
+        result.append([int(line[11])])
+        result.append([int(line[12])])
+        result.append([line[13]])
+
+        labels = self.remove_dot(line[14])
+        labels = self.one_hot(labels, self.LABELS)
+
+        return (sum(result, []), labels)
+
+
+    def mapline_one_hot(self, line):
         """
         given a vector of string attributes read from the adult dataset maps
         them into numeric features (using one_hot_encoding for categorical attributes).
@@ -72,7 +99,7 @@ class AdultDataset:
         result.append([int(line[0])])
         result.append(self.one_hot(line[1], self.WORKCLASS))
         result.append([int(line[2])])
-        result.append(self.one_hot(line[3], self.EDUCATION))
+        # result.append(self.one_hot(line[3], self.EDUCATION))
         result.append([int(line[4])])
         result.append(self.one_hot(line[5], self.MARITAL_STATUS))
         result.append(self.one_hot(line[6], self.OCCUPATION))
@@ -84,8 +111,8 @@ class AdultDataset:
         result.append([int(line[12])])
         result.append(self.one_hot(line[13], self.NATIVE_COUNTRY))
 
-        label = self.remove_dot(line[14])
-        labels = self.one_hot(label, self.LABELS)
+        labels = self.remove_dot(line[14])
+        labels = self.one_hot(labels, self.LABELS)
 
         return (sum(result, []), labels)
 
@@ -103,7 +130,7 @@ class AdultDataset:
         with open(path,'r') as file:
             reader = csv.reader(file, skipinitialspace=True)
             for line in tqdm(reader, total=num_lines):
-                x,y  = self.mapline(line)
+                x,y  = self.mapline_one_hot(line)
                 if x != []:
                     xs.append(x)
                     ys.append(y)

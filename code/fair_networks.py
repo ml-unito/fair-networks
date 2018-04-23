@@ -1,4 +1,9 @@
 import sys
+from sklearn import svm
+from sklearn import tree
+import numpy as np
+
+
 sys.path.append('code')
 
 import tensorflow as tf
@@ -10,7 +15,7 @@ NUM_EPOCHS = 1000
 # Building model
 
 def build_model(layers, optimizer):
-    x = tf.placeholder(tf.float32, shape=[None, 108], name="x")
+    x = tf.placeholder(tf.float32, shape=[None, 92], name="x")
     y = tf.placeholder(tf.float32, shape=[None, 2], name="y")
     is_training = tf.placeholder(tf.bool, None)
     in_layer = x
@@ -60,17 +65,32 @@ def print_confusion_matrix(tp, tn, fp, fn):
 # main
 # --------------------------------------------------------------------------------
 
-x,y,train_step,is_training,loss,accuracy, confusion_matrix = build_model([
-    (100, tf.nn.sigmoid, tf.random_normal_initializer) # first layer
-    ],
-    tf.train.GradientDescentOptimizer(3.0))
+dataset = ds.AdultDataset(balance_trainset=False)
 
-dataset = ds.AdultDataset(balance_trainset=True)
+xs,ys = dataset.train_all_data()
+ys = np.argmax(ys, 1)
+
+test_xs, test_ys = dataset.test_all_data()
+test_ys = np.argmax(test_ys,1)
+
+#svc = tree.DecisionTreeClassifier().fit(xs,ys)
+#np.count_nonzero(svc.predict(xs) - ys) / len(xs)
+#np.count_nonzero(svc.predict(test_xs) - test_ys) / len(test_xs)
+
+#np.count_nonzero(svc.predict(xs))
+
+
+#sys.exit(1)
+
+x,y,train_step,is_training,loss,accuracy, confusion_matrix = build_model([
+    (1000, tf.nn.relu, tf.random_normal_initializer), # first layer
+    ],
+    tf.train.AdagradOptimizer(20))
 
 train_xs, train_ys = dataset.train_all_data()
 test_xs, test_ys = dataset.test_all_data()
 
-trainset = dataset.train_dataset().batch(100)
+trainset = dataset.train_dataset().batch(100).shuffle(1000)
 train_it = trainset.make_initializable_iterator()
 train_next = train_it.get_next()
 
