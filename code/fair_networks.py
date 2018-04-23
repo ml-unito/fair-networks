@@ -8,14 +8,17 @@ sys.path.append('code')
 
 import tensorflow as tf
 import time
-import adult_dataset as ds
+# import adult_dataset as ds
+import bank_marketing_dataset as ds
 
+# NUM_FEATURES = 92   # Adult
+NUM_FEATURES = 51     # Bank
 NUM_EPOCHS = 1000
 
 # Building model
 
 def build_model(layers, optimizer):
-    x = tf.placeholder(tf.float32, shape=[None, 92], name="x")
+    x = tf.placeholder(tf.float32, shape=[None, NUM_FEATURES], name="x")
     y = tf.placeholder(tf.float32, shape=[None, 2], name="y")
     is_training = tf.placeholder(tf.bool, None)
     in_layer = x
@@ -65,7 +68,7 @@ def print_confusion_matrix(tp, tn, fp, fn):
 # main
 # --------------------------------------------------------------------------------
 
-dataset = ds.AdultDataset(balance_trainset=False)
+dataset = ds.BankMarketingDataset()
 
 xs,ys = dataset.train_all_data()
 ys = np.argmax(ys, 1)
@@ -83,7 +86,7 @@ test_ys = np.argmax(test_ys,1)
 #sys.exit(1)
 
 x,y,train_step,is_training,loss,accuracy, confusion_matrix = build_model([
-    (1000, tf.nn.relu, tf.random_normal_initializer), # first layer
+    (1000, tf.nn.sigmoid, tf.random_normal_initializer), # first layer
     ],
     tf.train.AdagradOptimizer(20))
 
@@ -99,6 +102,10 @@ last_epoch = 0
 session = tf.Session()
 init = tf.global_variables_initializer()
 session.run(init)
+
+
+writer = tf.summary.FileWriter(logdir='logdir', graph=session.graph)
+writer.close()
 
 print("%6s|%6s|%10s|%10s|%10s|%10s" % ("epoch", "it", "acc train", "acc test", "loss train", "loss test"))
 
