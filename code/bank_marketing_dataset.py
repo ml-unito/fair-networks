@@ -117,15 +117,22 @@ class BankMarketingDataset:
         self._traindata = (train_xs, train_ys)
         self._testdata = (test_xs, test_ys)
 
-        # self._testdata = self.load_data(self.TESTPATH)
+        print("-: " + str(np.count_nonzero(np.array(self._traindata[1])[:,0])))
+        print("1: " + str(np.count_nonzero(np.array(self._traindata[1])[:,1])))
 
-        # print(np.count_nonzero(np.array(self._traindata[1])[:,0]))
-        # print(np.count_nonzero(np.array(self._traindata[1])[:,1]))
-        # print("|Train| = %d" % len(self._traindata[0]))
-        # print("|Test| = %d" % len(self._testdata[0]))
+        neg_indexes = np.where( self._traindata[1][:,0] == 1 )[0]
+        pos_indexes = np.where( self._traindata[1][:,1] == 1 )[0]
+        sampled_indexes = np.random.choice(neg_indexes, len(pos_indexes), replace=False)
 
-        # test_xs = np.array(self._testdata[0])
-        # test_ys = np.array(self._testdata[1])
+        newxs = np.vstack([self._traindata[0][pos_indexes], self._traindata[0][sampled_indexes]])
+        newys = np.vstack([self._traindata[1][pos_indexes], self._traindata[1][sampled_indexes]])
+        self._traindata = (newxs, newys)
+
+        print("|Train| = %d" % len(self._traindata[0]))
+        print("|Test| = %d" % len(self._testdata[0]))
+
+        test_xs = np.array(self._testdata[0])
+        test_ys = np.array(self._testdata[1])
 
         self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
