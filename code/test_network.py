@@ -7,7 +7,7 @@ import time
 
 sys.path.append('code')
 
-from model import build_model, print_confusion_matrix, eval_loss_and_accuracy
+from model import build_model, print_confusion_matrix, print_loss_and_accuracy
 import bank_marketing_dataset as ds
 
 
