@@ -104,6 +104,15 @@ class BankMarketingDataset:
 
         return (list(xs) + list(sampled_xs), list(ys) + list(sampled_ys))
 
+    def undersample_dataset(self,dataset):
+        neg_indexes = np.where( dataset[1][:,0] == 1 )[0]
+        pos_indexes = np.where( dataset[1][:,1] == 1 )[0]
+        sampled_indexes = np.random.choice(neg_indexes, len(pos_indexes), replace=False)
+
+        newxs = np.vstack([dataset[0][pos_indexes], dataset[0][sampled_indexes]])
+        newys = np.vstack([dataset[1][pos_indexes], dataset[1][sampled_indexes]])
+
+        return (newxs, newys)
 
     def load_all(self):
         """
@@ -112,21 +121,17 @@ class BankMarketingDataset:
         access to the train and the test set)
         """
         xs,ys = self.load_data(self.DATAPATH)
-        train_xs, test_xs, train_ys, test_ys = train_test_split(xs,ys,test_size=0.3)
+
+        # FIXME: train/test split should be done only once!
+        train_xs, test_xs, train_ys, test_ys = train_test_split(xs,ys,test_size=0.1, random_state=42)
 
         self._traindata = (train_xs, train_ys)
         self._testdata = (test_xs, test_ys)
 
+        # self._traindata = self.undersample_dataset(self._traindata)
+
         print("-: " + str(np.count_nonzero(np.array(self._traindata[1])[:,0])))
         print("1: " + str(np.count_nonzero(np.array(self._traindata[1])[:,1])))
-
-        neg_indexes = np.where( self._traindata[1][:,0] == 1 )[0]
-        pos_indexes = np.where( self._traindata[1][:,1] == 1 )[0]
-        sampled_indexes = np.random.choice(neg_indexes, len(pos_indexes), replace=False)
-
-        newxs = np.vstack([self._traindata[0][pos_indexes], self._traindata[0][sampled_indexes]])
-        newys = np.vstack([self._traindata[1][pos_indexes], self._traindata[1][sampled_indexes]])
-        self._traindata = (newxs, newys)
 
         print("|Train| = %d" % len(self._traindata[0]))
         print("|Test| = %d" % len(self._testdata[0]))

@@ -7,20 +7,9 @@ import time
 
 sys.path.append('code')
 
-from model import build_model
+from model import build_model, print_confusion_matrix, eval_loss_and_accuracy
 import bank_marketing_dataset as ds
 # import adult_dataset as ds
-
-def eval_loss_and_accuracy(session, loss, accuracy, xs, ys):
-    loss_val = session.run(loss, feed_dict={x: xs, y: ys})
-    accuracy_val = session.run(accuracy, feed_dict={x: xs, y: ys})
-    return (loss_val, accuracy_val)
-
-def print_confusion_matrix(tp, tn, fp, fn):
-    print("|        |predicted +|predicted -|")
-    print("|:------:|----------:|----------:|")
-    print("|actual +|%11d|%11d|" % (tp,fn))
-    print("|actual -|%11d|%11d|" % (fp,tn))
 
 
 # --------------------------------------------------------------------------------
@@ -80,14 +69,3 @@ for epoch in range(NUM_EPOCHS):
 
     stat_des = session.run(test_stats, feed_dict = { x:test_xs, y:test_ys })
     writer.add_summary(stat_des, global_step = epoch)
-
-
-    loss_train_val, accuracy_train_val = eval_loss_and_accuracy(session, loss, accuracy, train_xs, train_ys)
-    loss_test_val, accuracy_test_val = eval_loss_and_accuracy(session, loss, accuracy, test_xs, test_ys)
-
-    (TP_val,TN_val,FP_val,FN_val) = session.run(confusion_matrix, feed_dict = {x:train_xs, y:train_ys})
-
-    print("")
-    print("%6d|%2.8f|%2.8f|%2.8f|%2.8f" % (epoch, accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
-    print_confusion_matrix(TP_val,TN_val,FP_val,FN_val)
-    print("")

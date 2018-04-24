@@ -42,3 +42,15 @@ def build_model(layers, optimizer, num_features):
     test_stats = tf.summary.merge([test_loss_stat, test_accuracy_stat])
 
     return ( x, y, train_step, loss, accuracy, confusion_matrix, train_stats, test_stats)
+
+
+def eval_loss_and_accuracy(session, loss, accuracy, feed_dict):
+    loss_val = session.run(loss, feed_dict=feed_dict)
+    accuracy_val = session.run(accuracy, feed_dict=feed_dict)
+    return (loss_val, accuracy_val)
+
+def print_confusion_matrix(tp, tn, fp, fn):
+    print("|        |predicted +|predicted -|")
+    print("|:------:|----------:|----------:|")
+    print("|actual +|%11d|%11d|" % (tp,fn))
+    print("|actual -|%11d|%11d|" % (fp,tn))
