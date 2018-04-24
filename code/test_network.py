@@ -42,20 +42,13 @@ session = tf.Session()
 saver = tf.train.Saver()
 saver.restore(session, 'models/%s-epoch-%d.ckpt' % (EXP_NAME, EPOCH))
 
+train_feed = { x:train_xs, y:test_ys }
+test_feed = { x:test_xs, y:test_ys }
 
-loss_train_val, accuracy_train_val = eval_loss_and_accuracy(session, loss, accuracy, feed_dict = { x:train_xs, y:train_ys} )
-loss_test_val, accuracy_test_val = eval_loss_and_accuracy(session, loss, accuracy, feed_dict = {x:test_xs, y:test_ys})
+print_loss_and_accuracy(session, loss, accuracy, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
+print("Confusion matrix -- Train")
+print_confusion_matrix(session, confusion_matrix, feed_dict = train_feed)
 
-print("")
-print("%2.8f|%2.8f|%2.8f|%2.8f" % (accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
-
-print("Confusion Matrix Train")
-(TP_val,TN_val,FP_val,FN_val) = session.run(confusion_matrix, feed_dict = {x:train_xs, y:train_ys})
-
-print_confusion_matrix(TP_val,TN_val,FP_val,FN_val)
-
-print("Confusione Matrix Test")
-(TP_val,TN_val,FP_val,FN_val) = session.run(confusion_matrix, feed_dict = {x:test_xs, y:test_ys})
-
-print_confusion_matrix(TP_val,TN_val,FP_val,FN_val)
+print("Confusion matrix -- Test")
+print_confusion_matrix(session, confusion_matrix, feed_dict = test_feed)

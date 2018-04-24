@@ -128,7 +128,7 @@ class BankMarketingDataset:
         self._traindata = (train_xs, train_ys)
         self._testdata = (test_xs, test_ys)
 
-        # self._traindata = self.undersample_dataset(self._traindata)
+        self._traindata = self.undersample_dataset(self._traindata)
 
         print("-: " + str(np.count_nonzero(np.array(self._traindata[1])[:,0])))
         print("1: " + str(np.count_nonzero(np.array(self._traindata[1])[:,1])))

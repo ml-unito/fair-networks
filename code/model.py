@@ -49,7 +49,16 @@ def eval_loss_and_accuracy(session, loss, accuracy, feed_dict):
     accuracy_val = session.run(accuracy, feed_dict=feed_dict)
     return (loss_val, accuracy_val)
 
-def print_confusion_matrix(tp, tn, fp, fn):
+def print_loss_and_accuracy(session, loss, accuracy, train_feed_dict, test_feed_dict):
+    loss_train_val, accuracy_train_val = eval_loss_and_accuracy(session, loss, accuracy, feed_dict = train_feed_dict )
+    loss_test_val, accuracy_test_val = eval_loss_and_accuracy(session, loss, accuracy, feed_dict = test_feed_dict)
+
+    print("")
+    print("acc tr:%2.8f|acc te:%2.8f|loss tr:%2.8f|loss te:%2.8f" % (accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
+
+def print_confusion_matrix(session, confusion_matrix, feed_dict):
+    (tp,tn,fp,fn) = session.run(confusion_matrix, feed_dict = feed_dict)
+
     print("|        |predicted +|predicted -|")
     print("|:------:|----------:|----------:|")
     print("|actual +|%11d|%11d|" % (tp,fn))
