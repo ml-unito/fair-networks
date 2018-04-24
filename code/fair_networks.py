@@ -20,21 +20,25 @@ if len(sys.argv) < 2:
     print("Usage: %s <num_hidden_units> [epoch_start:epoch_end]" % sys.argv[0])
     sys.exit(1)
 
-resume_learning = len(sys.argv) == 3
+epoch_start = 0
+epoch_end = 10000
+resume_learning = False
+
+if len(sys.argv) == 3:
+    epoch_start, epoch_end = sys.argv[2].split(':')
+
+    if epoch_start != '':
+        epoch_start = int(epoch_start)
+        resume_learning = True
+
+    epoch_end = int(epoch_end)
+
 
 # NUM_FEATURES = 92   # Adult
 NUM_FEATURES = 51     # Bank
-
-if resume_learning:
-    epoch_start, epoch_end = sys.argv[2].split(':')
-    epoch_start = int(epoch_start)
-    epoch_end = int(epoch_end)
-    EPOCHS = range(epoch_start, epoch_end)
-else:
-    EPOCHS = range(0,10000)
-
+EPOCHS = range(epoch_start, epoch_end)
 HIDDEN_UNITS = int(sys.argv[1])
-SAVE_FREQUENCY = 1000
+EPOCHS_PER_SAVE = 1000
 
 HIDDEN_LAYERS = [
     (HIDDEN_UNITS, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
@@ -84,9 +88,12 @@ for epoch in EPOCHS:
         except tf.errors.OutOfRangeError:
           break
 
-    if (epoch < SAVE_FREQUENCY and epoch % (SAVE_FREQUENCY/10) == 0) or epoch % SAVE_FREQUENCY == 0:
+    if (epoch < EPOCHS_PER_SAVE and epoch % (EPOCHS_PER_SAVE/10) == 0) \
+            or epoch % EPOCHS_PER_SAVE == 0:
+
         saver.save(session, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch))
 
+        print("epoch: %d" % epoch)
         print_loss_and_accuracy(session, loss, accuracy, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
         print("Confusion matrix -- Train")
