@@ -68,7 +68,7 @@ for epoch in range(NUM_EPOCHS):
           break
 
     if (epoch < SAVE_FREQUENCY and epoch % (SAVE_FREQUENCY/10) == 0) or epoch % SAVE_FREQUENCY == 0:
-        saver.save(session, "models/%s-epoch-%d.ckpt" % (epoch, EXP_NAME))
+        saver.save(session, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch))
 
     stat_des = session.run(train_stats, feed_dict = { x:train_xs, y:train_ys })
     writer.add_summary(stat_des, global_step = epoch)
