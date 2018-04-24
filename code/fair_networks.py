@@ -7,8 +7,8 @@ import time
 
 sys.path.append('code')
 
-from model import build_model, print_confusion_matrix, print_loss_and_accuracy
-import bank_marketing_dataset as ds
+from model import Model
+from options import Options
 # import adult_dataset as ds
 
 
@@ -16,41 +16,11 @@ import bank_marketing_dataset as ds
 # main
 # --------------------------------------------------------------------------------
 
-if len(sys.argv) < 2:
-    print("Usage: %s <num_hidden_units> [epoch_start:epoch_end]" % sys.argv[0])
-    sys.exit(1)
-
-epoch_start = 0
-epoch_end = 10000
-resume_learning = False
-
-if len(sys.argv) == 3:
-    epoch_start, epoch_end = sys.argv[2].split(':')
-
-    if epoch_start != '':
-        epoch_start = int(epoch_start)
-        resume_learning = True
-
-    epoch_end = int(epoch_end)
-
-
-# NUM_FEATURES = 92   # Adult
-NUM_FEATURES = 51     # Bank
-EPOCHS = range(epoch_start, epoch_end)
-HIDDEN_UNITS = int(sys.argv[1])
-EPOCHS_PER_SAVE = 1000
-
-HIDDEN_LAYERS = [
-    (HIDDEN_UNITS, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
-    ]
-EXP_NAME = "bank_h%d" % HIDDEN_UNITS
-
-
-dataset = ds.BankMarketingDataset()
+opts = Options().parse(sys.argv)
+dataset = opts.dataset
 
 optimizer = tf.train.AdagradOptimizer(1.0)
-x, y, train_step, loss, accuracy, confusion_matrix, train_stats, test_stats = build_model(
-    HIDDEN_LAYERS, optimizer, NUM_FEATURES )
+model = Model(opts.hidden_layers, optimizer, opts.num_features )
 
 # grads = optimizer.compute_gradients(loss)
 # for index, grad in enumerate(grads):
@@ -59,54 +29,51 @@ x, y, train_step, loss, accuracy, confusion_matrix, train_stats, test_stats = bu
 train_xs, train_ys = dataset.train_all_data()
 test_xs, test_ys = dataset.test_all_data()
 
-train_feed = { x:train_xs, y:train_ys }
-test_feed = { x:test_xs, y:test_ys }
+train_feed = { model.x:train_xs, model.y:train_ys }
+test_feed = { model.x:test_xs, model.y:test_ys }
 
 trainset = dataset.train_dataset().batch(100).shuffle(1000)
 trainset_it = trainset.make_initializable_iterator()
 trainset_next = trainset_it.get_next()
 
-
 session = tf.Session()
 saver = tf.train.Saver()
 
-if resume_learning:
-    saver.restore(session, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch_start))
+if opts.resume_learning:
+    saver.restore(session, opts.model_fname(opts.epoch_start))
 else:
     init = tf.global_variables_initializer()
     session.run(init)
 
 
-writer = tf.summary.FileWriter(logdir='logdir/log_%s' % EXP_NAME, graph=session.graph)
+writer = tf.summary.FileWriter(logdir=opts.log_fname(), graph=session.graph)
 
-for epoch in EPOCHS:
+for epoch in opts.epochs:
     session.run(trainset_it.initializer)
     while True:
         try:
             xs, ys = session.run(trainset_next)
-            session.run(train_step, feed_dict = { x:xs, y:ys } )
+            session.run(model.train_step, feed_dict = { model.x:xs, model.y:ys }  )
         except tf.errors.OutOfRangeError:
           break
 
-    if (epoch < EPOCHS_PER_SAVE and epoch % (EPOCHS_PER_SAVE/10) == 0) \
-            or epoch % EPOCHS_PER_SAVE == 0:
-
-        saver.save(session, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch))
+    if opts.save_at_epoch(epoch):
+        saver.save(session, opts.model_fname(epoch))
 
         print("epoch: %d" % epoch)
-        print_loss_and_accuracy(session, loss, accuracy, train_feed_dict = train_feed, test_feed_dict = test_feed)
+        model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
         print("Confusion matrix -- Train")
-        print_confusion_matrix(session, confusion_matrix, feed_dict = train_feed)
+        model.print_confusion_matrix(session, feed_dict = train_feed)
 
         print("Confusion matrix -- Test")
-        print_confusion_matrix(session, confusion_matrix, feed_dict = test_feed)
+        model.print_confusion_matrix(session, feed_dict = test_feed)
 
-    stat_des = session.run(train_stats, feed_dict = { x:train_xs, y:train_ys })
+    stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys })
     writer.add_summary(stat_des, global_step = epoch)
 
-    stat_des = session.run(test_stats, feed_dict = { x:test_xs, y:test_ys })
+    stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys })
     writer.add_summary(stat_des, global_step = epoch)
 
 
-saver.save(session, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch+1))
+saver.save(session, opts.model_fname(epoch+1))
