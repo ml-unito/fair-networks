@@ -42,7 +42,7 @@ session = tf.Session()
 saver = tf.train.Saver()
 saver.restore(session, 'models/%s-epoch-%d.ckpt' % (EXP_NAME, EPOCH))
 
-train_feed = { x:train_xs, y:test_ys }
+train_feed = { x:train_xs, y:train_ys }
 test_feed = { x:test_xs, y:test_ys }
 
 print_loss_and_accuracy(session, loss, accuracy, train_feed_dict = train_feed, test_feed_dict = test_feed)
