@@ -12,13 +12,14 @@ import bank_marketing_dataset as ds
 
 
 
-if len(sys.argv) < 2:
-    print("Usage: %s <num_hidden_units>" % sys.argv[0])
+if len(sys.argv) < 3:
+    print("Usage: %s <num_hidden_units> <epoch>" % sys.argv[0])
     sys.exit(1)
 
 NUM_FEATURES = 51     # Bank
 NUM_EPOCHS = 10000
-HIDDEN_UNITS = sys.argv[1]
+HIDDEN_UNITS = int(sys.argv[1])
+EPOCH = int(sys.argv[2])
 
 HIDDEN_LAYERS = [
     (HIDDEN_UNITS, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
@@ -39,7 +40,7 @@ test_xs, test_ys = dataset.test_all_data()
 session = tf.Session()
 
 saver = tf.train.Saver()
-saver.restore(session, 'models/%s.ckpt' % EXP_NAME)
+saver.restore(session, 'models/%s-epoch-%d.ckpt' % (EXP_NAME, EPOCH))
 
 
 loss_train_val, accuracy_train_val = eval_loss_and_accuracy(session, loss, accuracy, feed_dict = { x:train_xs, y:train_ys} )

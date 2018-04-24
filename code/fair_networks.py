@@ -24,6 +24,7 @@ if len(sys.argv) < 2:
 NUM_FEATURES = 51     # Bank
 NUM_EPOCHS = 10000
 HIDDEN_UNITS = int(sys.argv[1])
+SAVE_FREQUENCY = 1000
 
 HIDDEN_LAYERS = [
     (HIDDEN_UNITS, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
@@ -66,8 +67,8 @@ for epoch in range(NUM_EPOCHS):
         except tf.errors.OutOfRangeError:
           break
 
-    if epoch % SAVE_FREQUENCY == 0:
-        saver.save(session, "models/%s-%d.ckpt" % (epoch, EXP_NAME))
+    if (epoch < SAVE_FREQUENCY and epoch % (SAVE_FREQUENCY/10) == 0) or epoch % SAVE_FREQUENCY == 0:
+        saver.save(session, "models/%s-epoch-%d.ckpt" % (epoch, EXP_NAME))
 
     stat_des = session.run(train_stats, feed_dict = { x:train_xs, y:train_ys })
     writer.add_summary(stat_des, global_step = epoch)
