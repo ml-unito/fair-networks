@@ -24,7 +24,7 @@ EPOCH = int(sys.argv[2])
 HIDDEN_LAYERS = [
     (HIDDEN_UNITS, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
     ]
-EXP_NAME = "adult_h%d" % HIDDEN_UNITS
+EXP_NAME = "bank_h%d" % HIDDEN_UNITS
 
 
 dataset = ds.BankMarketingDataset()
