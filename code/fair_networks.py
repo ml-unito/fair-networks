@@ -20,15 +20,17 @@ if len(sys.argv) < 2:
     print("Usage: %s <num_hidden_units> [epoch_start:epoch_end]" % sys.argv[0])
     sys.exit(1)
 
-resume_learning = len(syss.argv) == 3
+resume_learning = len(sys.argv) == 3
 
 # NUM_FEATURES = 92   # Adult
 NUM_FEATURES = 51     # Bank
 
 if resume_learning:
     epoch_start, epoch_end = sys.argv[2].split(':')
+    epoch_start = int(epoch_start)
+    epoch_end = int(epoch_end)
     EPOCHS = range(epoch_start, epoch_end)
-else
+else:
     EPOCHS = range(0,10000)
 
 HIDDEN_UNITS = int(sys.argv[1])
@@ -65,7 +67,7 @@ session = tf.Session()
 saver = tf.train.Saver()
 
 if resume_learning:
-    saver.restore(saver, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch_start))
+    saver.restore(session, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch_start))
 else:
     init = tf.global_variables_initializer()
     session.run(init)
