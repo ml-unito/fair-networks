@@ -17,12 +17,20 @@ import bank_marketing_dataset as ds
 # --------------------------------------------------------------------------------
 
 if len(sys.argv) < 2:
-    print("Usage: %s <num_hidden_units>" % sys.argv[0])
+    print("Usage: %s <num_hidden_units> [epoch_start:epoch_end]" % sys.argv[0])
     sys.exit(1)
+
+resume_learning = len(syss.argv) == 3
 
 # NUM_FEATURES = 92   # Adult
 NUM_FEATURES = 51     # Bank
-NUM_EPOCHS = 10000
+
+if resume_learning:
+    epoch_start, epoch_end = sys.argv[2].split(':')
+    EPOCHS = range(epoch_start, epoch_end)
+else
+    EPOCHS = range(0,10000)
+
 HIDDEN_UNITS = int(sys.argv[1])
 SAVE_FREQUENCY = 1000
 
@@ -54,14 +62,18 @@ trainset_next = trainset_it.get_next()
 
 
 session = tf.Session()
-init = tf.global_variables_initializer()
-session.run(init)
+saver = tf.train.Saver()
+
+if resume_learning:
+    saver.restore(saver, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch_start))
+else:
+    init = tf.global_variables_initializer()
+    session.run(init)
 
 
 writer = tf.summary.FileWriter(logdir='logdir/log_%s' % EXP_NAME, graph=session.graph)
-saver = tf.train.Saver()
 
-for epoch in range(NUM_EPOCHS):
+for epoch in EPOCHS:
     session.run(trainset_it.initializer)
     while True:
         try:
@@ -86,3 +98,6 @@ for epoch in range(NUM_EPOCHS):
 
     stat_des = session.run(test_stats, feed_dict = { x:test_xs, y:test_ys })
     writer.add_summary(stat_des, global_step = epoch)
+
+
+saver.save(session, "models/%s-epoch-%d.ckpt" % (EXP_NAME, epoch+1))
