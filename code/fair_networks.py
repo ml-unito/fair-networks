@@ -16,15 +16,19 @@ import bank_marketing_dataset as ds
 # main
 # --------------------------------------------------------------------------------
 
+if len(sys.argv) < 2:
+    print("Usage: %s <num_hidden_units>" % sys.argv[0])
+    sys.exit(1)
+
 # NUM_FEATURES = 92   # Adult
 NUM_FEATURES = 51     # Bank
 NUM_EPOCHS = 10000
-HIDDEN_UNITS = 100
+HIDDEN_UNITS = int(sys.argv[1])
 
 HIDDEN_LAYERS = [
     (HIDDEN_UNITS, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
     ]
-EXP_NAME = "adult_h%d" % HIDDEN_UNITS
+EXP_NAME = "bank_h%d" % HIDDEN_UNITS
 
 
 dataset = ds.BankMarketingDataset()
@@ -62,7 +66,8 @@ for epoch in range(NUM_EPOCHS):
         except tf.errors.OutOfRangeError:
           break
 
-    saver.save(session, "models/%s.ckpt" % EXP_NAME)
+    if epoch % SAVE_FREQUENCY == 0:
+        saver.save(session, "models/%s-%d.ckpt" % (epoch, EXP_NAME))
 
     stat_des = session.run(train_stats, feed_dict = { x:train_xs, y:train_ys })
     writer.add_summary(stat_des, global_step = epoch)

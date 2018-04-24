@@ -11,9 +11,14 @@ from model import build_model, print_confusion_matrix, eval_loss_and_accuracy
 import bank_marketing_dataset as ds
 
 
+
+if len(sys.argv) < 2:
+    print("Usage: %s <num_hidden_units>" % sys.argv[0])
+    sys.exit(1)
+
 NUM_FEATURES = 51     # Bank
 NUM_EPOCHS = 10000
-HIDDEN_UNITS = 100
+HIDDEN_UNITS = sys.argv[1]
 
 HIDDEN_LAYERS = [
     (HIDDEN_UNITS, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
