@@ -20,7 +20,6 @@ NUM_EPOCHS = 1000
 def build_model(layers, optimizer):
     x = tf.placeholder(tf.float32, shape=[None, NUM_FEATURES], name="x")
     y = tf.placeholder(tf.float32, shape=[None, 2], name="y")
-    is_training = tf.placeholder(tf.bool, None)
     in_layer = x
 
     for index,layer in enumerate(layers):
@@ -29,7 +28,7 @@ def build_model(layers, optimizer):
             in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer())
 
     with tf.name_scope("out"):
-        out = tf.layers.dense(in_layer, 2, activation=tf.nn.sigmoid, kernel_initializer = tf.random_normal_initializer())
+        out = tf.layers.dense(in_layer, 2, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer())
 
     with tf.name_scope("loss"):
         loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=out))
@@ -51,11 +50,11 @@ def build_model(layers, optimizer):
 
     train_step = optimizer.minimize(loss)
 
-    return (x,y,train_step,is_training,loss,accuracy,confusion_matrix)
+    return (x,y,train_step,loss,accuracy,confusion_matrix)
 
 def eval_loss_and_accuracy(session, loss, accuracy, xs, ys):
-    loss_val = session.run(loss, feed_dict={x: xs, y: ys, is_training: False})
-    accuracy_val = session.run(accuracy, feed_dict={x: xs, y: ys, is_training: False})
+    loss_val = session.run(loss, feed_dict={x: xs, y: ys})
+    accuracy_val = session.run(accuracy, feed_dict={x: xs, y: ys})
     return (loss_val, accuracy_val)
 
 def print_confusion_matrix(tp, tn, fp, fn):
@@ -63,6 +62,10 @@ def print_confusion_matrix(tp, tn, fp, fn):
     print("|:------:|----------:|----------:|")
     print("|actual +|%11d|%11d|" % (tp,fn))
     print("|actual -|%11d|%11d|" % (fp,tn))
+
+
+
+
 
 # --------------------------------------------------------------------------------
 # main
@@ -85,10 +88,16 @@ test_ys = np.argmax(test_ys,1)
 
 #sys.exit(1)
 
-x,y,train_step,is_training,loss,accuracy, confusion_matrix = build_model([
-    (1000, tf.nn.sigmoid, tf.random_normal_initializer), # first layer
-    ],
-    tf.train.AdagradOptimizer(20))
+optimizer = tf.train.AdagradOptimizer(1.0)
+x,y,train_step,loss,accuracy, confusion_matrix = build_model([
+    (100, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
+    ], optimizer )
+
+grads = optimizer.compute_gradients(loss)
+for index, grad in enumerate(grads):
+    tf.summary.histogram("{}-grad".format(grads[index][1].name), grads[index])
+
+statistics = tf.summary.merge_all()
 
 train_xs, train_ys = dataset.train_all_data()
 test_xs, test_ys = dataset.test_all_data()
@@ -105,7 +114,6 @@ session.run(init)
 
 
 writer = tf.summary.FileWriter(logdir='logdir', graph=session.graph)
-writer.close()
 
 print("%6s|%6s|%10s|%10s|%10s|%10s" % ("epoch", "it", "acc train", "acc test", "loss train", "loss test"))
 
@@ -117,14 +125,16 @@ for _ in range(NUM_EPOCHS):
         try:
             count += 1
             xs, ys = session.run(train_next)
-            session.run(train_step, feed_dict = { x:xs, y:ys, is_training: True } )
+            session.run(train_step, feed_dict = { x:xs, y:ys } )
         except tf.errors.OutOfRangeError:
           break
+
+    stat_des = session.run(statistics, feed_dict = { x:train_xs, y:train_ys })
+    writer.add_summary(stat_des, global_step = count)
 
     last_epoch += 1
 
     loss_train_val, accuracy_train_val = eval_loss_and_accuracy(session, loss, accuracy, train_xs, train_ys)
-
     loss_test_val, accuracy_test_val = eval_loss_and_accuracy(session, loss, accuracy, test_xs, test_ys)
 
     (TP_val,TN_val,FP_val,FN_val) = session.run(confusion_matrix, feed_dict = {x:train_xs, y:train_ys})
