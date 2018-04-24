@@ -6,6 +6,7 @@ import numpy as np
 import zipfile
 import pandas
 import sklearn
+from sklearn.model_selection import train_test_split
 
 from tqdm import tqdm
 
@@ -111,7 +112,7 @@ class BankMarketingDataset:
         access to the train and the test set)
         """
         xs,ys = self.load_data(self.DATAPATH)
-        train_xs, test_xs, train_ys, test_ys = sklearn.model_selection.train_test_split(xs,ys,test_size=0.3)
+        train_xs, test_xs, train_ys, test_ys = train_test_split(xs,ys,test_size=0.3)
 
         self._traindata = (train_xs, train_ys)
         self._testdata = (test_xs, test_ys)
