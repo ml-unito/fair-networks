@@ -7,6 +7,7 @@ import zipfile
 import pandas
 import sklearn
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 from tqdm import tqdm
 
@@ -22,6 +23,7 @@ class BankMarketingDataset:
     DATADIR = 'data/'
     DATAPATH = 'data/bank-full.csv'
     # TESTPATH = 'data/bank_marketing.test'
+    COLUMNS = ["age","job","marital","education","default","balance","housing","loan","contact","day","month","duration","campaign","pdays","previous","poutcome"]
 
     ONE_HOT_COLUMNS = ["job","marital","education","default", "housing","loan","contact","poutcome","month","y"]
 
@@ -65,8 +67,11 @@ class BankMarketingDataset:
 
         print("Importing %s" % (path))
         dataset = pandas.read_csv(path, sep=';')
-        df = pandas.get_dummies(dataset, columns=self.ONE_HOT_COLUMNS)
 
+        df = pandas.get_dummies(dataset, columns=self.ONE_HOT_COLUMNS)
+        non_hot_cols = [col for col in self.COLUMNS if col not in self.ONE_HOT_COLUMNS]
+        scaler = StandardScaler()
+        df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols])
 
 
         matrix = df.as_matrix()
@@ -128,7 +133,7 @@ class BankMarketingDataset:
         self._traindata = (train_xs, train_ys)
         self._testdata = (test_xs, test_ys)
 
-        self._traindata = self.undersample_dataset(self._traindata)
+        #self._traindata = self.undersample_dataset(self._traindata)
 
         print("-: " + str(np.count_nonzero(np.array(self._traindata[1])[:,0])))
         print("1: " + str(np.count_nonzero(np.array(self._traindata[1])[:,1])))
