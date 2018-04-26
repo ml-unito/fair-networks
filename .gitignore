@@ -2,3 +2,10 @@ data/
 __pycache__
 logdir/
 models/
+*.pyc
+bin/*
+lib/*
+include
+man
+.Python
+pip-selfcheck.json
