@@ -1,6 +1,4 @@
 import sys
-from sklearn import svm
-from sklearn import tree
 import numpy as np
 import tensorflow as tf
 import time
@@ -39,14 +37,14 @@ trainset_next = trainset_it.get_next()
 session = tf.Session()
 saver = tf.train.Saver()
 
+writer = tf.summary.FileWriter(logdir=opts.log_fname())
+
 if opts.resume_learning:
     saver.restore(session, opts.model_fname(opts.epoch_start))
 else:
     init = tf.global_variables_initializer()
     session.run(init)
-
-
-writer = tf.summary.FileWriter(logdir=opts.log_fname(), graph=session.graph)
+    writer.add_graph(session.graph)
 
 for epoch in opts.epochs:
     session.run(trainset_it.initializer)

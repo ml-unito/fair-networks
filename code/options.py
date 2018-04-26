@@ -19,18 +19,37 @@ class Options:
         self.epochs_per_save = 1000
 
     def parse_epochs(self, epochs_str):
-        start, end = epochs_str.split(':')
+        epochs_spec = epochs_str.split(':')
+        if len(epochs_spec) == 1:
+            self.epoch_end = int(epochs_spec[0])
+            return
+
+        start,end = epochs_spec
 
         if start != '':
             self.epoch_start = int(start)
             self.resume_learning = True
 
-        self.epoch_end = int(end)
+        if end != '':
+            self.epoch_end = int(end)
+
         self.epochs = range(self.epoch_start, self.epoch_end)
 
     def parse(self, argv):
         if len(argv) < 2:
-            print("Usage: %s <num_hidden_units> [epoch_start:epoch_end]" % argv[0])
+            print("Usage: %s <num_hidden_units> [epochs_specs]" % argv[0])
+            print("  epoch_specs specifies the range of epochs to work with;")
+            print("  syntax is:  <start>:<end>")
+            print("     with <start> defaulting to 0 and <end> defaulting to 10000")
+            print("     giving a single number and omitting the colon will be ")
+            print("     interpreted as :<end>")
+            print("  examples:")
+            print("     100:5000  -- epochs from 100 to 5000")
+            print("     :5000     -- epochs from 0 to 5000")
+            print("     5000      -- epochs from 0 to 5000")
+            print("     100:      -- epochs from 100 to 10000")
+            print("  NOTE: at test time <end> need to be set to the epoch of the")
+            print("        model to be retrieved.")
             sys.exit(1)
 
         self.hidden_units = int(argv[1])
