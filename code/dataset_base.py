@@ -50,7 +50,6 @@ class DatasetBase:
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
 
         df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
-        print([s for s in df.columns])
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
         scaler = MinMaxScaler()
         df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols])
@@ -152,6 +151,9 @@ class DatasetBase:
 
         for (dataurl, filepath) in self.files_to_retrieve():
             self.download( dataurl, filepath)
+
+    def num_features(self):
+        return self._traindata[0].shape[1]
 
     def train_dataset(self):
         """

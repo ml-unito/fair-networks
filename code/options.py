@@ -4,11 +4,7 @@ from adult_dataset import AdultDataset
 import tensorflow as tf
 
 class Options:
-
     def __init__(self):
-        self.dataset_name = "adult"
-        self.dataset = AdultDataset()
-
         self.num_features = 108   # Adult
         # self.num_features = 51     # Bank
 
@@ -36,27 +32,43 @@ class Options:
 
         self.epochs = range(self.epoch_start, self.epoch_end)
 
-    def parse(self, argv):
-        if len(argv) < 2:
-            print("Usage: %s <num_hidden_units> [epochs_specs]" % argv[0])
-            print("  epoch_specs specifies the range of epochs to work with;")
-            print("  syntax is:  <start>:<end>")
-            print("     with <start> defaulting to 0 and <end> defaulting to 10000")
-            print("     giving a single number and omitting the colon will be ")
-            print("     interpreted as :<end>")
-            print("  examples:")
-            print("     100:5000  -- epochs from 100 to 5000")
-            print("     :5000     -- epochs from 0 to 5000")
-            print("     5000      -- epochs from 0 to 5000")
-            print("     100:      -- epochs from 100 to 10000")
-            print("  NOTE: at test time <end> need to be set to the epoch of the")
-            print("        model to be retrieved.")
+    def print_usage(self):
+        print("Usage: %s dataset <num_hidden_units> [epochs_specs]" % sys.argv[0])
+        print("  -d can be either adult or bank")
+        print("  epoch_specs specifies the range of epochs to work with;")
+        print("  syntax is:  <start>:<end>")
+        print("     with <start> defaulting to 0 and <end> defaulting to 10000")
+        print("     giving a single number and omitting the colon will be ")
+        print("     interpreted as :<end>")
+        print("  examples:")
+        print("     100:5000  -- epochs from 100 to 5000")
+        print("     :5000     -- epochs from 0 to 5000")
+        print("     5000      -- epochs from 0 to 5000")
+        print("     100:      -- epochs from 100 to 10000")
+        print("  NOTE: at test time <end> need to be set to the epoch of the")
+        print("        model to be retrieved.")
+
+    def parse_dataset(self, str):
+        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset }
+        if str not in ['adult', 'bank']:
+            self.print_usage()
             sys.exit(1)
 
-        self.hidden_units = int(argv[1])
+        self.dataset_name = str
+        self.dataset = datasets[str]()
+        self.num_features = self.dataset.num_features()
 
-        if len(argv) == 3:
-            self.parse_epochs(argv[2])
+    def parse(self, argv):
+        if len(argv) < 3:
+            self.print_usage()
+            sys.exit(1)
+
+        self.parse_dataset( argv[1] )
+
+        self.hidden_units = int(argv[2])
+
+        if len(argv) == 4:
+            self.parse_epochs(argv[3])
 
         self.hidden_layers = [
             (self.hidden_units, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
