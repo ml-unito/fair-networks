@@ -18,16 +18,6 @@ class BankMarketingDataset(DatasetBase):
     """
     Helper class allowing to download and load into memory the adult dataset
     """
-
-    def __init__(self):
-        """
-        Downloads and load into memory the dataset. If balance_trainset is True then
-        the negative examples are oversampled so to get a 50/50 split between the positive
-        and the negative class.
-        """
-        self.download_all()
-        self.load_all()
-
     def all_columns(self):
         return ["age","job","marital","education","default","balance","housing","loan","contact","day","month","duration","campaign","pdays","previous","poutcome"]
 
@@ -44,7 +34,7 @@ class BankMarketingDataset(DatasetBase):
         return [('https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip',
                 'data/bank.zip')]
 
-    def prepare_data(self):
+    def prepare_all(self):
         zip_ref = zipfile.ZipFile('data/bank.zip', 'r')
         zip_ref.extractall('data/')
         zip_ref.close()

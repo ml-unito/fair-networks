@@ -7,7 +7,7 @@ import zipfile
 import pandas
 import sklearn
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 
 from tqdm import tqdm
 
@@ -21,7 +21,7 @@ class DatasetBase:
         self.prepare_all()
         self.load_all()
 
-    def prepare_data(self):
+    def prepare_all(self):
         pass
 
     def all_columns(self):
@@ -50,8 +50,9 @@ class DatasetBase:
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
 
         df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
+        print([s for s in df.columns])
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
-        scaler = StandardScaler()
+        scaler = MinMaxScaler()
         df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols])
 
         matrix = df.as_matrix()
@@ -127,6 +128,10 @@ class DatasetBase:
         with open(filename, 'wb') as file:
             for data in tqdm(dataset):
                 file.write(data)
+
+    def print_columns_stats(self, name, dataset):
+        print("|Dataset|    count|  count +|  count -|")
+        print("|:-----:|--------:|--------:|--------:|")
 
     def print_datasets_stats(self, datasets):
         print("|Dataset|    count|  count +|  count -|")

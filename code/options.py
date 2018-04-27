@@ -1,15 +1,16 @@
 import sys
-import bank_marketing_dataset as ds
+from bank_marketing_dataset import BankMarketingDataset
+from adult_dataset import AdultDataset
 import tensorflow as tf
 
 class Options:
 
     def __init__(self):
-        self.dataset_name = "bank"
-        self.dataset = ds.BankMarketingDataset()
+        self.dataset_name = "adult"
+        self.dataset = AdultDataset()
 
-        # self.num_features = 92   # Adult
-        self.num_features = 51     # Bank
+        self.num_features = 108   # Adult
+        # self.num_features = 51     # Bank
 
         self.epoch_start = 0
         self.epoch_end = 10000

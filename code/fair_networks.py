@@ -7,7 +7,6 @@ sys.path.append('code')
 
 from model import Model
 from options import Options
-# import adult_dataset as ds
 
 
 # --------------------------------------------------------------------------------
