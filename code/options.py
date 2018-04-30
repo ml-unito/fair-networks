@@ -33,8 +33,8 @@ class Options:
         self.epochs = range(self.epoch_start, self.epoch_end)
 
     def print_usage(self):
-        print("Usage: %s dataset <num_hidden_units> [epochs_specs]" % sys.argv[0])
-        print("  -d can be either adult or bank")
+        print("Usage: %s <dataset> <num_hidden_units> [epochs_specs]" % sys.argv[0])
+        print("  dataset: choose from adult or bank")
         print("  epoch_specs specifies the range of epochs to work with;")
         print("  syntax is:  <start>:<end>")
         print("     with <start> defaulting to 0 and <end> defaulting to 10000")
