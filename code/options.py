@@ -2,10 +2,12 @@ import sys
 from bank_marketing_dataset import BankMarketingDataset
 from adult_dataset import AdultDataset
 import tensorflow as tf
+import argparse
+import textwrap
 
 class Options:
     def __init__(self):
-        self.num_features = 108   # Adult
+        # self.num_features = 108   # Adult
         # self.num_features = 51     # Bank
 
         self.epoch_start = 0
@@ -14,6 +16,12 @@ class Options:
         self.resume_learning = False
 
         self.epochs_per_save = 1000
+
+        self.parse(sys.argv)
+
+        self.exp_name = "%s_h%s" % (self.dataset_name, self.hidden_layers_specs)
+
+
 
     def parse_epochs(self, epochs_str):
         epochs_spec = epochs_str.split(':')
@@ -32,49 +40,57 @@ class Options:
 
         self.epochs = range(self.epoch_start, self.epoch_end)
 
-    def print_usage(self):
-        print("Usage: %s <dataset> <num_hidden_units> [epochs_specs]" % sys.argv[0])
-        print("  dataset: choose from adult or bank")
-        print("  epoch_specs specifies the range of epochs to work with;")
-        print("  syntax is:  <start>:<end>")
-        print("     with <start> defaulting to 0 and <end> defaulting to 10000")
-        print("     giving a single number and omitting the colon will be ")
-        print("     interpreted as :<end>")
-        print("  examples:")
-        print("     100:5000  -- epochs from 100 to 5000")
-        print("     :5000     -- epochs from 0 to 5000")
-        print("     5000      -- epochs from 0 to 5000")
-        print("     100:      -- epochs from 100 to 10000")
-        print("  NOTE: at test time <end> need to be set to the epoch of the")
-        print("        model to be retrieved.")
+    def parse_layers(self, str):
+        self.hidden_layers_specs = str
+        layers_specs = str.split(':')
+        self.hidden_layers = [
+            (int(hidden_units), tf.nn.sigmoid, tf.truncated_normal_initializer)
+               for hidden_units in layers_specs ]
 
-    def parse_dataset(self, str):
-        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset }
-        if str not in ['adult', 'bank']:
-            self.print_usage()
-            sys.exit(1)
-
-        self.dataset_name = str
-        self.dataset = datasets[str]()
-        self.num_features = self.dataset.num_features()
+        print(self.hidden_layers)
 
     def parse(self, argv):
-        if len(argv) < 3:
-            self.print_usage()
-            sys.exit(1)
+        description = """\
+        epoch_specs specifies the range of epochs to work with;
+        syntax is:  <start>:<end>
 
-        self.parse_dataset( argv[1] )
+        with <start> defaulting to 0 and <end> defaulting to 10000
+        giving a single number and omitting the colon will be
+        interpreted as :<end>
 
-        self.hidden_units = int(argv[2])
+        examples:
+            100:5000  -- epochs from 100 to 5000
+            :5000     -- epochs from 0 to 5000
+            5000      -- epochs from 0 to 5000
+            100:      -- epochs from 100 to 10000
+        NOTE: at test time <end> need to be set to the epoch of the
+            model to be retrieved.
 
-        if len(argv) == 4:
-            self.parse_epochs(argv[3])
+        hidden_layers specifies the composition of each hidden layer;
+        syntax is: h_1:h_2:...:h_K
 
-        self.hidden_layers = [
-            (self.hidden_units, tf.nn.sigmoid, tf.truncated_normal_initializer) # first layer
-            ]
+        where h_i being the number of hidden units in the i-th layer.
 
-        self.exp_name = "%s_h%d" % (self.dataset_name, self.hidden_units)
+        examples:
+             10       -- a single hidden layer with 10 neurons
+             10:5:2   -- three hidden layers with 10, 5, and 2 neuron respectively
+                            """
+        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset }
+        parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser.add_argument('dataset', choices=['adult', 'bank'], help="dataset to be loaded")
+        parser.add_argument('hidden_layers', type=str, help='hidden layers specs')
+        parser.add_argument('epoch_specs', help = 'which epochs to be run')
+        result = parser.parse_args()
+
+
+        self.dataset_name = result.dataset
+        self.dataset = datasets[self.dataset_name]()
+        self.num_features = self.dataset.num_features()
+
+        self.num_features = self.dataset.num_features()
+
+        self.parse_layers(result.hidden_layers)
+        self.parse_epochs(result.epoch_specs)
 
         return self
 

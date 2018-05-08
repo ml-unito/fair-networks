@@ -13,15 +13,11 @@ from options import Options
 # main
 # --------------------------------------------------------------------------------
 
-opts = Options().parse(sys.argv)
+opts = Options()
 dataset = opts.dataset
 
 optimizer = tf.train.AdagradOptimizer(1.0)
 model = Model(opts.hidden_layers, optimizer, opts.num_features )
-
-# grads = optimizer.compute_gradients(loss)
-# for index, grad in enumerate(grads):
-#     tf.summary.histogram("{}-grad".format(grads[index][1].name), grads[index])
 
 train_xs, train_ys = dataset.train_all_data()
 test_xs, test_ys = dataset.test_all_data()
