@@ -26,7 +26,7 @@ ds = np.concatenate([x, s, z], axis=1)
 trainx, trainy = ds[:8000,:], y[:8000]
 testx, testy = ds[8000:, :], y[8000:]
 
-transform = PolynomialFeatures(5)
+transform = PolynomialFeatures(3)
 trainx_ = transform.fit_transform(trainx)
 testx_ = transform.fit_transform(testx)
 
