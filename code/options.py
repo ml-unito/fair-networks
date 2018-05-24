@@ -28,6 +28,8 @@ class Options:
         epochs_spec = epochs_str.split(':')
         if len(epochs_spec) == 1:
             self.epoch_end = int(epochs_spec[0])
+            self.epochs = range(self.epoch_start, self.epoch_end)
+
             return
 
         start,end = epochs_spec
@@ -47,8 +49,6 @@ class Options:
         self.hidden_layers = [
             (int(hidden_units), tf.nn.sigmoid, tf.truncated_normal_initializer)
                for hidden_units in layers_specs ]
-
-        print(self.hidden_layers)
 
     def parse(self, argv):
         description = """\
