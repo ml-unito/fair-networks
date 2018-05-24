@@ -18,9 +18,6 @@ dataset = opts.dataset
 
 optimizer = tf.train.AdagradOptimizer(1.0)
 
-print(opts.hidden_layers)
-print(opts.num_features)
-print(dataset.num_y_columns)
 model = Model(opts.hidden_layers, optimizer, opts.num_features, dataset.num_y_columns() )
 
 train_xs, train_ys = dataset.train_all_data()
@@ -39,8 +36,11 @@ saver = tf.train.Saver()
 writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
 if opts.resume_learning:
-    saver.restore(session, opts.model_fname(opts.epoch_start))
+    model_to_resume = opts.model_fname(opts.epoch_start)
+    print("Restoring model: %s" % (model_to_resume))
+    saver.restore(session, model_to_resume)
 else:
+    print("Initializing a new model")
     init = tf.global_variables_initializer()
     session.run(init)
     writer.add_graph(session.graph)
