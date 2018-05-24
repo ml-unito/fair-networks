@@ -17,7 +17,11 @@ opts = Options()
 dataset = opts.dataset
 
 optimizer = tf.train.AdagradOptimizer(1.0)
-model = Model(opts.hidden_layers, optimizer, opts.num_features )
+
+print(opts.hidden_layers)
+print(opts.num_features)
+print(dataset.num_y_columns)
+model = Model(opts.hidden_layers, optimizer, opts.num_features, dataset.num_y_columns() )
 
 train_xs, train_ys = dataset.train_all_data()
 test_xs, test_ys = dataset.test_all_data()

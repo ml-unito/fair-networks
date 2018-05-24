@@ -3,12 +3,12 @@ import time
 
 
 class Model:
-    def __init__(self, layers, optimizer, num_features):
-        self._build(layers, optimizer, num_features)
+    def __init__(self, layers, optimizer, num_features, num_labels):
+        self._build(layers, optimizer, num_features, num_labels)
 
-    def _build(self, layers, optimizer, num_features):
+    def _build(self, layers, optimizer, num_features, num_labels):
         self.x = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
-        self.y = tf.placeholder(tf.float32, shape=[None, 2], name="y")
+        self.y = tf.placeholder(tf.float32, shape=[None, num_labels], name="y")
         in_layer = self.x
 
         for index,layer in enumerate(layers):
@@ -17,7 +17,7 @@ class Model:
                 in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer())
 
         with tf.name_scope("out"):
-            self.out = tf.layers.dense(in_layer, 2, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer())
+            self.out = tf.layers.dense(in_layer, num_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer())
 
         with tf.name_scope("loss"):
             self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.out))

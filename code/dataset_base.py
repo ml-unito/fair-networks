@@ -30,6 +30,9 @@ class DatasetBase:
     def one_hot_columns(self):
         pass
 
+    def num_y_columns(self):
+        return 2
+
     def dataset_path(self):
         pass
 
@@ -55,8 +58,8 @@ class DatasetBase:
         df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols])
 
         matrix = df.as_matrix()
-        xs = matrix[:,:-2]
-        ys = matrix[:, -2:]
+        xs = matrix[:,:-self.num_y_columns()]
+        ys = matrix[:, -self.num_y_columns():]
 
         return (xs,ys)
 
@@ -128,18 +131,19 @@ class DatasetBase:
             for data in tqdm(dataset):
                 file.write(data)
 
-    def print_columns_stats(self, name, dataset):
-        print("|Dataset|    count|  count +|  count -|")
-        print("|:-----:|--------:|--------:|--------:|")
+    def print_columns_stats(self):
+        print("|Dataset|    count|  count +|  count -|     min |     max |")
+        print("|:-----:|--------:|--------:|--------:|--------:|--------:|")
 
     def print_datasets_stats(self, datasets):
-        print("|Dataset|    count|  count +|  count -|")
-        print("|:-----:|--------:|--------:|--------:|")
+        self.print_columns_stats()
 
         for (name, dataset) in datasets:
             pos_set_len = len(np.where(dataset[1][:,1] == 1.0)[0])
             neg_set_len = len(np.where(dataset[1][:,0] == 1.0)[0])
-            print("|%7s|%9d|%9d|%9d|" % (name, len(dataset[1]), pos_set_len, neg_set_len))
+            min_col_val = dataset[0].min()
+            max_col_val = dataset[0].max()
+            print("|%7s|%9d|%9d|%9d|%9.5f|%9.4f|" % (name, len(dataset[1]), pos_set_len, neg_set_len, min_col_val, max_col_val))
 
         print("")
 

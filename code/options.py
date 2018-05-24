@@ -1,6 +1,7 @@
 import sys
 from bank_marketing_dataset import BankMarketingDataset
 from adult_dataset import AdultDataset
+from synth_dataset import SynthDataset
 import tensorflow as tf
 import argparse
 import textwrap
@@ -75,9 +76,9 @@ class Options:
              10       -- a single hidden layer with 10 neurons
              10:5:2   -- three hidden layers with 10, 5, and 2 neuron respectively
                             """
-        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset }
+        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
-        parser.add_argument('dataset', choices=['adult', 'bank'], help="dataset to be loaded")
+        parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
         parser.add_argument('hidden_layers', type=str, help='hidden layers specs')
         parser.add_argument('epoch_specs', help = 'which epochs to be run')
         result = parser.parse_args()
