@@ -12,6 +12,8 @@ class Model:
         self.s = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
         in_layer = self.x
 
+        self.shared_layers_variables = []
+
         for index,layer in enumerate(layers):
             num_nodes, activation, initializer = layer
             with tf.name_scope("layer-%d" % (index+1)):
@@ -64,25 +66,21 @@ class Model:
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=[y_branch_variables])
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=[s_branch_variables])
 
-        self.y_train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat])
-        self.y_test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat])
-        self.s_train_stats = tf.summary.merge([self.s_train_loss_stat, self.s_train_accuracy_stat])
-        self.s_test_stats = tf.summary.merge([self.s_test_loss_stat, self.s_test_accuracy_stat])
-
+        self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
+        self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
+        
         return self
 
 
-    def eval_loss_and_accuracy(self, session, feed_dict):
-        loss_val = session.run(self.loss, feed_dict=feed_dict)
-        accuracy_val = session.run(self.accuracy, feed_dict=feed_dict)
-        return (loss_val, accuracy_val)
-
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
-        loss_train_val, accuracy_train_val = self.eval_loss_and_accuracy(session, feed_dict = train_feed_dict )
-        loss_test_val, accuracy_test_val = self.eval_loss_and_accuracy(session, feed_dict = test_feed_dict)
+        measures = [["y", [self.y_loss, self.y_accuracy]], ["s", [self.s_loss, self.s_accuracy]]]
 
-        print("")
-        print("acc tr:%2.8f|acc te:%2.8f|loss tr:%2.8f|loss te:%2.8f" % (accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
+        for name, loss_and_accuracy in measures:
+            loss_train_val, accuracy_train_val = session.run(loss_and_accuracy, feed_dict = train_feed_dict)
+            loss_test_val, accuracy_test_val = session.run(loss_and_accuracy, feed_dict = test_feed_dict)
+
+            print("%s:" % (name))
+            print("acc tr:%2.8f|acc te:%2.8f|loss tr:%2.8f|loss te:%2.8f" % (accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
 
     def print_confusion_matrix(self, session, feed_dict):
         (tp,tn,fp,fn) = session.run(self.confusion_matrix, feed_dict = feed_dict)

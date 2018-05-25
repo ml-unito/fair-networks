@@ -23,8 +23,8 @@ model = Model(opts.hidden_layers, optimizer, opts.num_features, dataset.num_y_co
 train_xs, train_ys, train_s = dataset.train_all_data()
 test_xs, test_ys, test_s = dataset.test_all_data()
 
-train_feed = { model.x:train_xs, model.y:train_ys }
-test_feed = { model.x:test_xs, model.y:test_ys }
+train_feed = { model.x:train_xs, model.y:train_ys, model.s:train_s }
+test_feed = { model.x:test_xs, model.y:test_ys, model.s:test_s }
 
 trainset = dataset.train_dataset().batch(100).shuffle(1000)
 trainset_it = trainset.make_initializable_iterator()
@@ -67,10 +67,10 @@ for epoch in opts.epochs:
         print("Confusion matrix -- Test")
         model.print_confusion_matrix(session, feed_dict = test_feed)
 
-    stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys })
+    stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
     writer.add_summary(stat_des, global_step = epoch)
 
-    stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys })
+    stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys, model.s: test_s })
     writer.add_summary(stat_des, global_step = epoch)
 
 
