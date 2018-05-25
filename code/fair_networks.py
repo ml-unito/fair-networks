@@ -18,10 +18,10 @@ dataset = opts.dataset
 
 optimizer = tf.train.AdagradOptimizer(1.0)
 
-model = Model(opts.hidden_layers, optimizer, opts.num_features, dataset.num_y_columns() )
+model = Model(opts.hidden_layers, optimizer, opts.num_features, dataset.num_y_columns(), dataset.num_s_columns())
 
-train_xs, train_ys = dataset.train_all_data()
-test_xs, test_ys = dataset.test_all_data()
+train_xs, train_ys, train_s = dataset.train_all_data()
+test_xs, test_ys, test_s = dataset.test_all_data()
 
 train_feed = { model.x:train_xs, model.y:train_ys }
 test_feed = { model.x:test_xs, model.y:test_ys }
@@ -49,8 +49,9 @@ for epoch in opts.epochs:
     session.run(trainset_it.initializer)
     while True:
         try:
-            xs, ys = session.run(trainset_next)
-            session.run(model.train_step, feed_dict = { model.x:xs, model.y:ys }  )
+            xs, ys, s = session.run(trainset_next)
+            session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
+            session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
         except tf.errors.OutOfRangeError:
           break
 

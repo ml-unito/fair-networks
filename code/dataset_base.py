@@ -30,6 +30,12 @@ class DatasetBase:
     def one_hot_columns(self):
         pass
 
+    def sensible_columns(self):
+        pass
+
+    def num_s_columns(self):
+        pass
+
     def num_y_columns(self):
         return 2
 
@@ -45,24 +51,29 @@ class DatasetBase:
     def load_data(self):
         """
         Loads the file specified by the path parameter, parses it
-        according to the Bank file format and returns a pair of
-        lists containing the resulting examples and labels (xs,ys)
+        according to the Bank file format and returns a three
+        lists containing the resulting examples, labels and secret variables (xs,ys,s).
         """
 
         print("Importing %s" % (self.dataset_path()))
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
+        s_col_names = self.sensible_columns()
+        s_index_from = dataset.columns.get_loc(s_col_names[0])
+        s_index_to = dataset.columns.get_loc(s_col_names[0]) + self.num_s_columns()
 
         df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
+
         scaler = MinMaxScaler()
         df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols])
+
 
         matrix = df.as_matrix()
         xs = matrix[:,:-self.num_y_columns()]
         ys = matrix[:, -self.num_y_columns():]
+        s = matrix[:,s_index_from:s_index_to]
 
-        return (xs,ys)
-
+        return (xs,ys,s)
 
     def sample_examples(self, xs, ys, class_vec, num_elems):
         class_examples = np.where(ys == class_vec)[0]
@@ -104,17 +115,18 @@ class DatasetBase:
         be called before accessing to them using other methods that
         access to the train and the test set)
         """
-        xs,ys = self.load_data()
+        xs,ys,s = self.load_data()
 
-        train_xs, test_xs, train_ys, test_ys = train_test_split(xs,ys,test_size=0.1, random_state=42)
+        train_xs, test_xs, train_ys, test_ys, train_s, test_s = train_test_split(xs,ys,s,test_size=0.1, random_state=42)
 
-        self._traindata = (train_xs, train_ys)
-        self._testdata = (test_xs, test_ys)
+        self._traindata = (train_xs, train_ys, train_s)
+        self._testdata = (test_xs, test_ys, test_s)
 
         self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 
         self.print_datasets_stats([("Train", self._traindata), ("Test", self._testdata)])
+
 
     def download(self, url, filename):
         """
@@ -173,14 +185,14 @@ class DatasetBase:
 
     def train_all_data(self):
         """
-        returns the whole training set as a pair of numpy arrays (xs,ys)
+        returns the whole training set as a tuple of numpy arrays (xs,ys,s)
         """
-        xs,ys = self._traindata
-        return (np.array(xs), np.array(ys))
+        xs,ys,s = self._traindata
+        return (np.array(xs), np.array(ys), np.array(s))
 
     def test_all_data(self):
         """
-        returns the whole test set as a pair of numpy arrays (xs,ys)
+        returns the whole test set as a tuple of numpy arrays (xs,ys,s)
         """
-        xs,ys = self._testdata
-        return (np.array(xs), np.array(ys))
+        xs,ys,s = self._testdata
+        return (np.array(xs), np.array(ys), np.array(s))

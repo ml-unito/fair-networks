@@ -1,4 +1,10 @@
 from dataset_base import DatasetBase
+import pandas
+import sklearn
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
+import numpy as np
 
 class SynthDataset(DatasetBase):
     def all_columns(self):
@@ -6,6 +12,9 @@ class SynthDataset(DatasetBase):
 
     def one_hot_columns(self):
         return ["s", "y"]
+
+    def sensible_columns(self):
+        return ["s"]
 
     def dataset_path(self):
         return 'data/synth-full.csv'
@@ -21,3 +30,6 @@ class SynthDataset(DatasetBase):
 
     def num_y_columns(self):
         return 2
+
+    def num_s_columns(self):
+        return 5

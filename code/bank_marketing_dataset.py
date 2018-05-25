@@ -24,6 +24,12 @@ class BankMarketingDataset(DatasetBase):
     def one_hot_columns(self):
         return ["job","marital","education","default", "housing","loan","contact","poutcome","month","y"]
 
+    def sensible_columns(self):
+        return ["marital"]
+
+    def num_s_columns(self):
+        return 3
+
     def dataset_path(self):
         return 'data/bank-full.csv'
 

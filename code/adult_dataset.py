@@ -32,6 +32,12 @@ class AdultDataset(DatasetBase):
              'data/adult.test')
         ]
 
+    def sensible_columns(self):
+        return["sex"]
+
+    def num_s_columns(self):
+        return 2
+
     def prepare_all(self):
         with open(self.dataset_path(), "w") as file:
             file.write(','.join(self.all_columns())+"\n")
