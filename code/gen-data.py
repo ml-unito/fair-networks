@@ -32,20 +32,20 @@ y = y > 368.5
 sum(y)
 
 ds = np.concatenate([x, s.reshape(10000,1), z], axis=1)
-ds = np.concatenate([x,s.reshape(10000,1)], axis=1)
-ds = np.concatenate([x,z],axis=1)
-ds = x
+#ds = np.concatenate([x,s.reshape(10000,1)], axis=1)
+#ds = np.concatenate([x,z],axis=1)
+#ds = x
 
 df = pd.DataFrame(np.concatenate([ds, np.reshape(y, [10000,1])], axis=1) , columns=["x1", "x2", "s", "z1", "z2", "y"])
 df.to_csv("data/synth-full.csv", sep=",", index=False)
 
-svc = SVC()
-
-
-model = svc.fit(ds, s)
-sum((model.predict(ds) == s) == True) / len(ds)
-
-plt.scatter(x[:,1], z[:,1], c=y, marker='.')
+#svc = SVC()
+#
+#
+#model = svc.fit(ds, s)
+#sum((model.predict(ds) == s) == True) / len(ds)
+#
+#plt.scatter(x[:,1], z[:,1], c=y, marker='.')
 
 
 # df = pd.DataFrame(np.concatenate([testx, np.reshape(testy, [2000,1])], axis=1) , columns=["x1", "x2", "s", "z1", "z2", "y"])
