@@ -1,31 +1,44 @@
 import tensorflow as tf
+import numpy as np
 import time
 
 
 class Model:
-    def __init__(self, layers, optimizer, num_features, num_y_labels, num_s_labels):
-        self._build(layers, optimizer, num_features, num_y_labels, num_s_labels)
+    def __init__(self, options, optimizer):
+        self._build(options, optimizer)
 
-    def _build(self, layers, optimizer, num_features, num_y_labels, num_s_labels):
+    def build_layer(self, in_layer, layer_name, layers):
+        layers_variables = []
+
+        for index,layer in enumerate(layers):
+            num_nodes, activation, initializer = layer
+            with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
+                in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
+
+            layers_variables.append(
+                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "%s-layer-%d" % (layer_name, index+1))[0])
+
+        return in_layer, layers_variables
+
+    def _build(self, options, optimizer):
+        num_features = options.num_features
+        num_s_labels = options.dataset.num_s_columns()
+        num_y_labels = options.dataset.num_y_columns()
+
         self.x = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
         self.y = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
         self.s = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
         in_layer = self.x
 
-        self.shared_layers_variables = []
-
-        for index,layer in enumerate(layers):
-            num_nodes, activation, initializer = layer
-            with tf.name_scope("layer-%d" % (index+1)):
-                in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='layer-%d' % (index+1))
-            self.shared_layers_variables.append(
-                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "layer-%d" % (index+1))[0])
+        h_layer, self.hidden_layers_variables   = self.build_layer(in_layer, "hidden", options.hidden_layers)
+        s_layer, self.sensible_layers_variables = self.build_layer(h_layer, "sensible", options.sensible_layers)
+        y_layer, self.class_layers_variables    = self.build_layer(h_layer, "class", options.class_layers)
 
         with tf.name_scope("s_out"):
-            self.s_out = tf.layers.dense(in_layer, num_s_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer(), name="s_out")
+            self.s_out = tf.layers.dense(s_layer, num_s_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer(), name="s_out")
 
         with tf.name_scope("y_out"):
-            self.y_out = tf.layers.dense(in_layer, num_y_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer(), name="y_out")
+            self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer(), name="y_out")
 
         with tf.name_scope("y_loss"):
             self.y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
@@ -58,17 +71,20 @@ class Model:
             FN = tf.count_nonzero((predicted - 1) * actual)
             self.confusion_matrix = (TP,TN,FP,FN)
 
-        s_branch_variables = [vars for vars in self.shared_layers_variables]
-        y_branch_variables = s_branch_variables.copy()
-        y_branch_variables.extend(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out"))
-        s_branch_variables.extend(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out"))
+        # s_branch_variables = [vars for vars in self.shared_layers_variables]
+        # y_branch_variables = s_branch_variables.copy()
+        # y_branch_variables.extend(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out"))
+        # s_branch_variables.extend(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out"))
 
-        self.y_train_step = optimizer.minimize(self.y_loss, var_list=[y_branch_variables])
-        self.s_train_step = optimizer.minimize(self.s_loss, var_list=[s_branch_variables])
+        y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
+        s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
+
+        self.y_train_step = optimizer.minimize(self.y_loss, var_list=y_variables)
+        self.s_train_step = optimizer.minimize(self.s_loss, var_list=s_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
-        
+
         return self
 
 
@@ -89,3 +105,16 @@ class Model:
         print("|:------:|----------:|----------:|")
         print("|actual +|%11d|%11d|" % (tp,fn))
         print("|actual -|%11d|%11d|" % (fp,tn))
+
+    def print_errors(self, session, feed_dict, out, exp_out):
+        count = 0
+        errors = 0
+        predictions = session.run(out, feed_dict = feed_dict)
+        for index in range(len(predictions)):
+            count += 1
+            pred = predictions[index,:]
+            exp = feed_dict[exp_out][index,:]
+            if np.argmax(pred) != np.argmax(exp):
+                print("index: %d pred: %d expected: %d" % (index, np.argmax(pred), np.argmax(exp)))
+                errors += 1
+        print("accuracy: %f" % ((count - errors) / float(count)))

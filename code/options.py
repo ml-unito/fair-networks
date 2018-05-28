@@ -20,7 +20,7 @@ class Options:
 
         self.parse(sys.argv)
 
-        self.exp_name = "%s_h%s" % (self.dataset_name, self.hidden_layers_specs)
+        self.exp_name = "%s_h%s_s%s_y%s" % (self.dataset_name, self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs)
 
 
 
@@ -44,10 +44,8 @@ class Options:
         self.epochs = range(self.epoch_start, self.epoch_end)
 
     def parse_layers(self, str):
-        self.hidden_layers_specs = str
         layers_specs = str.split(':')
-        self.hidden_layers = [
-            (int(hidden_units), tf.nn.sigmoid, tf.truncated_normal_initializer)
+        return [(int(hidden_units), tf.nn.sigmoid, tf.truncated_normal_initializer)
                for hidden_units in layers_specs ]
 
     def parse(self, argv):
@@ -67,7 +65,7 @@ class Options:
         NOTE: at test time <end> need to be set to the epoch of the
             model to be retrieved.
 
-        hidden_layers specifies the composition of each hidden layer;
+        *_layers specify the composition of sub networks;
         syntax is: h_1:h_2:...:h_K
 
         where h_i being the number of hidden units in the i-th layer.
@@ -79,18 +77,29 @@ class Options:
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
-        parser.add_argument('hidden_layers', type=str, help='hidden layers specs')
+        parser.add_argument('-H', '--hidden_layers', type=str, help='hidden layers specs', required=True)
+        parser.add_argument('-S', '--sensible_layers', type=str, help='sensible network specs', required=True)
+        parser.add_argument('-Y', '--class_layers', type=str, help='output network specs', required=True)
         parser.add_argument('epoch_specs', help = 'which epochs to be run')
         result = parser.parse_args()
-
 
         self.dataset_name = result.dataset
         self.dataset = datasets[self.dataset_name]()
         self.num_features = self.dataset.num_features()
 
-        self.num_features = self.dataset.num_features()
+        self.hidden_layers_specs = result.hidden_layers
+        self.hidden_layers = self.parse_layers(result.hidden_layers)
 
-        self.parse_layers(result.hidden_layers)
+        self.sensible_layers_specs = result.sensible_layers
+        self.sensible_layers = self.parse_layers(result.sensible_layers)
+
+        self.class_layers_specs = result.class_layers
+        self.class_layers = self.parse_layers(result.class_layers)
+
+        print(self.hidden_layers)
+        print(self.sensible_layers)
+        print(self.class_layers)
+
         self.parse_epochs(result.epoch_specs)
 
         return self
