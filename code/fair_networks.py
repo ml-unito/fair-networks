@@ -57,6 +57,9 @@ for epoch in opts.epochs:
             if opts.train_s:
                 session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
+            if opts.train_not_s:
+                session.run(model.not_s_train_step, feed_dict={model.x:xs, model.s:s})
+
         except tf.errors.OutOfRangeError:
           break
 

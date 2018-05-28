@@ -50,6 +50,10 @@ class Model:
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss)
             self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss)
 
+        with tf.name_scope("not_s_loss"):
+            self.s_softmax = tf.nn.softmax(self.s_out)
+            self.not_s_loss = tf.reduce_mean( tf.reduce_sum(self.s * tf.log(self.s_softmax), axis=1 ) )
+
         with tf.name_scope("y_accuracy"):
             y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out,1), tf.argmax(self.y,1)), "float")
             self.y_accuracy = tf.cast(tf.reduce_mean(y_correct_predictions), "float")
@@ -71,16 +75,12 @@ class Model:
             FN = tf.count_nonzero((predicted - 1) * actual)
             self.confusion_matrix = (TP,TN,FP,FN)
 
-        # s_branch_variables = [vars for vars in self.shared_layers_variables]
-        # y_branch_variables = s_branch_variables.copy()
-        # y_branch_variables.extend(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out"))
-        # s_branch_variables.extend(tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out"))
-
         y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=y_variables)
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=s_variables)
+        self.not_s_train_step = optimizer.minimize(self.not_s_loss, var_list=self.hidden_layers_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])

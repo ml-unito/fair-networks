@@ -82,6 +82,7 @@ class Options:
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs', required=True)
         parser.add_argument('-y', '--train-y', default=False, action='store_const', const=True, help='optimize the network to predict y variables')
         parser.add_argument('-s', '--train-s', default=False, action='store_const', const=True, help='optimize the network to predict s variables')
+        parser.add_argument('-x', '--train-not-s', default=False, action='store_const', const=True, help='optimize the network to "not" predict s variables')
         parser.add_argument('epoch_specs', help = 'which epochs to be run')
         result = parser.parse_args()
 
@@ -105,6 +106,7 @@ class Options:
         self.parse_epochs(result.epoch_specs)
         self.train_y = result.train_y
         self.train_s = result.train_s
+        self.train_not_s = result.train_not_s
 
 
         return self
