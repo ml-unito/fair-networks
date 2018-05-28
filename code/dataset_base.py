@@ -62,6 +62,9 @@ class DatasetBase:
         s_col_names = self.sensible_columns()
         y_col_names = self.y_columns()
 
+        assert len(s_col_names) <= 1, "multiple s columns not yet supported"
+        assert len(y_col_names) <= 1, "multiple y columns not yet supported"
+
         df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
 
