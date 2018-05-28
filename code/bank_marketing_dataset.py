@@ -27,8 +27,8 @@ class BankMarketingDataset(DatasetBase):
     def sensible_columns(self):
         return ["marital"]
 
-    def num_s_columns(self):
-        return 3
+    def y_columns(self):
+        return ["y"]
 
     def dataset_path(self):
         return 'data/bank-full.csv'

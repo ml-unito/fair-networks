@@ -35,8 +35,8 @@ class AdultDataset(DatasetBase):
     def sensible_columns(self):
         return["sex"]
 
-    def num_s_columns(self):
-        return 2
+    def y_columns(self):
+        return ["label"]
 
     def prepare_all(self):
         with open(self.dataset_path(), "w") as file:

@@ -51,15 +51,16 @@ class DatasetBase:
     def load_data(self):
         """
         Loads the file specified by the path parameter, parses it
-        according to the Bank file format and returns a three
-        lists containing the resulting examples, labels and secret variables (xs,ys,s).
+        and returns three lists containing the resulting examples, labels and secret variables (xs,ys,s).
+        In order for the method to work properly each column name must *not* be a prefix of another column
+        name (indeed this must be true for the sensible and the class columns, but it would be indeed better
+        to enforce the constraint on all columns).
         """
 
         print("Importing %s" % (self.dataset_path()))
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
         s_col_names = self.sensible_columns()
-        s_index_from = dataset.columns.get_loc(s_col_names[0])
-        s_index_to = dataset.columns.get_loc(s_col_names[0]) + self.num_s_columns()
+        y_col_names = self.y_columns()
 
         df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
@@ -67,13 +68,28 @@ class DatasetBase:
         scaler = MinMaxScaler()
         df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols])
 
+        s_1h_col_names = df.columns[[colname for s_col_name in s_col_names for colname in df.columns.str.startswith(s_col_name)]]
+        y_1h_col_names = df.columns[[colname for y_col_name in y_col_names for colname in df.columns.str.startswith(y_col_name)]]
+        all_non_y_names = [col for col in df.columns if col not in y_1h_col_names]
 
-        matrix = df.as_matrix()
-        xs = matrix[:,:-self.num_y_columns()]
-        ys = matrix[:, -self.num_y_columns():]
-        s = matrix[:,s_index_from:s_index_to]
+        self._num_s_columns = len(s_1h_col_names)
+        self._num_y_columns = len(y_1h_col_names)
 
-        return (xs,ys,s)
+        print("all non y names: %s" % (','.join(all_non_y_names)))
+        print("all y names: %s" % (','.join(y_1h_col_names)))
+        print("all s names: %s" % (','.join(s_1h_col_names)))
+
+        xs = df[all_non_y_names]
+        ys = df[y_1h_col_names]
+        s = df[s_1h_col_names]
+
+        return (xs.as_matrix(),ys.as_matrix(),s.as_matrix())
+
+    def num_s_columns(self):
+        return self._num_s_columns
+
+    def num_y_columns(self):
+        return self._num_y_columns
 
     def sample_examples(self, xs, ys, class_vec, num_elems):
         class_examples = np.where(ys == class_vec)[0]

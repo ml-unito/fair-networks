@@ -16,6 +16,9 @@ class SynthDataset(DatasetBase):
     def sensible_columns(self):
         return ["s"]
 
+    def y_columns(self):
+        return ["y"]
+
     def dataset_path(self):
         return 'data/synth-full.csv'
 
@@ -27,9 +30,3 @@ class SynthDataset(DatasetBase):
 
     def prepare_all(self):
         pass
-
-    def num_y_columns(self):
-        return 2
-
-    def num_s_columns(self):
-        return 5
