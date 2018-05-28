@@ -51,8 +51,11 @@ for epoch in opts.epochs:
         try:
             xs, ys, s = session.run(trainset_next)
 
-            # session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
-            session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
+            if opts.train_y:
+                session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
+
+            if opts.train_s:
+                session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
         except tf.errors.OutOfRangeError:
           break

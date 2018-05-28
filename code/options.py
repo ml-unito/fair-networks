@@ -77,9 +77,11 @@ class Options:
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
-        parser.add_argument('-H', '--hidden_layers', type=str, help='hidden layers specs', required=True)
-        parser.add_argument('-S', '--sensible_layers', type=str, help='sensible network specs', required=True)
-        parser.add_argument('-Y', '--class_layers', type=str, help='output network specs', required=True)
+        parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs', required=True)
+        parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs', required=True)
+        parser.add_argument('-Y', '--class-layers', type=str, help='output network specs', required=True)
+        parser.add_argument('-y', '--train-y', default=False, action='store_const', const=True, help='optimize the network to predict y variables')
+        parser.add_argument('-s', '--train-s', default=False, action='store_const', const=True, help='optimize the network to predict s variables')
         parser.add_argument('epoch_specs', help = 'which epochs to be run')
         result = parser.parse_args()
 
@@ -101,6 +103,9 @@ class Options:
         print(self.class_layers)
 
         self.parse_epochs(result.epoch_specs)
+        self.train_y = result.train_y
+        self.train_s = result.train_s
+
 
         return self
 
