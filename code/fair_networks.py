@@ -25,6 +25,46 @@ def run_epoch(opts, session, model, trainset_next):
         except tf.errors.OutOfRangeError:
           break
 
+def training_loop():
+    for epoch in opts.epochs:
+        session.run(trainset_it.initializer)
+
+        run_epoch(opts, session, model, trainset_next)
+
+        if opts.save_at_epoch(epoch):
+            saver.save(session, opts.model_fname(epoch))
+
+            print("epoch: %d" % epoch)
+            model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
+
+            print("Confusion matrix -- Train")
+            model.print_confusion_matrix(session, feed_dict = train_feed)
+
+            print("Confusion matrix -- Test")
+            model.print_confusion_matrix(session, feed_dict = test_feed)
+
+            # print("Errors:")
+            # model.print_errors(session, train_feed, model.s_out, model.s)
+
+        stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
+        writer.add_summary(stat_des, global_step = epoch)
+
+        stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys, model.s: test_s })
+        writer.add_summary(stat_des, global_step = epoch)
+
+
+    saver.save(session, opts.model_fname(epoch+1))
+
+def print_stats():
+    print("loss and accuracy:")
+    model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
+
+    print("Confusion matrix -- Train:")
+    model.print_confusion_matrix(session, feed_dict = train_feed)
+
+    print("Confusion matrix -- Test:")
+    model.print_confusion_matrix(session, feed_dict = test_feed)
+
 # --------------------------------------------------------------------------------
 # main
 # --------------------------------------------------------------------------------
@@ -61,30 +101,8 @@ else:
     session.run(init)
     writer.add_graph(session.graph)
 
-for epoch in opts.epochs:
-    session.run(trainset_it.initializer)
-    run_epoch(opts, session, model, trainset_next)
 
-    if opts.save_at_epoch(epoch):
-        saver.save(session, opts.model_fname(epoch))
-
-        print("epoch: %d" % epoch)
-        model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
-
-        print("Confusion matrix -- Train")
-        model.print_confusion_matrix(session, feed_dict = train_feed)
-
-        print("Confusion matrix -- Test")
-        model.print_confusion_matrix(session, feed_dict = test_feed)
-
-        # print("Errors:")
-        # model.print_errors(session, train_feed, model.s_out, model.s)
-
-    stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
-    writer.add_summary(stat_des, global_step = epoch)
-
-    stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys, model.s: test_s })
-    writer.add_summary(stat_des, global_step = epoch)
-
-
-saver.save(session, opts.model_fname(epoch+1))
+if not opts.eval_stats:
+    training_loop()
+else:
+    print_stats()
