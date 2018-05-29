@@ -53,6 +53,7 @@ class Model:
         with tf.name_scope("not_s_loss"):
             self.s_softmax = tf.nn.softmax(self.s_out)
             self.not_s_loss = tf.reduce_mean( tf.reduce_sum(self.s * tf.log(self.s_softmax), axis=1 ) )
+            self.not_s_and_y_loss = self.not_s_loss + self.y_loss
 
         with tf.name_scope("y_accuracy"):
             y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out,1), tf.argmax(self.y,1)), "float")
@@ -81,6 +82,7 @@ class Model:
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=y_variables)
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=s_variables)
         self.not_s_train_step = optimizer.minimize(self.not_s_loss, var_list=self.hidden_layers_variables)
+        self.not_s_and_y_train_step = optimizer.minimize(self.not_s_and_y_loss, var_list=self.hidden_layers_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])

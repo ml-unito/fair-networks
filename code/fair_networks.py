@@ -20,7 +20,7 @@ def run_epoch(opts, session, model, trainset_next):
                 session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
             if opts.train_not_s:
-                session.run(model.not_s_train_step, feed_dict={model.x:xs, model.s:s})
+                session.run(model.not_s_and_y_train_step, feed_dict={model.x:xs, model.s:s, model.y:ys})
 
         except tf.errors.OutOfRangeError:
           break

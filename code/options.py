@@ -118,7 +118,7 @@ class Options:
         return 'logdir/log_%s' % self.exp_name
 
     def save_at_epoch(self, epoch):
-        early_saves = epoch < 1000 and epoch % 100 == 0
+        early_saves = epoch < 100000 and epoch % 100 == 0
         normal_saves = epoch % self.epochs_per_save == 0
 
         return early_saves or normal_saves
