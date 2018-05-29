@@ -56,6 +56,9 @@ def training_loop():
     saver.save(session, opts.model_fname(epoch+1))
 
 def print_stats():
+    print("Learning rate:")
+    print(session.run(optimizer._learning_rate_tensor))
+
     print("loss and accuracy:")
     model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
@@ -100,6 +103,12 @@ else:
     init = tf.global_variables_initializer()
     session.run(init)
     writer.add_graph(session.graph)
+
+# s is always retrained from scratch
+if opts.train_s:
+    s_variables = [var for varlist in model.s_variables for var in varlist]
+    init_s_vars = tf.variables_initializer(s_variables, name="init_s_vars")
+    session.run(init_s_vars)
 
 
 if not opts.eval_stats:
