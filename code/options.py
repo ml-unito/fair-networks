@@ -6,6 +6,32 @@ import tensorflow as tf
 import argparse
 import textwrap
 
+class Schedule:
+    def __init__(self, schedule_list):
+        self.schedule_list = schedule_list
+        self.current_index = 0
+
+    def get_next(self):
+        try:
+            current_part_tuple = self.schedule_list[self.current_index]
+        except IndexError:
+            return None
+        if current_part_tuple[1] > 0:
+            self.schedule_list[self.current_index] = (current_part_tuple[0], current_part_tuple[1] - 1)
+            return current_part_tuple[0]
+        else:
+            self.current_index += 1
+            return self.get_next()
+        return None
+
+    def is_s_next(self):
+        current_part_tuple = self.schedule_list[self.current_index]
+        try:
+            next_part_tuple = self.schedule_list[self.current_index+1]
+            return current_part_tuple[1] == 0 and next_part_tuple[0] == 's'
+        except IndexError:
+            return False
+
 class Options:
     def __init__(self):
         # self.num_features = 108   # Adult
@@ -21,8 +47,6 @@ class Options:
         self.parse(sys.argv)
 
         self.exp_name = "%s_h%s_s%s_y%s" % (self.dataset_name, self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs)
-
-
 
     def parse_epochs(self, epochs_str):
         epochs_spec = epochs_str.split(':')
@@ -47,6 +71,13 @@ class Options:
         layers_specs = str.split(':')
         return [(int(hidden_units), tf.nn.sigmoid, tf.truncated_normal_initializer)
                for hidden_units in layers_specs ]
+
+
+    def parse_schedule(self, str):
+        schedule_specs = str.split(':')
+        schedule_list = [(spec[0], int(spec[1:])) for spec in schedule_specs]
+        schedule = Schedule(schedule_list)
+        return schedule
 
     def parse(self, argv):
         description = """\
@@ -74,18 +105,32 @@ class Options:
              10       -- a single hidden layer with 10 neurons
              10:5:2   -- three hidden layers with 10, 5, and 2 neuron respectively
                             """
+        schedule_description = """\
+        schedule specifies a training procedure by enumerating the number of epochs
+        that should be spent optimizing different parts of the network and how.
+        The syntax is: <network part><number of epochs>:<network part><number of epochs>;
+        ... which can be repeated any number of times.
+
+        Possible values for <network part>: a [all], s [sensible], y [target],
+        h [hidden], x [un-train sensible]
+
+        examples:
+            a10:s100:y100   -- train the whole network for 10 epochs; then the
+                               section predicting s for 100 epochs; then the
+                               section predicting y for 100 epochs.
+            s10:x10         -- train the section predicting s for 10 epochs, then
+                               un-train it for 10 epochs.
+        """
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs', required=True)
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs', required=True)
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs', required=True)
-        parser.add_argument('-y', '--train-y', default=False, action='store_const', const=True, help='optimize the network to predict y variables')
-        parser.add_argument('-s', '--train-s', default=False, action='store_const', const=True, help='optimize the network to predict s variables')
-        parser.add_argument('-x', '--train-not-s', default=False, action='store_const', const=True, help='optimize the network to "not" predict s variables')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
-
-        parser.add_argument('epoch_specs', help = 'which epochs to be run')
+        epoch_parser= parser.add_mutually_exclusive_group(required=True)
+        epoch_parser.add_argument('--schedule', default="", type=str, help=schedule_description)
+        epoch_parser.add_argument('--epoch_specs', type=str, help='Number of epochs to run')
         result = parser.parse_args()
 
         self.dataset_name = result.dataset
@@ -105,12 +150,13 @@ class Options:
         print(self.sensible_layers)
         print(self.class_layers)
 
-        self.parse_epochs(result.epoch_specs)
-        self.train_y = result.train_y
-        self.train_s = result.train_s
-        self.train_not_s = result.train_not_s
-        self.eval_stats = result.eval_stats
+        if result.schedule:
+            self.schedule = self.parse_schedule(result.schedule)
+        else:
+            self.parse_epochs(result.epoch_specs)
+            self.schedule = self.parse_schedule('a'+str(self.epoch_end))
 
+        self.eval_stats = result.eval_stats
 
         return self
 

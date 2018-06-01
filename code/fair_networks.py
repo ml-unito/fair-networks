@@ -8,28 +8,41 @@ sys.path.append('code')
 from model import Model
 from options import Options
 
-def run_epoch(opts, session, model, trainset_next):
+def run_epoch(step_type, session, model, trainset_next):
     while True:
         try:
             xs, ys, s = session.run(trainset_next)
 
-            if opts.train_y:
+            if step_type == 'y':
                 session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
 
-            if opts.train_s:
+            if step_type == 's':
                 session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
-            if opts.train_not_s:
+            if step_type == 'x':
                 session.run(model.not_s_and_y_train_step, feed_dict={model.x:xs, model.s:s, model.y:ys})
 
         except tf.errors.OutOfRangeError:
           break
 
 def training_loop():
-    for epoch in opts.epochs:
+    epoch = 0
+    while True:
+        print(opts.schedule.schedule_list)
+        step_type = opts.schedule.get_next()
+
+        if step_type == None:
+            break
+
         session.run(trainset_it.initializer)
 
-        run_epoch(opts, session, model, trainset_next)
+        # s is always retrained from scratch
+        if opts.schedule.is_s_next() == True:
+            s_variables = [var for varlist in model.s_variables for var in varlist]
+            init_s_vars = tf.variables_initializer(s_variables, name="init_s_vars")
+            session.run(init_s_vars)
+
+        run_epoch(step_type, session, model, trainset_next)
 
         if opts.save_at_epoch(epoch):
             saver.save(session, opts.model_fname(epoch))
@@ -52,6 +65,7 @@ def training_loop():
         stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys, model.s: test_s })
         writer.add_summary(stat_des, global_step = epoch)
 
+        epoch += 1
 
     saver.save(session, opts.model_fname(epoch+1))
 
@@ -103,12 +117,6 @@ else:
     init = tf.global_variables_initializer()
     session.run(init)
     writer.add_graph(session.graph)
-
-# s is always retrained from scratch
-if opts.train_s:
-    s_variables = [var for varlist in model.s_variables for var in varlist]
-    init_s_vars = tf.variables_initializer(s_variables, name="init_s_vars")
-    session.run(init_s_vars)
 
 
 if not opts.eval_stats:
