@@ -22,13 +22,19 @@ def run_epoch(step_type, session, model, trainset_next):
             if step_type == 'x':
                 session.run(model.not_s_and_y_train_step, feed_dict={model.x:xs, model.s:s, model.y:ys})
 
+            if step_type == 'a':
+                session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
+                session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
+
+            if step_type == 'h':
+                session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys })
+
         except tf.errors.OutOfRangeError:
           break
 
 def training_loop():
     epoch = 0
     while True:
-        print(opts.schedule.schedule_list)
         step_type = opts.schedule.get_next()
 
         if step_type == None:

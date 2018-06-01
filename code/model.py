@@ -79,6 +79,7 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
+        self.h_train_step = optimizer.minimize(self.y_loss, var_list=self.hidden_layers_variables)
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
         self.not_s_train_step = optimizer.minimize(self.not_s_loss, var_list=self.hidden_layers_variables)
