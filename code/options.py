@@ -81,38 +81,20 @@ class Options:
 
     def parse(self, argv):
         description = """\
-        epoch_specs specifies the range of epochs to work with;
-        syntax is:  <start>:<end>
-
-        with <start> defaulting to 0 and <end> defaulting to 10000
-        giving a single number and omitting the colon will be
-        interpreted as :<end>
-
-        examples:
-            100:5000  -- epochs from 100 to 5000
-            :5000     -- epochs from 0 to 5000
-            5000      -- epochs from 0 to 5000
-            100:      -- epochs from 100 to 10000
-        NOTE: at test time <end> need to be set to the epoch of the
-            model to be retrieved.
-
-        *_layers specify the composition of sub networks;
-        syntax is: h_1:h_2:...:h_K
-
-        where h_i being the number of hidden units in the i-th layer.
-
-        examples:
-             10       -- a single hidden layer with 10 neurons
-             10:5:2   -- three hidden layers with 10, 5, and 2 neuron respectively
-                            """
-        schedule_description = """\
-        schedule specifies a training procedure by enumerating the number of epochs
+        The SCHEDULE option specifies a training procedure by enumerating the number of epochs
         that should be spent optimizing different parts of the network and how.
-        The syntax is: <network part><number of epochs>:<network part><number of epochs>;
-        ... which can be repeated any number of times.
+        The syntax is:
+            SCHEDULE -> SCHEDULE_SPEC
+            SCHEDULE -> SCHEDULE_SPEC:SCHEDULE
+            SCHEDULE_SPECH -> aINT | sINT | yINT | hINT | xINT
+            INT -> {1..9}{0..9}*
 
-        Possible values for <network part>: a [all], s [sensible], y [target],
-        h [hidden], x [un-train sensible]
+        where a,s,y,h and x specify the network part to be trained:
+            - a [all],
+            - s [sensible],
+            - y [target],
+            - h [hidden],
+            - x [un-train sensible]
 
         examples:
             a10:s100:y100   -- train the whole network for 10 epochs; then the
@@ -120,7 +102,19 @@ class Options:
                                section predicting y for 100 epochs.
             s10:x10         -- train the section predicting s for 10 epochs, then
                                un-train it for 10 epochs.
+
+        "*_LAYERS" options specify the composition of sub networks;
+        syntax is:
+            LAYER -> INT
+            LAYER -> INT:LAYER
+
+        where the integers are the number of hidden units in the layer being specified
+
+        examples:
+             10       -- a single layer with 10 neurons
+             10:5:2   -- three layers with 10, 5, and 2 neuron respectively
         """
+
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
@@ -128,9 +122,7 @@ class Options:
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs', required=True)
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs', required=True)
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
-        epoch_parser= parser.add_mutually_exclusive_group(required=True)
-        epoch_parser.add_argument('--schedule', default="", type=str, help=schedule_description)
-        epoch_parser.add_argument('--epoch_specs', type=str, help='Number of epochs to run')
+        parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         result = parser.parse_args()
 
         self.dataset_name = result.dataset
@@ -150,12 +142,7 @@ class Options:
         print(self.sensible_layers)
         print(self.class_layers)
 
-        if result.schedule:
-            self.schedule = self.parse_schedule(result.schedule)
-        else:
-            self.parse_epochs(result.epoch_specs)
-            self.schedule = self.parse_schedule('a'+str(self.epoch_end))
-
+        self.schedule = self.parse_schedule(result.schedule)
         self.eval_stats = result.eval_stats
 
         return self
