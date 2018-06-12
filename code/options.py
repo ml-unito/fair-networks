@@ -117,6 +117,7 @@ class Options:
 
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser.add_argument('-r', '--resume', metavar="FILENAME.ckpt", default="", type=str, help="If specified the script will load the given checkpoint instead of building a new model")
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs', required=True)
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs', required=True)
@@ -138,17 +139,22 @@ class Options:
         self.class_layers_specs = result.class_layers
         self.class_layers = self.parse_layers(result.class_layers)
 
+        self.resume_learning = result.resume != ""
+        self._model_fname = result.resume
+
         print(self.hidden_layers)
         print(self.sensible_layers)
         print(self.class_layers)
 
-        self.schedule = self.parse_schedule(result.schedule)
+        if result.schedule != None:
+            self.schedule = self.parse_schedule(result.schedule)
+            
         self.eval_stats = result.eval_stats
 
         return self
 
     def model_fname(self, epoch):
-        return "models/%s-epoch-%d.ckpt" % (self.exp_name, epoch)
+        return self._model_fname
 
     def log_fname(self):
         return 'logdir/log_%s' % self.exp_name
