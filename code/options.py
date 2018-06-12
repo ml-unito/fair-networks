@@ -148,13 +148,16 @@ class Options:
 
         if result.schedule != None:
             self.schedule = self.parse_schedule(result.schedule)
-            
+
         self.eval_stats = result.eval_stats
 
         return self
 
     def model_fname(self, epoch):
-        return self._model_fname
+        if self.resume_learning:
+            return self._model_fname
+
+        return "models/%s-epoch-%d.ckpt" % (self.exp_name, epoch)
 
     def log_fname(self):
         return 'logdir/log_%s' % self.exp_name
