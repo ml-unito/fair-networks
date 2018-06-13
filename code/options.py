@@ -149,7 +149,9 @@ class Options:
         return "%s" % (self._model_fname)
 
     def log_fname(self):
-        return 'logdir/log_%s' % self.exp_name
+        name = self._model_fname.split('/')[-1]
+        name = name.split('.ckpt')[0]
+        return 'logdir/log_%s' % name
 
     def save_at_epoch(self, epoch):
         early_saves = epoch < 100000 and epoch % 100 == 0
