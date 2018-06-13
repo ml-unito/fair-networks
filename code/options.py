@@ -56,7 +56,7 @@ class Options:
         # tbs['class_layers'] =
         # print(to_be_serialized)
 
-        with open(self.model_fname() + ".json", "w") as json_file:
+        with open(self.output_fname() + ".json", "w") as json_file:
             json_file.write(json.dumps(tbs, sort_keys=True,indent=4))
 
     def parse_layers(self, str):
@@ -110,6 +110,7 @@ class Options:
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=True, type=str, help="Name of the checkpoint to be saved/loaded.")
+        parser.add_argument('-o', '--output', metavar="FILENAME.ckpt", type=str, help="Name of the checkpoint to be saved into. Defaults to the value given to the -c parameter if not given.")
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs', required=True)
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs', required=True)
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs', required=True)
@@ -117,7 +118,6 @@ class Options:
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
         result = parser.parse_args()
-
         self.dataset_name = result.dataset
         self.dataset = datasets[self.dataset_name]()
         self.num_features = self.dataset.num_features()
@@ -131,8 +131,13 @@ class Options:
         self.class_layers_specs = result.class_layers
         self.class_layers = self.parse_layers(result.class_layers)
 
+        if result.output == None:
+            self.checkpoint_output = result.checkpoint
+        else:
+            self.checkpoint_output = result.output
+
         self._model_fname = result.checkpoint
-        self.resume_learning = tf.train.checkpoint_exists(self.model_fname())
+        self.resume_learning = tf.train.checkpoint_exists(self.input_fname())
 
         print(self.hidden_layers)
         print(self.sensible_layers)
@@ -145,11 +150,17 @@ class Options:
 
         return self
 
-    def model_fname(self):
-        return "%s" % (self._model_fname)
+    def model_fname(self, name):
+        return "%s" % (name)
+
+    def output_fname(self):
+        return self.model_fname(self.checkpoint_output)
+
+    def input_fname(self):
+        return self.model_fname(self._model_fname)
 
     def log_fname(self):
-        name = self._model_fname.split('/')[-1]
+        name = self.output_fname().split('/')[-1]
         name = name.split('.ckpt')[0]
         return 'logdir/log_%s' % name
 

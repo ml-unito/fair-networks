@@ -51,7 +51,7 @@ def training_loop():
         run_epoch(step_type, session, model, trainset_next)
 
         if opts.save_at_epoch(epoch):
-            saver.save(session, opts.model_fname())
+            saver.save(session, opts.output_fname())
 
             print("epoch: %d" % epoch)
             model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
@@ -73,7 +73,7 @@ def training_loop():
 
         epoch += 1
 
-    saver.save(session, opts.model_fname())
+    saver.save(session, opts.output_fname())
 
 def print_stats():
     print("Learning rate:")
@@ -115,7 +115,7 @@ saver = tf.train.Saver()
 writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
 if opts.resume_learning:
-    model_to_resume = opts.model_fname()
+    model_to_resume = opts.input_fname()
     print("Restoring model: %s" % (model_to_resume))
     saver.restore(session, model_to_resume)
 else:
