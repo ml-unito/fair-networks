@@ -6,6 +6,8 @@ import tensorflow as tf
 import argparse
 import textwrap
 import os
+import json
+from copy import copy
 
 class Schedule:
     def __init__(self, schedule_list):
@@ -40,7 +42,22 @@ class Options:
 
         self.parse(sys.argv)
 
-        self.exp_name = "%s_h%s_s%s_y%s" % (self.dataset_name, self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs)
+        # self.exp_name = "%s_h%s_s%s_y%s" % (self.dataset_name, self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs)
+
+
+
+        tbs = copy(self.__dict__)
+        tbs.pop('dataset')
+        for key in tbs.keys():
+            tbs[key] = str(tbs[key])
+
+        # tbs['hidden_layers'] = str(to_be_serialized['hidden_layers'])
+        # tbs['sensible_layers'] = str(to_be_serialized['hidden_layers'])
+        # tbs['class_layers'] =
+        # print(to_be_serialized)
+
+        with open(self.model_fname() + ".json", "w") as json_file:
+            json_file.write(json.dumps(tbs, sort_keys=True,indent=4))
 
     def parse_layers(self, str):
         layers_specs = str.split(':')
@@ -129,7 +146,7 @@ class Options:
         return self
 
     def model_fname(self):
-        return "models/%s.ckpt" % (self._model_fname)
+        return "%s" % (self._model_fname)
 
     def log_fname(self):
         return 'logdir/log_%s' % self.exp_name
