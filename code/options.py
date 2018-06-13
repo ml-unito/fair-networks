@@ -132,7 +132,7 @@ class Options:
         self.class_layers = self.parse_layers(result.class_layers)
 
         self._model_fname = result.checkpoint
-        self.resume_learning = os.path.isfile(self.model_fname())
+        self.resume_learning = tf.train.checkpoint_exists(self.model_fname())
 
         print(self.hidden_layers)
         print(self.sensible_layers)
