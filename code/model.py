@@ -94,12 +94,14 @@ class Model:
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
         measures = [["y", [self.y_loss, self.y_accuracy]], ["s", [self.s_loss, self.s_accuracy]]]
 
+        print('|variable|acc. (train)|acc. (test)|loss (train)| loss(test)|')
+        print('|:------:|-----------:|----------:|-----------:|----------:|')
+
         for name, loss_and_accuracy in measures:
             loss_train_val, accuracy_train_val = session.run(loss_and_accuracy, feed_dict = train_feed_dict)
             loss_test_val, accuracy_test_val = session.run(loss_and_accuracy, feed_dict = test_feed_dict)
 
-            print("%s:" % (name))
-            print("acc tr:%2.8f|acc te:%2.8f|loss tr:%2.8f|loss te:%2.8f" % (accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
+            print("|%8s|     %2.5f|    %2.5f|     %2.5f|    %2.5f|" % (name,accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
 
     def print_confusion_matrix(self, session, feed_dict):
         (tp,tn,fp,fn) = session.run(self.confusion_matrix, feed_dict = feed_dict)

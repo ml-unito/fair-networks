@@ -8,6 +8,7 @@ import pandas
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from termcolor import colored
 
 from tqdm import tqdm
 
@@ -57,7 +58,7 @@ class DatasetBase:
         to enforce the constraint on all columns).
         """
 
-        print("Importing %s" % (self.dataset_path()))
+        print(colored("\nImporting %s" % (self.dataset_path()),attrs=['bold']))
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
         s_col_names = self.sensible_columns()
         y_col_names = self.y_columns()
@@ -77,10 +78,6 @@ class DatasetBase:
 
         self._num_s_columns = len(s_1h_col_names)
         self._num_y_columns = len(y_1h_col_names)
-
-        print("all non y names: %s" % (','.join(all_non_y_names)))
-        print("all y names: %s" % (','.join(y_1h_col_names)))
-        print("all s names: %s" % (','.join(s_1h_col_names)))
 
         xs = df[all_non_y_names]
         ys = df[y_1h_col_names]

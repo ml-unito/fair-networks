@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 import time
+from termcolor import colored
 
 sys.path.append('code')
 
@@ -53,13 +54,14 @@ def training_loop():
         if opts.save_at_epoch(epoch):
             saver.save(session, opts.output_fname())
 
-            print("epoch: %d" % epoch)
+            print('\n--------------------------------------------------------------')
+            print(colored("epoch: %d" % epoch, 'green', attrs=['bold']))
             model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
-            print("Confusion matrix -- Train")
+            print(colored("\nConfusion matrix -- Train:", attrs=['bold']))
             model.print_confusion_matrix(session, feed_dict = train_feed)
 
-            print("Confusion matrix -- Test")
+            print(colored("\nConfusion matrix -- Test:", attrs=['bold']))
             model.print_confusion_matrix(session, feed_dict = test_feed)
 
             # print("Errors:")
@@ -82,10 +84,10 @@ def print_stats():
     print("loss and accuracy:")
     model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
-    print("Confusion matrix -- Train:")
+    print(colored("\nConfusion matrix -- Train:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = train_feed)
 
-    print("Confusion matrix -- Test:")
+    print(colored("\nConfusion matrix -- Test:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = test_feed)
 
 # --------------------------------------------------------------------------------
@@ -116,10 +118,10 @@ writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
 if opts.resume_learning:
     model_to_resume = opts.input_fname()
-    print("Restoring model: %s" % (model_to_resume))
+    print(colored("Restoring model: %s" % (model_to_resume), 'yellow'))
     saver.restore(session, model_to_resume)
 else:
-    print("Initializing a new model")
+    print(colored("Initializing a new model", 'yellow'))
     init = tf.global_variables_initializer()
     session.run(init)
     writer.add_graph(session.graph)

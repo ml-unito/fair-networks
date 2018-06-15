@@ -139,9 +139,6 @@ class Options:
         self._model_fname = result.checkpoint
         self.resume_learning = tf.train.checkpoint_exists(self.input_fname())
 
-        print(self.hidden_layers)
-        print(self.sensible_layers)
-        print(self.class_layers)
 
         if result.schedule != None:
             self.schedule = self.parse_schedule(result.schedule)
