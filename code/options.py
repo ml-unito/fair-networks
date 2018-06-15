@@ -8,6 +8,7 @@ import textwrap
 import os
 import json
 from copy import copy
+from termcolor import colored
 
 class Schedule:
     def __init__(self, schedule_list):
@@ -64,6 +65,42 @@ class Options:
         return [(int(hidden_units), tf.nn.sigmoid, tf.truncated_normal_initializer)
                for hidden_units in layers_specs ]
 
+    def check_layers_specs(self, from_json=False):
+        if self.hidden_layers_specs != None and self.sensible_layers_specs != None and self.class_layers_specs != None:
+            return
+
+        if from_json:
+            print(colored('Cannot parse layer specs read from the json options.', 'red'))
+            exit(1)
+        else:
+            print(colored('Cannot parse layer specs from options on the command line.', 'red'))
+            exit(1)
+
+
+
+    def set_layers(self, options):
+        if self.resume_learning:
+            with open(self.input_fname() + ".json", "r") as json_file:
+                parsed_json = json.loads(json_file.read())
+            self.hidden_layers_specs = parsed_json['hidden_layers_specs']
+            self.sensible_layers_specs = parsed_json['sensible_layers_specs']
+            self.class_layers_specs = parsed_json['class_layers_specs']
+
+            self.check_layers_specs(from_json=True)
+        else:
+            self.hidden_layers_specs = options.hidden_layers
+            self.sensible_layers_specs = options.sensible_layers
+            self.class_layers_specs = options.class_layers
+
+            self.check_layers_specs(from_json=False)
+
+        print(colored("Basing model on specs: H%s S%s Y%s" % (self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs), 'yellow'))
+
+        self.hidden_layers = self.parse_layers(self.hidden_layers_specs)
+        self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
+        self.class_layers = self.parse_layers(self.class_layers_specs)
+
+
 
     def parse_schedule(self, str):
         schedule_specs = str.split(':')
@@ -111,9 +148,9 @@ class Options:
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=True, type=str, help="Name of the checkpoint to be saved/loaded.")
         parser.add_argument('-o', '--output', metavar="FILENAME.ckpt", type=str, help="Name of the checkpoint to be saved into. Defaults to the value given to the -c parameter if not given.")
-        parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs', required=True)
-        parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs', required=True)
-        parser.add_argument('-Y', '--class-layers', type=str, help='output network specs', required=True)
+        parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs')
+        parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
+        parser.add_argument('-Y', '--class-layers', type=str, help='output network specs')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
@@ -122,14 +159,6 @@ class Options:
         self.dataset = datasets[self.dataset_name]()
         self.num_features = self.dataset.num_features()
 
-        self.hidden_layers_specs = result.hidden_layers
-        self.hidden_layers = self.parse_layers(result.hidden_layers)
-
-        self.sensible_layers_specs = result.sensible_layers
-        self.sensible_layers = self.parse_layers(result.sensible_layers)
-
-        self.class_layers_specs = result.class_layers
-        self.class_layers = self.parse_layers(result.class_layers)
 
         if result.output == None:
             self.checkpoint_output = result.checkpoint
@@ -139,6 +168,7 @@ class Options:
         self._model_fname = result.checkpoint
         self.resume_learning = tf.train.checkpoint_exists(self.input_fname())
 
+        self.set_layers(result)
 
         if result.schedule != None:
             self.schedule = self.parse_schedule(result.schedule)
