@@ -142,6 +142,8 @@ class Options:
         examples:
              10       -- a single layer with 10 neurons
              10:5:2   -- three layers with 10, 5, and 2 neuron respectively
+
+        NOTE: layers options CAN be omitted when the model is restored from a .ckpt file
         """
 
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
