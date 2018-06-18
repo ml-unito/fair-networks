@@ -7,13 +7,17 @@ import argparse
 import textwrap
 import os
 import json
-from copy import copy
+from copy import copy, deepcopy
 from termcolor import colored
 
 class Schedule:
-    def __init__(self, schedule_list):
+    def __init__(self, schedule_str):
+        schedule_specs = schedule_str.split(':')
+        schedule_list = [(spec[0], int(spec[1:])) for spec in schedule_specs]
+
         self.schedule_list = schedule_list
         self.current_index = 0
+        self.schedule_original = deepcopy(self)
 
     def get_next(self):
         try:
@@ -35,6 +39,17 @@ class Schedule:
             return current_part_tuple[1] == 0 and next_part_tuple[0] == 's'
         except IndexError:
             return False
+
+    def is_s_starting(self):
+        original_tuple = self.schedule_original.schedule_list[self.current_index]
+        current_part_tuple = self.schedule_list[self.current_index]
+        current_spec = current_part_tuple[0]
+        current_num_epochs = current_part_tuple[1]
+        original_num_epochs = original_tuple[1]
+        if current_spec == 's' and (current_num_epochs + 1) == original_num_epochs:
+            return True
+        return False
+
 
 class Options:
     def __init__(self):
@@ -173,7 +188,7 @@ class Options:
         self.set_layers(result)
 
         if result.schedule != None:
-            self.schedule = self.parse_schedule(result.schedule)
+            self.schedule = Schedule(result.schedule)
 
         self.eval_stats = result.eval_stats
 
