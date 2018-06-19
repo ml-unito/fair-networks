@@ -41,11 +41,8 @@ class Schedule:
             return False
 
     def is_s_starting(self):
-        original_tuple = self.schedule_original.schedule_list[self.current_index]
-        current_part_tuple = self.schedule_list[self.current_index]
-        current_spec = current_part_tuple[0]
-        current_num_epochs = current_part_tuple[1]
-        original_num_epochs = original_tuple[1]
+        (_, original_num_epochs) = self.schedule_original.schedule_list[self.current_index]
+        (current_spec, current_num_epochs) = self.schedule_list[self.current_index]
         if current_spec == 's' and (current_num_epochs + 1) == original_num_epochs:
             return True
         return False
