@@ -44,7 +44,7 @@ def training_loop():
         session.run(trainset_it.initializer)
 
         # s is always retrained from scratch
-        if opts.schedule.is_s_next() == True:
+        if opts.schedule.is_s_starting() == True:
             s_variables = [var for varlist in model.s_variables for var in varlist]
             init_s_vars = tf.variables_initializer(s_variables, name="init_s_vars")
             session.run(init_s_vars)
