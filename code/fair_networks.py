@@ -34,7 +34,6 @@ def run_epoch(step_type, session, model, trainset_next):
           break
 
 def training_loop():
-    epoch = 0
     while True:
         step_type = opts.schedule.get_next()
 
@@ -51,11 +50,11 @@ def training_loop():
 
         run_epoch(step_type, session, model, trainset_next)
 
-        if opts.save_at_epoch(epoch):
+        if opts.save_at_epoch(session.run(model.epoch)):
             saver.save(session, opts.output_fname())
 
             print('\n--------------------------------------------------------------')
-            print(colored("epoch: %d" % epoch, 'green', attrs=['bold']))
+            print(colored("epoch: %d" % session.run(model.epoch), 'green', attrs=['bold']))
             model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
             print(colored("\nConfusion matrix -- Train:", attrs=['bold']))
@@ -68,12 +67,12 @@ def training_loop():
             # model.print_errors(session, train_feed, model.s_out, model.s)
 
         stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
-        writer.add_summary(stat_des, global_step = epoch)
+        writer.add_summary(stat_des, global_step = session.run(model.epoch))
 
         stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys, model.s: test_s })
-        writer.add_summary(stat_des, global_step = epoch)
+        writer.add_summary(stat_des, global_step = session.run(model.epoch))
 
-        epoch += 1
+        session.run(model.inc_epoch)
 
     saver.save(session, opts.output_fname())
 

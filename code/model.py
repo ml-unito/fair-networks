@@ -25,9 +25,13 @@ class Model:
         num_s_labels = options.dataset.num_s_columns()
         num_y_labels = options.dataset.num_y_columns()
 
+        self.epoch = tf.get_variable("epoch", shape=[1], initializer=tf.zeros_initializer)
+        self.inc_epoch = self.epoch.assign(self.epoch + 1)
+
         self.x = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
         self.y = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
         self.s = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
+
         in_layer = self.x
 
         h_layer, self.hidden_layers_variables   = self.build_layer(in_layer, "hidden", options.hidden_layers)
