@@ -37,8 +37,16 @@ def run_epoch(step_type, session, model, trainset_next):
           break
 
 def training_loop():
+    old_step_type = ""
     while True:
         step_type = opts.schedule.get_next()
+
+        if step_type != old_step_type:
+            print(colored('Starting new schedule step: {}, position {} \n in schedule {}'
+                     .format(step_type, opts.schedule.current_index, opts.schedule.schedule_list), 'green'))
+
+        old_step_type = step_type
+
 
         if step_type == None:
             break
