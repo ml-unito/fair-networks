@@ -30,6 +30,9 @@ def run_epoch(step_type, session, model, trainset_next):
             if step_type == 'h':
                 session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys })
 
+            if step_type == 'i':
+                session.run(model.info_s_h_train_step, feed_dict = {model.x:xs, model.s:s, model.y:ys})
+
         except tf.errors.OutOfRangeError:
           break
 

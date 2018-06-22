@@ -25,6 +25,7 @@ class Model:
         num_s_labels = options.dataset.num_s_columns()
         num_y_labels = options.dataset.num_y_columns()
 
+
         self.epoch = tf.get_variable("epoch", shape=[1], initializer=tf.zeros_initializer)
         self.inc_epoch = self.epoch.assign(self.epoch + 1)
 
@@ -71,6 +72,11 @@ class Model:
             self.s_train_accuracy_stat = tf.summary.scalar("s_train_accuracy", self.s_accuracy)
             self.s_test_accuracy_stat = tf.summary.scalar("s_test_accuracy", self.s_accuracy)
 
+        with tf.name_scope("info_s_h_loss"):
+            self.h_softmax = tf.nn.softmax(h_layer)
+            self.info_s_h_loss = tf.reduce_mean(tf.reduce_sum(self.s * tf.log(self.h_softmax), axis=1))
+
+
         with tf.name_scope("y_confusion_matrix"):
             predicted = tf.argmax(self.y_out, 1)
             actual = tf.argmax(self.y,1)
@@ -88,6 +94,7 @@ class Model:
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
         self.not_s_train_step = optimizer.minimize(self.not_s_loss, var_list=self.hidden_layers_variables)
         self.not_s_and_y_train_step = optimizer.minimize(self.not_s_and_y_loss, var_list=self.hidden_layers_variables)
+        self.info_s_h_train_step = optimizer.minimize(self.info_s_h_loss, var_list=self.hidden_layers_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
@@ -98,14 +105,12 @@ class Model:
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
         measures = [["y", [self.y_loss, self.y_accuracy]], ["s", [self.s_loss, self.s_accuracy]]]
 
-        print('|variable|acc. (train)|acc. (test)|loss (train)| loss(test)|')
-        print('|:------:|-----------:|----------:|-----------:|----------:|')
-
         for name, loss_and_accuracy in measures:
             loss_train_val, accuracy_train_val = session.run(loss_and_accuracy, feed_dict = train_feed_dict)
             loss_test_val, accuracy_test_val = session.run(loss_and_accuracy, feed_dict = test_feed_dict)
 
-            print("|%8s|     %2.5f|    %2.5f|     %2.5f|    %2.5f|" % (name,accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
+            print("%s:" % (name))
+            print("acc tr:%2.8f|acc te:%2.8f|loss tr:%2.8f|loss te:%2.8f" % (accuracy_train_val, accuracy_test_val, loss_train_val, loss_test_val))
 
     def print_confusion_matrix(self, session, feed_dict):
         (tp,tn,fp,fn) = session.run(self.confusion_matrix, feed_dict = feed_dict)
