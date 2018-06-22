@@ -59,6 +59,17 @@ class Model:
             self.not_s_loss = tf.reduce_mean( tf.reduce_sum(self.s * tf.log(self.s_softmax), axis=1 ) )
             self.not_s_and_y_loss = self.not_s_loss + self.y_loss
 
+        with tf.name_scope("decorr_loss"):
+            s_mean = tf.reduce_mean(self.s, axis=0)
+            first_term = tf.transpose(self.s - s_mean)
+            #d_theta = tf.matmul((h_layer - 0.5), tf.tanh(tf.transpose(self.s) - 0.5))
+            d_theta = tf.tensordot((h_layer - 0.5), tf.tanh(tf.transpose(self.s - 0.5)), [[0], [1]])
+            print(s_mean.shape)
+            print(first_term.shape)
+            print(h_layer.shape)
+            print(d_theta.shape)
+            self.decorr_loss = tf.reduce_mean(tf.matmul(d_theta, first_term))
+
         with tf.name_scope("y_accuracy"):
             y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out,1), tf.argmax(self.y,1)), "float")
             self.y_accuracy = tf.cast(tf.reduce_mean(y_correct_predictions), "float")
@@ -88,6 +99,7 @@ class Model:
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
         self.not_s_train_step = optimizer.minimize(self.not_s_loss, var_list=self.hidden_layers_variables)
         self.not_s_and_y_train_step = optimizer.minimize(self.not_s_and_y_loss, var_list=self.hidden_layers_variables)
+        self.decorr_train_step = optimizer.minimize(self.decorr_loss, var_list=self.hidden_layers_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
