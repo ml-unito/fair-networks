@@ -28,10 +28,6 @@ def run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_va
 
             session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys, model.s:s })
 
-            session.run(init_s_vars)
-            for i in range(SUB_NETS_NUM_IT):
-                session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
-
         except tf.errors.OutOfRangeError:
           break
 
@@ -52,7 +48,6 @@ def training_loop():
         session.run(trainset_it.initializer)
         run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars)
 
-
         if opts.save_at_epoch(session.run(model.epoch)):
             saver.save(session, opts.output_fname())
 
@@ -68,6 +63,13 @@ def training_loop():
 
             # print("Errors:")
             # model.print_errors(session, train_feed, model.s_out, model.s)
+
+        # retrains the s layer so to be sure to have the best possible prediction about its
+        # performances
+        session.run(init_s_vars)
+        for i in range(SUB_NETS_NUM_IT):
+            session.run(model.s_train_step, feed_dict = { model.x:train_xs, model.s:s })
+
 
         stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
         writer.add_summary(stat_des, global_step = session.run(model.epoch))
