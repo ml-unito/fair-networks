@@ -68,7 +68,7 @@ def training_loop():
         # performances
         session.run(init_s_vars)
         for i in range(SUB_NETS_NUM_IT):
-            session.run(model.s_train_step, feed_dict = { model.x:train_xs, model.s:s })
+            session.run(model.s_train_step, feed_dict = { model.x:train_xs, model.s:train_s })
 
 
         stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
