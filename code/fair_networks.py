@@ -11,7 +11,7 @@ from options import Options
 
 SUB_NETS_NUM_IT = 10
 
-def run_epoch_new_approach(session, model, trainset_next):
+def run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars):
 
     while True:
         try:
