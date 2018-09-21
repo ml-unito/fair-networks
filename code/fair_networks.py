@@ -9,45 +9,23 @@ sys.path.append('code')
 from model import Model
 from options import Options
 
-def run_epoch(step_type, session, model, trainset_next):
-    while True:
-        try:
-            xs, ys, s = session.run(trainset_next)
-
-            if step_type == 'y':
-                session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
-
-            if step_type == 's':
-                session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
-
-            if step_type == 'x':
-                session.run(model.not_s_and_y_train_step, feed_dict={model.x:xs, model.s:s, model.y:ys})
-
-            if step_type == 'a':
-                session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
-                session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
-
-            if step_type == 'h':
-                session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys })
-
-            if step_type == 'd':
-                session.run(model.decorr_train_step, feed_dict={model.x:xs, model.s:s})
-
-        except tf.errors.OutOfRangeError:
-          break
-
 def run_epoch_new_approach(session, model, trainset_next):
+    IT_NUM = 10
+
     while True:
         try:
             xs, ys, s = session.run(trainset_next)
 
-            for i in range(100):
+            for i in range(IT_NUM):
                 session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
 
-            for i in range(100):
+            for i in range(IT_NUM):
                 session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
             session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys, model.s:s })
+
+            for i in range(IT_NUM):
+                session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
         except tf.errors.OutOfRangeError:
           break
