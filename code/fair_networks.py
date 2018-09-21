@@ -9,22 +9,27 @@ sys.path.append('code')
 from model import Model
 from options import Options
 
+SUB_NETS_NUM_IT = 10
+
 def run_epoch_new_approach(session, model, trainset_next):
-    IT_NUM = 10
 
     while True:
         try:
             xs, ys, s = session.run(trainset_next)
 
-            for i in range(IT_NUM):
+            session.run(init_s_vars)
+            session.run(init_y_vars)
+
+            for i in range(SUB_NETS_NUM_IT):
                 session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
 
-            for i in range(IT_NUM):
+            for i in range(SUB_NETS_NUM_IT):
                 session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
             session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys, model.s:s })
 
-            for i in range(IT_NUM):
+            session.run(init_s_vars)
+            for i in range(SUB_NETS_NUM_IT):
                 session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
         except tf.errors.OutOfRangeError:
@@ -33,12 +38,10 @@ def run_epoch_new_approach(session, model, trainset_next):
 def training_loop():
     s_variables = [var for varlist in model.s_variables for var in varlist]
     init_s_vars = tf.variables_initializer(s_variables, name="init_s_vars")
-    session.run(init_s_vars)
 
 
     s_variables = [var for varlist in model.s_variables for var in varlist]
     init_y_vars = tf.variables_initializer(s_variables, name="init_y_vars")
-    session.run(init_y_vars)
 
     while True:
         step_type = opts.schedule.get_next()
@@ -47,10 +50,8 @@ def training_loop():
             break
 
         session.run(trainset_it.initializer)
+        run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars)
 
-        session.run(init_s_vars)
-        session.run(init_y_vars)
-        run_epoch_new_approach(session, model, trainset_next)
 
         if opts.save_at_epoch(session.run(model.epoch)):
             saver.save(session, opts.output_fname())
