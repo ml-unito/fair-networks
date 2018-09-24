@@ -27,6 +27,7 @@ def svc_results_stats(h_train, h_test):
 
     s_accuracy = 1.0 - np.mean(s_test != s_pred)
 
+    print("SVC -- y accuracy: %2.4f   s accuracy: %2.4f" % (y_accuracy, s_accuracy))
     return (y_accuracy, s_accuracy)
 
 
@@ -39,8 +40,9 @@ def train_s_and_y(session, model, init_y_vars, init_s_vars, xs, ys, s):
 
     for i in range(opts.schedule.sub_nets_num_it):
         session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
+        # print("NN sub: s accuracy: %2.4f" % (session.run(model.s_accuracy, feed_dict={model.x:xs, model.s:s})))
 
-
+    # print("----")
 
 def run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars):
 
@@ -97,6 +99,13 @@ def training_loop():
         stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys, model.s: test_s })
         writer.add_summary(stat_des, global_step = epoch)
 
+        nn_y_accuracy = session.run(model.y_accuracy, feed_dict = {model.x: test_xs, model.y: test_ys})
+        nn_s_accuracy = session.run(model.s_accuracy, feed_dict = {model.x: test_xs, model.s: test_s})
+
+        print("NN -- y accuracy: %s    s accuracy: %s" % (nn_y_accuracy, nn_s_accuracy))
+
+
+        # SVC summaries
         h_train = session.run(model.model_last_hidden_layer, feed_dict={model.x: train_xs})
         h_test = session.run(model.model_last_hidden_layer, feed_dict={model.x: test_xs})
 
@@ -106,6 +115,7 @@ def training_loop():
         writer.add_summary(y_svc_stat, global_step = epoch)
         writer.add_summary(s_svc_stat, global_step = epoch)
 
+        # Changing epoch
         session.run(model.inc_epoch)
 
     saver.save(session, opts.output_fname())
