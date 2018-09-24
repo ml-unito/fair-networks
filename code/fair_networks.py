@@ -10,20 +10,25 @@ from model import Model
 from options import Options
 
 
+def train_s_and_y(session, model, init_y_vars, init_s_vars, xs, ys, s):
+    session.run(init_s_vars)
+    session.run(init_y_vars)
+
+    for i in range(opts.schedule.sub_nets_num_it):
+        session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
+
+    for i in range(opts.schedule.sub_nets_num_it):
+        session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
+
+
+
 def run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars):
 
     while True:
         try:
             xs, ys, s = session.run(trainset_next)
 
-            session.run(init_s_vars)
-            session.run(init_y_vars)
-
-            for i in range(opts.schedule.sub_nets_num_it):
-                session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
-
-            for i in range(opts.schedule.sub_nets_num_it):
-                session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
+            train_s_and_y(session, model, init_y_vars, init_s_vars, xs, ys, s)
 
             session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys, model.s:s })
 
@@ -43,6 +48,10 @@ def training_loop():
         session.run(trainset_it.initializer)
         run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars)
 
+        # retrains the s layer so to be sure to have the best possible prediction about its
+        # performances
+        train_s_and_y(session, model, init_y_vars, init_s_vars, train_xs, train_ys, train_s)
+
         if opts.save_at_epoch(session.run(model.epoch)):
             saver.save(session, opts.output_fname())
 
@@ -58,12 +67,6 @@ def training_loop():
 
             # print("Errors:")
             # model.print_errors(session, train_feed, model.s_out, model.s)
-
-        # retrains the s layer so to be sure to have the best possible prediction about its
-        # performances
-        session.run(init_s_vars)
-        for i in range(opts.schedule.sub_nets_num_it):
-            session.run(model.s_train_step, feed_dict = { model.x:train_xs, model.s:train_s })
 
 
         stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
@@ -88,6 +91,9 @@ def print_stats():
 
     print(colored("\nConfusion matrix -- Test:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = test_feed)
+
+def print_processed_data():
+
 
 # --------------------------------------------------------------------------------
 # main
@@ -126,7 +132,9 @@ else:
     writer.add_graph(session.graph)
 
 
-if not opts.eval_stats:
-    training_loop()
-else:
+if opts.eval_stats:
     print_stats()
+else if opts.eval_data:
+    print_processed_data()
+else:
+    training_loop()

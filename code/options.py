@@ -101,7 +101,7 @@ class Options:
         The SCHEDULE option specifies a training procedure by enumerating the number of epochs
         that should be spent optimizing different parts of the network and how.
         The syntax is:
-            SCHEDULE -> aINT:sINT
+            SCHEDULE -> mINT:cINT
             INT -> {1..9}{0..9}*
 
         where 'a' and 's' specify the network part to be trained:
@@ -139,6 +139,7 @@ class Options:
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
+        parser.add_argument('-E', '--eval-data', default=False, action='store_const', const=True, help='Evaluate the current model and print, for each example (x,s,y), the pair (N(x),s,y), where N(x) is the value computed on the last layer of "model" network.')
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
         result = parser.parse_args()
