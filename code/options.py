@@ -162,6 +162,7 @@ class Options:
             self.schedule = Schedule(result.schedule)
 
         self.eval_stats = result.eval_stats
+        self.eval_data = result.eval_data
 
         return self
 

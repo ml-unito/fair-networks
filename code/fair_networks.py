@@ -92,7 +92,7 @@ def print_stats():
     print(colored("\nConfusion matrix -- Test:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = test_feed)
 
-def print_processed_data():
+# def print_processed_data():
 
 
 # --------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ else:
 
 if opts.eval_stats:
     print_stats()
-else if opts.eval_data:
+elif opts.eval_data:
     print_processed_data()
 else:
     training_loop()
