@@ -70,6 +70,12 @@ class Model:
             self.s_train_accuracy_stat = tf.summary.scalar("s_train_accuracy", self.s_accuracy)
             self.s_test_accuracy_stat = tf.summary.scalar("s_test_accuracy", self.s_accuracy)
 
+        with tf.name_scope("svc_accuracies"):
+            self.s_svc_accuracy = tf.placeholder(tf.float32)
+            self.y_svc_accuracy = tf.placeholder(tf.float32)
+            self.s_svc_accuracy_stat = tf.summary.scalar("s_svc_accuracy", self.s_svc_accuracy)
+            self.y_svc_accuracy_stat = tf.summary.scalar("y_svc_accuracy", self.y_svc_accuracy)
+
         with tf.name_scope("y_confusion_matrix"):
             predicted = tf.argmax(self.y_out, 1)
             actual = tf.argmax(self.y,1)

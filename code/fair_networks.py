@@ -3,12 +3,31 @@ import numpy as np
 import tensorflow as tf
 import time
 import pandas
+import sklearn.svm as svm
 from termcolor import colored
 
 sys.path.append('code')
 
 from model import Model
 from options import Options
+
+def svc_results_stats(h_train, h_test):
+    svc_y = svm.SVC()
+    svc_y.fit(h_train, train_ys[:,1])
+    y_pred = svc_y.predict(h_test)
+
+
+    y_accuracy = 1.0 - np.mean(test_ys[:,1] != y_pred)
+
+    svc_s = svm.SVC()
+    s_train = np.argmax(train_s, axis=1)
+    s_test = np.argmax(test_s, axis=1)
+    svc_s.fit(h_train, s_train)
+    s_pred = svc_s.predict(h_test)
+
+    s_accuracy = 1.0 - np.mean(s_test != s_pred)
+
+    return (y_accuracy, s_accuracy)
 
 
 def train_s_and_y(session, model, init_y_vars, init_s_vars, xs, ys, s):
@@ -53,11 +72,13 @@ def training_loop():
         # performances
         train_s_and_y(session, model, init_y_vars, init_s_vars, train_xs, train_ys, train_s)
 
-        if opts.save_at_epoch(session.run(model.epoch)):
+        epoch = session.run(model.epoch)
+
+        if opts.save_at_epoch(epoch):
             saver.save(session, opts.output_fname())
 
             print('\n--------------------------------------------------------------')
-            print(colored("epoch: %d" % session.run(model.epoch), 'green', attrs=['bold']))
+            print(colored("epoch: %d" % epoch, 'green', attrs=['bold']))
             model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
             print(colored("\nConfusion matrix -- Train:", attrs=['bold']))
@@ -71,10 +92,19 @@ def training_loop():
 
 
         stat_des = session.run(model.train_stats, feed_dict = { model.x:train_xs, model.y:train_ys, model.s: train_s })
-        writer.add_summary(stat_des, global_step = session.run(model.epoch))
+        writer.add_summary(stat_des, global_step = epoch)
 
         stat_des = session.run(model.test_stats, feed_dict = { model.x:test_xs, model.y:test_ys, model.s: test_s })
-        writer.add_summary(stat_des, global_step = session.run(model.epoch))
+        writer.add_summary(stat_des, global_step = epoch)
+
+        h_train = session.run(model.model_last_hidden_layer, feed_dict={model.x: train_xs})
+        h_test = session.run(model.model_last_hidden_layer, feed_dict={model.x: test_xs})
+
+        y_accuracy, s_accuracy = svc_results_stats(h_train, h_test)
+        y_svc_stat, s_svc_stat = session.run((model.y_svc_accuracy_stat, model.s_svc_accuracy_stat), feed_dict={
+            model.y_svc_accuracy:y_accuracy, model.s_svc_accuracy:s_accuracy })
+        writer.add_summary(y_svc_stat, global_step = epoch)
+        writer.add_summary(s_svc_stat, global_step = epoch)
 
         session.run(model.inc_epoch)
 
