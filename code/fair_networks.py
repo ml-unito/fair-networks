@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 import time
+import pandas
 from termcolor import colored
 
 sys.path.append('code')
@@ -92,7 +93,17 @@ def print_stats():
     print(colored("\nConfusion matrix -- Test:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = test_feed)
 
-# def print_processed_data():
+def print_processed_data():
+    model_data_representation = session.run(model.model_last_hidden_layer, feed_dict={model.x:train_xs, model.y:train_ys, model.s:train_s})
+
+    result = np.hstack((model_data_representation, train_s, train_ys))
+    h_header = ["h_"+str(index) for index in range(len(model_data_representation[0]))]
+    s_header = ["s_"+str(index) for index in range(len(train_s[0]))]
+    y_header = ["y_"+str(index) for index in range(len(train_ys[0]))]
+
+    print(colored("Saving data representations onto %s" % opts.eval_data_path, "green"))
+    pandas.DataFrame(result, columns=h_header + s_header + y_header).to_csv(opts.eval_data_path, index=False)
+
 
 
 # --------------------------------------------------------------------------------
@@ -134,7 +145,7 @@ else:
 
 if opts.eval_stats:
     print_stats()
-elif opts.eval_data:
+elif opts.eval_data_path != None:
     print_processed_data()
 else:
     training_loop()

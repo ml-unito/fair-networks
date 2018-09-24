@@ -39,6 +39,9 @@ class Model:
         s_layer, self.sensible_layers_variables = self.build_layer(h_layer, "sensible", options.sensible_layers)
         y_layer, self.class_layers_variables    = self.build_layer(h_layer, "class", options.class_layers)
 
+        self.model_last_hidden_layer = h_layer
+        # self.model_last_hidden_layer = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "hidden-layer-%d" % (len(options.hidden_layers)))[0]
+
         with tf.name_scope("s_out"):
             self.s_out = tf.layers.dense(s_layer, num_s_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer(), name="s_out")
 

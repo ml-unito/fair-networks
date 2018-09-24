@@ -139,7 +139,7 @@ class Options:
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
-        parser.add_argument('-E', '--eval-data', default=False, action='store_const', const=True, help='Evaluate the current model and print, for each example (x,s,y), the pair (N(x),s,y), where N(x) is the value computed on the last layer of "model" network.')
+        parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
         result = parser.parse_args()
@@ -162,7 +162,7 @@ class Options:
             self.schedule = Schedule(result.schedule)
 
         self.eval_stats = result.eval_stats
-        self.eval_data = result.eval_data
+        self.eval_data_path = result.eval_data
 
         return self
 
