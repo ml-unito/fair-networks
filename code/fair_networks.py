@@ -9,7 +9,6 @@ sys.path.append('code')
 from model import Model
 from options import Options
 
-SUB_NETS_NUM_IT = 10
 
 def run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars):
 
@@ -20,10 +19,10 @@ def run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_va
             session.run(init_s_vars)
             session.run(init_y_vars)
 
-            for i in range(SUB_NETS_NUM_IT):
+            for i in range(opts.schedule.sub_nets_num_it):
                 session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
 
-            for i in range(SUB_NETS_NUM_IT):
+            for i in range(opts.schedule.sub_nets_num_it):
                 session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
 
             session.run(model.h_train_step, feed_dict = { model.x:xs, model.y:ys, model.s:s })
@@ -39,11 +38,7 @@ def training_loop():
     s_variables = [var for varlist in model.s_variables for var in varlist]
     init_y_vars = tf.variables_initializer(s_variables, name="init_y_vars")
 
-    while True:
-        step_type = opts.schedule.get_next()
-
-        if step_type == None:
-            break
+    for _ in range(opts.schedule.num_epochs):
 
         session.run(trainset_it.initializer)
         run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars)
@@ -67,7 +62,7 @@ def training_loop():
         # retrains the s layer so to be sure to have the best possible prediction about its
         # performances
         session.run(init_s_vars)
-        for i in range(SUB_NETS_NUM_IT):
+        for i in range(opts.schedule.sub_nets_num_it):
             session.run(model.s_train_step, feed_dict = { model.x:train_xs, model.s:train_s })
 
 

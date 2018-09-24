@@ -10,43 +10,27 @@ import json
 from copy import copy, deepcopy
 from termcolor import colored
 
+class ParseError(Exception):
+    """Exception raised for errors in the command line options.
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
+
 class Schedule:
     def __init__(self, schedule_str):
-        schedule_specs = schedule_str.split(':')
-        schedule_list = [(spec[0], int(spec[1:])) for spec in schedule_specs]
+        self.schedule_specs = schedule_str.split(':')
+        self.num_epochs = self.parse_schedule('m',self.schedule_specs[0])
+        self.sub_nets_num_it = self.parse_schedule('c',self.schedule_specs[1])
 
-        self.schedule_list = schedule_list
-        self.current_index = 0
-        self.schedule_original = deepcopy(self)
+    def parse_schedule(self, kind, epoch_spec):
+        if epoch_spec[0] != kind:
+            raise ParseError("Cannot parse schedule option '%s' expected '%s' found" % (kind, epoch_spec[0]))
 
-    def get_next(self):
-        try:
-            current_part_tuple = self.schedule_list[self.current_index]
-        except IndexError:
-            return None
-        if current_part_tuple[1] > 0:
-            self.schedule_list[self.current_index] = (current_part_tuple[0], current_part_tuple[1] - 1)
-            return current_part_tuple[0]
-        else:
-            self.current_index += 1
-            return self.get_next()
-        return None
-
-    def is_s_next(self):
-        current_part_tuple = self.schedule_list[self.current_index]
-        try:
-            next_part_tuple = self.schedule_list[self.current_index+1]
-            return current_part_tuple[1] == 0 and next_part_tuple[0] == 's'
-        except IndexError:
-            return False
-
-    def is_s_starting(self):
-        (_, original_num_epochs) = self.schedule_original.schedule_list[self.current_index]
-        (current_spec, current_num_epochs) = self.schedule_list[self.current_index]
-        if current_spec == 's' and (current_num_epochs + 1) == original_num_epochs:
-            return True
-        return False
-
+        return int(epoch_spec[1:])
 
 class Options:
     def __init__(self):
@@ -112,37 +96,26 @@ class Options:
         self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
         self.class_layers = self.parse_layers(self.class_layers_specs)
 
-
-
-    def parse_schedule(self, str):
-        schedule_specs = str.split(':')
-        schedule_list = [(spec[0], int(spec[1:])) for spec in schedule_specs]
-        schedule = Schedule(schedule_list)
-        return schedule
-
     def parse(self, argv):
         description = """\
         The SCHEDULE option specifies a training procedure by enumerating the number of epochs
         that should be spent optimizing different parts of the network and how.
         The syntax is:
-            SCHEDULE -> SCHEDULE_SPEC
-            SCHEDULE -> SCHEDULE_SPEC:SCHEDULE
-            SCHEDULE_SPECH -> aINT | sINT | yINT | hINT | xINT
+            SCHEDULE -> aINT:sINT
             INT -> {1..9}{0..9}*
 
-        where a,s,y,h and x specify the network part to be trained:
-            - a [all],
-            - s [sensible],
-            - y [target],
-            - h [hidden],
-            - x [un-train sensible]
+        where 'a' and 's' specify the network part to be trained:
+            - m [model], train the main model
+            - c [classifiers], train the attached classifiers (y and s)
 
-        examples:
-            a10:s100:y100   -- train the whole network for 10 epochs; then the
-                               section predicting s for 100 epochs; then the
-                               section predicting y for 100 epochs.
-            s10:x10         -- train the section predicting s for 10 epochs, then
-                               un-train it for 10 epochs.
+        the integer after the 'm' option specifies the total number of epochs to be performed;
+        the integer after the 'c' option specifies how much the sensible and y layer have to be trained
+        at each iteration.
+
+        example:
+            m100:c100        -- train the whole network for 10 epochs; for each batch train
+                                the sensible and y network for 100 iterations before using it to
+                                feedback the prediction to train model
 
         "*_LAYERS" options specify the composition of sub networks;
         syntax is:
