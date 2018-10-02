@@ -7,6 +7,7 @@ import argparse
 import textwrap
 import os
 import json
+import re
 from copy import copy, deepcopy
 from termcolor import colored
 
@@ -56,10 +57,34 @@ class Options:
         with open(self.output_fname() + ".json", "w") as json_file:
             json_file.write(json.dumps(tbs, sort_keys=True,indent=4))
 
+    def parse_hidden_units(self, spec):
+        match = re.search('^[sl]?(\d+)$', spec)
+        if match == None:
+            print(colored('Cannot parse layer specification for element:' + spec, 'red'))
+            exit(1)
+
+        return int(match.group(1))
+
+    def parse_activation(self, spec):
+        match = re.search('^([sl]?)\d+$', spec)
+        if match == None:
+            print(colored('Cannot parse layer specification for element:' + spec, 'red'))
+            exit(1)
+
+
+        if match.group(1) == '' or match.group(1) == 's':
+            return tf.nn.sigmoid
+
+        if match.group(1) == 'l':
+            return None
+
+        print(colored('Error in parsing layer specification for element:' + spec + '. This is a bug.', 'red'))
+        exit(1)
+
     def parse_layers(self, str):
         layers_specs = str.split(':')
-        return [(int(hidden_units), tf.nn.sigmoid, tf.truncated_normal_initializer)
-               for hidden_units in layers_specs ]
+        return [(self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
+               for spec in layers_specs ]
 
     def check_layers_specs(self, from_json=False):
         if self.hidden_layers_specs != None and self.sensible_layers_specs != None and self.class_layers_specs != None:
@@ -119,14 +144,17 @@ class Options:
 
         "*_LAYERS" options specify the composition of sub networks;
         syntax is:
-            LAYER -> INT
-            LAYER -> INT:LAYER
+            LAYER -> [sl]?INT
+            LAYER -> [sl]?INT:LAYER
 
-        where the integers are the number of hidden units in the layer being specified
+        where the integers are the number of hidden units in the layer being specified and the
+        optional 's' or 'l' flags specify the activation unit to be used (s==sigmoid, l==linear,
+        default=='s').
 
         examples:
-             10       -- a single layer with 10 neurons
-             10:5:2   -- three layers with 10, 5, and 2 neuron respectively
+             10       -- a single layer with 10 sigmoid neurons
+             10:5:2   -- three layers with 10, 5, and 2 neuron respectively, allo sigmoid units
+             l5:s3    -- two layers, first has 5 linear units, the second has 3 sigmoid units
 
         NOTE: layers options CAN be omitted when the model is restored from a .ckpt file
         """
