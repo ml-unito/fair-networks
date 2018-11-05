@@ -12,7 +12,7 @@ from model import Model
 from options import Options
 
 def svc_results_stats(h_train, h_test):
-    svc_y = svm.SVC()
+    svc_y = svm.SVC(gamma="scale")
     svc_y.fit(h_train, train_ys[:,1])
     y_pred = svc_y.predict(h_test)
 
