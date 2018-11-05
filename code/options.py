@@ -52,6 +52,9 @@ class Options:
         with open(self.output_fname() + "_used_options.json", "w") as json_file:
             json_file.write(json.dumps(vars(used_options), sort_keys=True,indent=4))
 
+        print("Initializing system using options:")
+        print(json.dumps(vars(used_options), indent=4))
+
     def parse_hidden_units(self, spec):
         match = re.search('^[sl]?(\d+)$', spec)
         if match == None:
@@ -136,6 +139,21 @@ class Options:
 
     def parse(self, argv):
         description = """\
+        or:
+
+         fair_networks.py CONFIG_FILENAME [other options]
+
+        or:
+
+         fair_networks.py
+
+        If CONFIG_FILENAME is given, the options found therein are used as
+        initial option values. Any option given on the command line overwrite
+        the ones in the file.
+
+        If no option is given CONFIG_FILENAME is assumed to be the file '.fn-config'
+        in the current directory (if exists).
+
         The SCHEDULE option specifies a training procedure by enumerating the number of epochs
         that should be spent optimizing different parts of the network and how.
         The syntax is:
@@ -184,13 +202,12 @@ class Options:
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
         parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
+        parser.add_argument('-f', '--fairness-importance', type=float, default=1.0, help="Specify how important is fairness w.r.t. the error")
 
         if not config_opts.has_key('dataset'):
             parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
 
-        print(config_opts)
         result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
-        print("here:" + str(vars(result)))
 
         self.dataset_name = result.dataset
         self.dataset = datasets[self.dataset_name]()
@@ -212,7 +229,7 @@ class Options:
 
         self.eval_stats = result.eval_stats
         self.eval_data_path = result.eval_data
-
+        self.fairness_importance = result.fairness_importance
 
         return result
 
