@@ -66,6 +66,8 @@ def training_loop():
     init_y_vars = tf.variables_initializer(s_variables, name="init_y_vars")
 
     for _ in range(opts.schedule.num_epochs):
+        epoch = session.run(model.epoch)
+        print("Running epoch number: %d" % epoch)
 
         session.run(trainset_it.initializer)
         run_epoch_new_approach(session, model, trainset_next, init_y_vars, init_s_vars)
@@ -73,8 +75,6 @@ def training_loop():
         # retrains the s layer so to be sure to have the best possible prediction about its
         # performances
         train_s_and_y(session, model, init_y_vars, init_s_vars, train_xs, train_ys, train_s)
-
-        epoch = session.run(model.epoch)
 
         if opts.save_at_epoch(epoch):
             saver.save(session, opts.output_fname())

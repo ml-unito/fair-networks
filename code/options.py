@@ -10,6 +10,7 @@ import json
 import re
 from copy import copy, deepcopy
 from termcolor import colored
+from pathlib import Path
 
 class ParseError(Exception):
     """Exception raised for errors in the command line options.
@@ -38,24 +39,18 @@ class Options:
         self.resume_learning = False
         self.epochs_per_save = 1000
 
-        self.parse(sys.argv)
+        used_options = self.parse(sys.argv)
 
         # self.exp_name = "%s_h%s_s%s_y%s" % (self.dataset_name, self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs)
 
-
-
-        tbs = copy(self.__dict__)
-        tbs.pop('dataset')
-        for key in tbs.keys():
-            tbs[key] = str(tbs[key])
 
         # tbs['hidden_layers'] = str(to_be_serialized['hidden_layers'])
         # tbs['sensible_layers'] = str(to_be_serialized['hidden_layers'])
         # tbs['class_layers'] =
         # print(to_be_serialized)
 
-        with open(self.output_fname() + ".json", "w") as json_file:
-            json_file.write(json.dumps(tbs, sort_keys=True,indent=4))
+        with open(self.output_fname() + "_used_options.json", "w") as json_file:
+            json_file.write(json.dumps(vars(used_options), sort_keys=True,indent=4))
 
     def parse_hidden_units(self, spec):
         match = re.search('^[sl]?(\d+)$', spec)
@@ -94,6 +89,7 @@ class Options:
             print(colored('Cannot parse layer specs read from the json options.', 'red'))
             exit(1)
         else:
+            print( { "hidden_layers_specs":self.hidden_layers_specs, "sensible_layers_specs":self.sensible_layers_specs, "class_layers_specs":self.class_layers_specs})
             print(colored('Cannot parse layer specs from options on the command line.', 'red'))
             exit(1)
 
@@ -101,11 +97,11 @@ class Options:
 
     def set_layers(self, options):
         if self.resume_learning:
-            with open(self.input_fname() + ".json", "r") as json_file:
+            with open(self.input_fname() + "_used_options.json", "r") as json_file:
                 parsed_json = json.loads(json_file.read())
-            self.hidden_layers_specs = parsed_json['hidden_layers_specs']
-            self.sensible_layers_specs = parsed_json['sensible_layers_specs']
-            self.class_layers_specs = parsed_json['class_layers_specs']
+            self.hidden_layers_specs = parsed_json['hidden_layers']
+            self.sensible_layers_specs = parsed_json['sensible_layers']
+            self.class_layers_specs = parsed_json['class_layers']
 
             self.check_layers_specs(from_json=True)
         else:
@@ -120,6 +116,23 @@ class Options:
         self.hidden_layers = self.parse_layers(self.hidden_layers_specs)
         self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
         self.class_layers = self.parse_layers(self.class_layers_specs)
+
+    def try_load_opts(self, argv):
+        if len(argv) == 2:
+            file_to_read = argv[1]
+            argv.pop()
+            return json.loads(open(file_to_read).read())
+
+        if Path('.fn-config').is_file():
+            return json.loads(open('.fn-config').read())
+
+        return {}
+
+    def try_update_opts(self, config_opts, parsed_args):
+        setted_args = { k:v for k,v in vars(parsed_args).items() if v != None }
+        config_opts.update(setted_args)
+        parsed_args.__dict__ = config_opts
+        return parsed_args
 
     def parse(self, argv):
         description = """\
@@ -159,9 +172,11 @@ class Options:
         NOTE: layers options CAN be omitted when the model is restored from a .ckpt file
         """
 
+        config_opts = self.try_load_opts(argv)
+
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
-        parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=True, type=str, help="Name of the checkpoint to be saved/loaded.")
+        parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=not config_opts.has_key('checkpoint'), type=str, help="Name of the checkpoint to be saved/loaded.")
         parser.add_argument('-o', '--output', metavar="FILENAME.ckpt", type=str, help="Name of the checkpoint to be saved into. Defaults to the value given to the -c parameter if not given.")
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs')
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
@@ -169,8 +184,14 @@ class Options:
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
         parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
-        parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
-        result = parser.parse_args()
+
+        if not config_opts.has_key('dataset'):
+            parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
+
+        print(config_opts)
+        result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
+        print("here:" + str(vars(result)))
+
         self.dataset_name = result.dataset
         self.dataset = datasets[self.dataset_name]()
         self.num_features = self.dataset.num_features()
@@ -192,7 +213,8 @@ class Options:
         self.eval_stats = result.eval_stats
         self.eval_data_path = result.eval_data
 
-        return self
+
+        return result
 
     def model_fname(self, name):
         return "%s" % (name)
@@ -209,7 +231,7 @@ class Options:
         return 'logdir/log_%s' % name
 
     def save_at_epoch(self, epoch):
-        early_saves = epoch < 100000 and epoch % 100 == 0
+        early_saves = epoch < 1000 and epoch % 10 == 0
         normal_saves = epoch % self.epochs_per_save == 0
 
         return early_saves or normal_saves

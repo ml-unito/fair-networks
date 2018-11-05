@@ -5,7 +5,7 @@ import time
 
 class Model:
     def __init__(self, options, optimizer):
-        self.FAIRNESS_IMPORTANCE = 1.0
+        self.FAIRNESS_IMPORTANCE = 100.0
         self._build(options, optimizer)
 
     def build_layer(self, in_layer, layer_name, layers):
