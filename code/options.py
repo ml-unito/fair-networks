@@ -41,14 +41,6 @@ class Options:
 
         used_options = self.parse(sys.argv)
 
-        # self.exp_name = "%s_h%s_s%s_y%s" % (self.dataset_name, self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs)
-
-
-        # tbs['hidden_layers'] = str(to_be_serialized['hidden_layers'])
-        # tbs['sensible_layers'] = str(to_be_serialized['hidden_layers'])
-        # tbs['class_layers'] =
-        # print(to_be_serialized)
-
         with open(self.output_fname() + "_used_options.json", "w") as json_file:
             json_file.write(json.dumps(vars(used_options), sort_keys=True,indent=4))
 
@@ -121,9 +113,9 @@ class Options:
         self.class_layers = self.parse_layers(self.class_layers_specs)
 
     def try_load_opts(self, argv):
-        if len(argv) == 2 and Path(argv[1]).is_file():
+        if len(argv) >= 2 and Path(argv[1]).is_file():
             file_to_read = argv[1]
-            argv.pop()
+            argv.pop(1)
             return json.loads(open(file_to_read).read())
 
         if Path('.fn-config').is_file():
@@ -202,7 +194,7 @@ class Options:
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
         parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
-        parser.add_argument('-f', '--fairness-importance', type=float, default=1.0, help="Specify how important is fairness w.r.t. the error")
+        parser.add_argument('-f', '--fairness-importance', type=float, help="Specify how important is fairness w.r.t. the error")
 
         if not config_opts.has_key('dataset'):
             parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")

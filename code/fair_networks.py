@@ -176,6 +176,12 @@ if opts.resume_learning:
     model_to_resume = opts.input_fname()
     print(colored("Restoring model: %s" % (model_to_resume), 'yellow'))
     saver.restore(session, model_to_resume)
+
+    graph_fairness_importance = session.run(tf.get_default_graph().get_tensor_by_name("fairness_importance:0"))
+    if graph_fairness_importance != opts.fairness_importance:
+        print(colored("Warning:", "yellow") + "Fairness importance changed by the options, but it is part of the model. The new value will be ignored")
+        print("    given value: %2.2f  value that is being used: %2.2f" % (opts.fairness_importance, graph_fairness_importance ) )
+        print("    " + colored('NOTE', 'yellow') + "'_used_options.json' file will incorrectly report the given value")
 else:
     print(colored("Initializing a new model", 'yellow'))
     init = tf.global_variables_initializer()

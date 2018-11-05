@@ -25,6 +25,8 @@ class Model:
         num_s_labels = options.dataset.num_s_columns()
         num_y_labels = options.dataset.num_y_columns()
 
+        self.fairness_importance = tf.Variable(options.fairness_importance, name="fairness_importance")
+
         self.epoch = tf.get_variable("epoch", shape=[1], initializer=tf.zeros_initializer)
         self.inc_epoch = self.epoch.assign(self.epoch + 1)
 
@@ -87,7 +89,7 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step = optimizer.minimize(self.y_loss - options.fairness_importance * self.s_loss, var_list=self.hidden_layers_variables)
+        self.h_train_step = optimizer.minimize(self.y_loss - self.fairness_importance * self.s_loss, var_list=self.hidden_layers_variables)
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
 
