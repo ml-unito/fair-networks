@@ -118,7 +118,7 @@ class Options:
         self.class_layers = self.parse_layers(self.class_layers_specs)
 
     def try_load_opts(self, argv):
-        if len(argv) == 2:
+        if len(argv) == 2 and Path(argv[1]).is_file():
             file_to_read = argv[1]
             argv.pop()
             return json.loads(open(file_to_read).read())
@@ -142,7 +142,7 @@ class Options:
             SCHEDULE -> mINT:cINT
             INT -> {1..9}{0..9}*
 
-        where 'a' and 's' specify the network part to be trained:
+        where 'm' and 'c' specify the network part to be trained:
             - m [model], train the main model
             - c [classifiers], train the attached classifiers (y and s)
 
