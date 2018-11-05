@@ -19,7 +19,7 @@ def svc_results_stats(h_train, h_test):
 
     y_accuracy = 1.0 - np.mean(test_ys[:,1] != y_pred)
 
-    svc_s = svm.SVC()
+    svc_s = svm.SVC(gamma="scale")
     s_train = np.argmax(train_s, axis=1)
     s_test = np.argmax(test_s, axis=1)
     svc_s.fit(h_train, s_train)

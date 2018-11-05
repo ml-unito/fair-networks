@@ -70,7 +70,7 @@ class DatasetBase:
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
 
         scaler = MinMaxScaler()
-        df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols])
+        df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols].astype(np.float64))
 
         s_1h_col_names = df.columns[[colname for s_col_name in s_col_names for colname in df.columns.str.startswith(s_col_name)]]
         y_1h_col_names = df.columns[[colname for y_col_name in y_col_names for colname in df.columns.str.startswith(y_col_name)]]
@@ -83,7 +83,7 @@ class DatasetBase:
         ys = df[y_1h_col_names]
         s = df[s_1h_col_names]
 
-        return (xs.as_matrix(),ys.as_matrix(),s.as_matrix())
+        return (xs.values,ys.values,s.values)
 
     def num_s_columns(self):
         return self._num_s_columns
