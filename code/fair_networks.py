@@ -12,14 +12,14 @@ from model import Model
 from options import Options
 
 def svc_results_stats(h_train, h_test):
-    svc_y = svm.SVC(gamma="scale")
+    svc_y = svm.SVC()
     svc_y.fit(h_train, train_ys[:,1])
     y_pred = svc_y.predict(h_test)
 
 
     y_accuracy = 1.0 - np.mean(test_ys[:,1] != y_pred)
 
-    svc_s = svm.SVC(gamma="scale")
+    svc_s = svm.SVC()
     s_train = np.argmax(train_s, axis=1)
     s_test = np.argmax(test_s, axis=1)
     svc_s.fit(h_train, s_train)
@@ -106,14 +106,15 @@ def training_loop():
 
 
         # SVC summaries
-        h_train = session.run(model.model_last_hidden_layer, feed_dict={model.x: train_xs})
-        h_test = session.run(model.model_last_hidden_layer, feed_dict={model.x: test_xs})
+        if (epoch + 1) % 10 == 0:
+            h_train = session.run(model.model_last_hidden_layer, feed_dict={model.x: train_xs})
+            h_test = session.run(model.model_last_hidden_layer, feed_dict={model.x: test_xs})
 
-        y_accuracy, s_accuracy = svc_results_stats(h_train, h_test)
-        y_svc_stat, s_svc_stat = session.run((model.y_svc_accuracy_stat, model.s_svc_accuracy_stat), feed_dict={
-            model.y_svc_accuracy:y_accuracy, model.s_svc_accuracy:s_accuracy })
-        writer.add_summary(y_svc_stat, global_step = epoch)
-        writer.add_summary(s_svc_stat, global_step = epoch)
+            y_accuracy, s_accuracy = svc_results_stats(h_train, h_test)
+            y_svc_stat, s_svc_stat = session.run((model.y_svc_accuracy_stat, model.s_svc_accuracy_stat), feed_dict={
+                model.y_svc_accuracy:y_accuracy, model.s_svc_accuracy:s_accuracy })
+            writer.add_summary(y_svc_stat, global_step = epoch)
+            writer.add_summary(s_svc_stat, global_step = epoch)
 
         # Changing epoch
         session.run(model.inc_epoch)
