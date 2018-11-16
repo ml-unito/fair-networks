@@ -186,7 +186,7 @@ class Options:
 
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
-        parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=not config_opts.has_key('checkpoint'), type=str, help="Name of the checkpoint to be saved/loaded.")
+        parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=not 'checkpoint' in config_opts, type=str, help="Name of the checkpoint to be saved/loaded.")
         parser.add_argument('-o', '--output', metavar="FILENAME.ckpt", type=str, help="Name of the checkpoint to be saved into. Defaults to the value given to the -c parameter if not given.")
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs')
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
@@ -196,7 +196,7 @@ class Options:
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('-f', '--fairness-importance', type=float, help="Specify how important is fairness w.r.t. the error")
 
-        if not config_opts.has_key('dataset'):
+        if not 'dataset' in config_opts:
             parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
 
         result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
