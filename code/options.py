@@ -124,7 +124,6 @@ class Options:
         return {}
 
     def try_update_opts(self, config_opts, parsed_args):
-        print(parsed_args)
         setted_args = { k:v for k,v in vars(parsed_args).items() if v != None }
         config_opts.update(setted_args)
         parsed_args.__dict__ = config_opts
@@ -184,7 +183,6 @@ class Options:
         """
 
         config_opts = self.try_load_opts(argv)
-        print(config_opts)
 
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)

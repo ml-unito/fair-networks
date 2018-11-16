@@ -151,6 +151,7 @@ class DatasetBase:
         the given filename
         """
         if os.path.isfile(filename):
+            print(filename + " already exists. Skipping download.")
             return
 
         dataset = requests.get(url)
@@ -183,7 +184,7 @@ class DatasetBase:
         """
 
         for (dataurl, filepath) in self.files_to_retrieve():
-            self.download( dataurl, filepath)
+            self.download( dataurl, filepath )
 
     def num_features(self):
         return self._traindata[0].shape[1]

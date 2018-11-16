@@ -41,6 +41,10 @@ class BankMarketingDataset(DatasetBase):
                 '%s/bank.zip' % (self.workingdir))]
 
     def prepare_all(self):
+        if os.path.isfile(self.dataset_path()):
+            print("Bank datafile already exists. Using existing version.")
+            return
+
         zip_ref = zipfile.ZipFile('%s/bank.zip' % (self.workingdir), 'r')
         zip_ref.extractall(self.workingdir)
         zip_ref.close()
