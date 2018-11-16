@@ -42,11 +42,11 @@ class AdultDataset(DatasetBase):
         with open(self.dataset_path(), "w") as file:
             file.write(','.join(self.all_columns())+"\n")
 
-            with open("data/adult.data", "r") as train:
+            with open("%s/adult.data" % self.workingdir, "r") as train:
                 for line in train:
                     file.write(line)
 
-            with open("data/adult.test", "r") as test:
+            with open("%s/adult.test" % self.workingdir, "r") as test:
                 for line in test:
                     if len(line) > 0 and line[0] == '|':
                         continue

@@ -38,9 +38,9 @@ class BankMarketingDataset(DatasetBase):
 
     def files_to_retrieve(self):
         return [('https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip',
-                'data/bank.zip')]
+                '%s/bank.zip' % (self.workingdir))]
 
     def prepare_all(self):
-        zip_ref = zipfile.ZipFile('data/bank.zip', 'r')
-        zip_ref.extractall('data/')
+        zip_ref = zipfile.ZipFile('%s/bank.zip' % (self.workingdir), 'r')
+        zip_ref.extractall(self.workingdir)
         zip_ref.close()
