@@ -14,10 +14,11 @@ from tqdm import tqdm
 
 
 class DatasetBase:
-    def __init__(self):
+    def __init__(self, workingdir):
         """
         Downloads and load into memory the dataset.
         """
+        self.workingdir = workingdir
         self.download_all()
         self.prepare_all()
         self.load_all()

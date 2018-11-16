@@ -31,7 +31,7 @@ class BankMarketingDataset(DatasetBase):
         return ["y"]
 
     def dataset_path(self):
-        return 'data/bank-full.csv'
+        return '%s/bank-full.csv' % (self.workingdir)
 
     def sep(self):
         return ';'

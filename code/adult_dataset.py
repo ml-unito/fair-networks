@@ -19,7 +19,7 @@ class AdultDataset(DatasetBase):
         return [ "workclass","education","marital-status","occupation","relationship","race","sex","native-country","label" ]
 
     def dataset_path(self):
-        return "data/adult-train-test.csv"
+        return "%s/adult-train-test.csv" % (self.workingdir)
 
     def sep(self):
         return ','

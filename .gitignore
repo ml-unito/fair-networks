@@ -9,3 +9,5 @@ include
 man
 .Python
 pip-selfcheck.json
+experiments/
+representations/
