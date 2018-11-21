@@ -2,6 +2,7 @@ import sys
 from bank_marketing_dataset import BankMarketingDataset
 from adult_dataset import AdultDataset
 from synth_dataset import SynthDataset
+from german_dataset import GermanDataset
 import tensorflow as tf
 import argparse
 import textwrap
@@ -184,7 +185,7 @@ class Options:
 
         config_opts = self.try_load_opts(argv)
 
-        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
+        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'german':GermanDataset, 'synth': SynthDataset }
         parser = argparse.ArgumentParser(description=description,formatter_class=argparse.RawDescriptionHelpFormatter)
         parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=not 'checkpoint' in config_opts, type=str, help="Name of the checkpoint to be saved/loaded.")
         parser.add_argument('-o', '--output', metavar="FILENAME.ckpt", type=str, help="Name of the checkpoint to be saved into. Defaults to the value given to the -c parameter if not given.")
@@ -198,7 +199,7 @@ class Options:
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
 
         if not 'dataset' in config_opts:
-            parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
+            parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth'], help="dataset to be loaded")
 
         result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
 
