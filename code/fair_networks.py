@@ -105,16 +105,16 @@ def training_loop():
         print("NN -- y accuracy: %s    s accuracy: %s" % (nn_y_accuracy, nn_s_accuracy))
 
 
-        # SVC summaries
-        if (epoch + 1) % 10 == 0:
-            h_train = session.run(model.model_last_hidden_layer, feed_dict={model.x: train_xs})
-            h_test = session.run(model.model_last_hidden_layer, feed_dict={model.x: test_xs})
-
-            y_accuracy, s_accuracy = svc_results_stats(h_train, h_test)
-            y_svc_stat, s_svc_stat = session.run((model.y_svc_accuracy_stat, model.s_svc_accuracy_stat), feed_dict={
-                model.y_svc_accuracy:y_accuracy, model.s_svc_accuracy:s_accuracy })
-            writer.add_summary(y_svc_stat, global_step = epoch)
-            writer.add_summary(s_svc_stat, global_step = epoch)
+        # # SVC summaries
+        # if (epoch + 1) % 10 == 0:
+        #     h_train = session.run(model.model_last_hidden_layer, feed_dict={model.x: train_xs})
+        #     h_test = session.run(model.model_last_hidden_layer, feed_dict={model.x: test_xs})
+        #
+        #     y_accuracy, s_accuracy = svc_results_stats(h_train, h_test)
+        #     y_svc_stat, s_svc_stat = session.run((model.y_svc_accuracy_stat, model.s_svc_accuracy_stat), feed_dict={
+        #         model.y_svc_accuracy:y_accuracy, model.s_svc_accuracy:s_accuracy })
+        #     writer.add_summary(y_svc_stat, global_step = epoch)
+        #     writer.add_summary(s_svc_stat, global_step = epoch)
 
         # Changing epoch
         session.run(model.inc_epoch)
