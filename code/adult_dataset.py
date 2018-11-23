@@ -27,9 +27,9 @@ class AdultDataset(DatasetBase):
     def files_to_retrieve(self):
         return [
             ('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
-             'data/adult.data'),
+             'adult.data'),
             ('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test',
-             'data/adult.test')
+             'adult.test')
         ]
 
     def sensible_columns(self):
@@ -42,7 +42,7 @@ class AdultDataset(DatasetBase):
         if os.path.isfile(self.dataset_path()):
             print("Adult dataset already exist. Using existing version.")
             return
-            
+
         with open(self.dataset_path(), "w") as file:
             file.write(','.join(self.all_columns())+"\n")
 
