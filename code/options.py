@@ -109,7 +109,7 @@ class Options:
         options from file and to merge command line options with those read from file.
 
         # Attributes
-        
+
         After initializations a property will be set for each option succesfully recognised:
 
         self.dataset_name: dataset name to be used
@@ -240,6 +240,7 @@ class Options:
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('-f', '--fairness-importance', type=float, help="Specify how important is fairness w.r.t. the error")
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
+        parser.add_argument('-l', '--logdir', type=str, help="Specify the base directory for storing tensorboard logs")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth'], help="dataset to be loaded")
@@ -252,11 +253,15 @@ class Options:
 
         self.configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts, dataset_already_given='dataset' in config_opts)
 
-        result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
+        parsed_opts = parser.parse_args(argv[1:])
+        result = self.try_update_opts(config_opts, parsed_opts)
 
         self.dataset_name = result.dataset
         self.dataset_base_path = result.dataset_base_path
         print("dataset base path:%s" % (self.dataset_base_path))
+
+        self.logdir = result.logdir
+        print("logdir:%s" % (self.logdir))
 
         self.dataset = datasets[self.dataset_name](self.dataset_base_path)
         self.num_features = self.dataset.num_features()
@@ -293,7 +298,7 @@ class Options:
     def log_fname(self):
         name = self.output_fname().split('/')[-1]
         name = name.split('.ckpt')[0]
-        return 'logdir/log_%s' % name
+        return '%s/log_%s' % (self.logdir,name)
 
     def save_at_epoch(self, epoch):
         early_saves = epoch < 1000 and epoch % 10 == 0
