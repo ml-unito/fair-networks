@@ -5,7 +5,6 @@ from termcolor import colored
 
 sys.path.append('code')
 
-from model import Model
 from options import Options
 
 USAGE="""
