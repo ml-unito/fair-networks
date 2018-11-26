@@ -152,7 +152,7 @@ def print_processed_data():
 # --------------------------------------------------------------------------------
 
 opts = Options()
-tf.random.set_random_seed(opts.random_seed)
+tf.set_random_seed(opts.random_seed)
 
 dataset = opts.dataset
 
