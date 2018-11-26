@@ -235,12 +235,12 @@ class Options:
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs')
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs')
+        parser.add_argument('-r', '--random-seed', type=int, help='sets the random seed used in the experiment')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
         parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('-f', '--fairness-importance', type=float, help="Specify how important is fairness w.r.t. the error")
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
-        parser.add_argument('-l', '--logdir', type=str, help="Specify the base directory for storing tensorboard logs")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth'], help="dataset to be loaded")
@@ -253,15 +253,11 @@ class Options:
 
         self.configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts, dataset_already_given='dataset' in config_opts)
 
-        parsed_opts = parser.parse_args(argv[1:])
-        result = self.try_update_opts(config_opts, parsed_opts)
+        result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
 
         self.dataset_name = result.dataset
         self.dataset_base_path = result.dataset_base_path
         print("dataset base path:%s" % (self.dataset_base_path))
-
-        self.logdir = result.logdir
-        print("logdir:%s" % (self.logdir))
 
         self.dataset = datasets[self.dataset_name](self.dataset_base_path)
         self.num_features = self.dataset.num_features()
@@ -283,6 +279,7 @@ class Options:
         self.eval_stats = result.eval_stats
         self.eval_data_path = result.eval_data
         self.fairness_importance = result.fairness_importance
+        self.random_seed = result.random_seed
 
         return result
 
@@ -298,7 +295,7 @@ class Options:
     def log_fname(self):
         name = self.output_fname().split('/')[-1]
         name = name.split('.ckpt')[0]
-        return '%s/log_%s' % (self.logdir,name)
+        return 'logdir/log_%s' % name
 
     def save_at_epoch(self, epoch):
         early_saves = epoch < 1000 and epoch % 10 == 0

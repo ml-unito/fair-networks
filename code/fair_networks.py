@@ -152,6 +152,8 @@ def print_processed_data():
 # --------------------------------------------------------------------------------
 
 opts = Options()
+tf.random.set_random_seed(opts.random_seed)
+
 dataset = opts.dataset
 
 optimizer = tf.train.AdagradOptimizer(1.0)
