@@ -151,7 +151,7 @@ def print_processed_data():
 # main
 # --------------------------------------------------------------------------------
 
-opts = Options()
+opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
 
 dataset = opts.dataset
@@ -175,7 +175,7 @@ saver = tf.train.Saver()
 
 writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
-if opts.resume_learning:
+if tf.train.checkpoint_exists(opts.input_fname()):
     model_to_resume = opts.input_fname()
     print(colored("Restoring model: %s" % (model_to_resume), 'yellow'))
     saver.restore(session, model_to_resume)

@@ -8,6 +8,7 @@ import textwrap
 import os
 import json
 import re
+import tensorflow as tf
 from copy import copy, deepcopy
 from termcolor import colored
 from pathlib import Path
@@ -134,17 +135,21 @@ class Options:
         self.epochs_per_save: number of epochs to be performed before saving a new model. This is
             used only epochs > 1000. Before this treshold a model is saved every 10 epochs.
     """
-    def __init__(self):
+    def __init__(self, args):
         self.resume_learning = False
         self.epochs_per_save = 1000
+        self.args = args
 
-        used_options = self.parse(sys.argv)
+        self.used_options = self.parse(self.args)
 
-        with open(self.output_fname() + "_used_options.json", "w") as json_file:
-            json_file.write(json.dumps(vars(used_options), sort_keys=True,indent=4))
+        # with open(self.output_fname() + "_used_options.json", "w") as json_file:
+        #     json_file.write(self.json_representation())
 
         print("Initializing system using options:")
-        print(json.dumps(vars(used_options), indent=4))
+        print(json.dumps(vars(self.used_options), indent=4))
+
+    def config_struct(self):
+        return vars(self.used_options)
 
     def parse_hidden_units(self, spec):
         match = re.search('^[sl]?(\d+)$', spec)
