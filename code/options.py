@@ -3,7 +3,6 @@ from bank_marketing_dataset import BankMarketingDataset
 from adult_dataset import AdultDataset
 from synth_dataset import SynthDataset
 from german_dataset import GermanDataset
-import tensorflow as tf
 import argparse
 import textwrap
 import os
