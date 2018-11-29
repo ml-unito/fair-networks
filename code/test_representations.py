@@ -68,6 +68,8 @@ def process_dir(path):
 
     if not os.path.exists(representations_dir):
         print("Directory %s does not exists." % representations_dir )
+        print(colored("Skipping this directory", "red"))
+        return { "experiment_name": path, "error": "Cannot find representation directory" }
 
 
     experiments_results = []
@@ -107,6 +109,9 @@ def process_dir(path):
 
 results = []
 for dir in os.listdir(sys.argv[1]):
-    results.append(process_dir(os.path.join(sys.argv[1], dir)))
+    try:
+        results.append(process_dir(os.path.join(sys.argv[1], dir)))
+    except:
+        results.append({ "experiment_name": dir, "error": sys.exc_info() })
 
 print(json.dumps(results, indent=4))
