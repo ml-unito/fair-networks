@@ -112,6 +112,6 @@ for dir in os.listdir(sys.argv[1]):
     try:
         results.append(process_dir(os.path.join(sys.argv[1], dir)))
     except:
-        results.append({ "experiment_name": dir, "error": sys.exc_info() })
+        results.append({ "experiment_name": dir, "error": str(sys.exc_info()) })
 
 print(json.dumps(results, indent=4))
