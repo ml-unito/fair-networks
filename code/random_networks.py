@@ -20,7 +20,7 @@ print(colored("Note: this script accept all options of fair_networks.py, but use
 print(colored("\n" + USAGE, "yellow"))
 
 
-opts = Options()
+opts = Options(sys.argv)
 
 if(opts.eval_data_path == None):
     print(colored("ERROR: this script can only be used witht the '--eval-data' option", "red"))
