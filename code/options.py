@@ -155,7 +155,7 @@ class Options:
         return vars(self.used_options)
 
     def parse_hidden_units(self, spec):
-        match = re.search('^[sl]?(\d+)$', spec)
+        match = re.search(r'^[sl]?(\d+)$', spec)
         if match == None:
             print(colored('Cannot parse layer specification for element:' + spec, 'red'))
             exit(1)
@@ -163,7 +163,7 @@ class Options:
         return int(match.group(1))
 
     def parse_activation(self, spec):
-        match = re.search('^([sl]?)\d+$', spec)
+        match = re.search(r'^([sl]?)\d+$', spec)
         if match == None:
             print(colored('Cannot parse layer specification for element:' + spec, 'red'))
             exit(1)
@@ -236,7 +236,7 @@ class Options:
     def path_for(self, path):
         if path == None:
             return None
-            
+
         if os.path.isabs(path):
             return path
 
