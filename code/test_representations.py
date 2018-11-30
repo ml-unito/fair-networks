@@ -6,6 +6,7 @@ import os
 import sys
 import json
 import traceback
+import re
 from termcolor import colored
 
 
@@ -112,6 +113,10 @@ def process_dir(path):
 results = []
 for dir in os.listdir(sys.argv[1]):
     try:
+        if re.search(r'_.*', dir):
+            print(colored("Name of directory %s starts with _, skipping to the next" % dir, "green"))
+            continue
+
         print("Processing dir %s/%s" % (sys.argv[1], dir))
         results.append(process_dir(os.path.join(sys.argv[1], dir)))
     except:

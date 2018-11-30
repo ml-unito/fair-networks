@@ -3,6 +3,7 @@ import sys
 from termcolor import colored
 import subprocess
 import json
+import re
 
 
 def extract_model_path(config_path):
@@ -16,6 +17,11 @@ experiments_path = sys.argv[2]
 approaches = ['fair_networks', 'random_networks']
 
 for dir in os.listdir(experiments_path):
+    if re.search(r'_.*', dir):
+        print(colored("Name of directory %s starts with _, skipping to the next" % dir, "green"))
+
+        continue
+
     print(colored("Entering directory %s" % dir, "green"))
     for approach in approaches:
         print(colored("\tBuilding representations with approach %s" % approach, "yellow"))
