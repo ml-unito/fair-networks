@@ -36,13 +36,13 @@ class DatasetBase:
         return
 
     def sensible_columns(self):
-        return
+        return []
 
     def dataset_path(self):
         return
 
     def y_columns(self):
-        return
+        return []
 
     def sep(self):
         return ';'
