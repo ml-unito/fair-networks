@@ -7,6 +7,9 @@ import tensorflow as tf
 import numpy as np
 
 class SynthDataset(DatasetBase):
+    def name(self):
+        return "Synth"
+
     def all_columns(self):
         return ["x1","x2","s","z1","z2","y"]
 

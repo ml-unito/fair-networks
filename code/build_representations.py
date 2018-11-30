@@ -17,7 +17,7 @@ experiments_path = sys.argv[2]
 approaches = ['fair_networks', 'random_networks']
 
 for dir in os.listdir(experiments_path):
-    if re.search(r'_.*', dir):
+    if re.search(r'^_.*', dir):
         print(colored("Name of directory %s starts with _, skipping to the next" % dir, "green"))
 
         continue

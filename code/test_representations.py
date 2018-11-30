@@ -58,7 +58,6 @@ def eval_accuracies_on_representation(file):
 
 
 def process_dir(path):
-    print(colored("Processing directory: %s" % path, "green"))
     config_path = os.path.join(path, "config.json")
     if not os.path.exists(config_path):
         print(colored("Cannot find config file in %s -- Skipping to next directory" % path, "red"))
@@ -113,12 +112,14 @@ def process_dir(path):
 results = []
 for dir in os.listdir(sys.argv[1]):
     try:
-        if re.search(r'_.*', dir):
+        if re.search(r'^_.*', dir):
             print(colored("Name of directory %s starts with _, skipping to the next" % dir, "green"))
             continue
 
-        print("Processing dir %s/%s" % (sys.argv[1], dir))
-        results.append(process_dir(os.path.join(sys.argv[1], dir)))
+        experiment_base_dir = os.path.join(sys.argv[1], dir)
+        
+        print(colored("Processing directory: %s" % experiment_base_dir, "green"))
+        results.append(process_dir(experiment_base_dir))
     except:
         error_info = sys.exc_info()
         results.append({ 

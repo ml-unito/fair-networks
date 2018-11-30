@@ -8,6 +8,10 @@ class GermanDataset(DatasetBase):
     """
     Helper class allowing to download and load into memory the german dataset
     """
+
+    def name(self):
+        return "German"
+
     def all_columns(self):
         return [ "Attribute_1", "Attribute_2", "Attribute_3", "Attribute_4", "Attribute_5", "Attribute_6", "Attribute_7", "Attribute_8", "Gender", "Attribute_10", "Attribute_11", "Attribute_12", "Attribute_13", "Attribute_14", "Attribute_15", "Attribute_16", "Attribute_17", "Attribute_18", "Attribute_19", "Attribute_20", "y" ]
 

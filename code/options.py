@@ -148,8 +148,9 @@ class Options:
         # with open(self.output_fname() + "_used_options.json", "w") as json_file:
         #     json_file.write(self.json_representation())
 
-        print("Initializing system using options:")
+    def print_config(self):
         print(json.dumps(vars(self.used_options), indent=4))
+
 
     def config_struct(self):
         return vars(self.used_options)
@@ -157,16 +158,16 @@ class Options:
     def parse_hidden_units(self, spec):
         match = re.search(r'^[sl]?(\d+)$', spec)
         if match == None:
-            print(colored('Cannot parse layer specification for element:' + spec, 'red'))
-            exit(1)
+            raise ParseError('Cannot parse layer specification for element:' + spec)
+            
 
         return int(match.group(1))
 
     def parse_activation(self, spec):
         match = re.search(r'^([sl]?)\d+$', spec)
         if match == None:
-            print(colored('Cannot parse layer specification for element:' + spec, 'red'))
-            exit(1)
+            raise ParseError('Cannot parse layer specification for element:' + spec)
+            
 
 
         if match.group(1) == '' or match.group(1) == 's':
@@ -175,8 +176,8 @@ class Options:
         if match.group(1) == 'l':
             return None
 
-        print(colored('Error in parsing layer specification for element:' + spec + '. This is a bug.', 'red'))
-        exit(1)
+        raise ParseError('Error in parsing layer specification for element:' + spec + '. This is a bug.')
+        
 
     def parse_layers(self, str):
         layers_specs = str.split(':')
@@ -188,12 +189,10 @@ class Options:
             return
 
         if from_json:
-            print(colored('Cannot parse layer specs read from the json options.', 'red'))
-            exit(1)
+            raise ParseError('Cannot parse layer specs read from the json options.')
         else:
             print( { "hidden_layers_specs":self.hidden_layers_specs, "sensible_layers_specs":self.sensible_layers_specs, "class_layers_specs":self.class_layers_specs})
-            print(colored('Cannot parse layer specs from options on the command line.', 'red'))
-            exit(1)
+            raise ParseError('Cannot parse layer specs from options on the command line.')
 
 
 
@@ -212,8 +211,6 @@ class Options:
             self.class_layers_specs = options.class_layers
 
             self.check_layers_specs(from_json=False)
-
-        print(colored("Basing model on specs: H%s S%s Y%s" % (self.hidden_layers_specs, self.sensible_layers_specs, self.class_layers_specs), 'yellow'))
 
         self.hidden_layers = self.parse_layers(self.hidden_layers_specs)
         self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
@@ -276,7 +273,6 @@ class Options:
 
         self.dataset_name = result.dataset
         self.dataset_base_path = self.path_for(result.dataset_base_path)
-        print("dataset base path:%s" % (self.dataset_base_path))
 
         self.dataset = datasets[self.dataset_name](self.dataset_base_path)
         self.num_features = self.dataset.num_features()

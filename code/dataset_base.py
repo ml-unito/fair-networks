@@ -23,32 +23,32 @@ class DatasetBase:
         self.prepare_all()
         self.load_all()
 
+    def name(self):
+        return
+
     def prepare_all(self):
         pass
 
     def all_columns(self):
-        pass
+        return
 
     def one_hot_columns(self):
-        pass
+        return
 
     def sensible_columns(self):
-        pass
-
-    def num_s_columns(self):
-        pass
-
-    def num_y_columns(self):
-        return 2
+        return
 
     def dataset_path(self):
-        pass
+        return
+
+    def y_columns(self):
+        return
 
     def sep(self):
         return ';'
 
     def files_to_retrieve(self):
-        pass
+        return
 
     def load_data(self):
         """
@@ -59,7 +59,6 @@ class DatasetBase:
         to enforce the constraint on all columns).
         """
 
-        print(colored("\nImporting %s" % (self.dataset_path()),attrs=['bold']))
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
         s_col_names = self.sensible_columns()
         y_col_names = self.y_columns()
@@ -142,8 +141,6 @@ class DatasetBase:
         self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 
-        self.print_datasets_stats([("Train", self._traindata), ("Test", self._testdata)])
-
 
     def download(self, url, filename):
         """
@@ -177,6 +174,8 @@ class DatasetBase:
 
         print("")
 
+    def print_stats(self):
+        self.print_datasets_stats([("Train", self._traindata), ("Test", self._testdata)])
 
     def download_all(self):
         """

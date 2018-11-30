@@ -18,6 +18,10 @@ class BankMarketingDataset(DatasetBase):
     """
     Helper class allowing to download and load into memory the adult dataset
     """
+
+    def name(self):
+        return "Bank"
+
     def all_columns(self):
         return ["age","job","marital","education","default","balance","housing","loan","contact","day","month","duration","campaign","pdays","previous","poutcome"]
 

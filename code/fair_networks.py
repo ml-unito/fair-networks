@@ -35,10 +35,10 @@ def train_s_and_y(session, model, init_y_vars, init_s_vars, xs, ys, s):
     session.run(init_s_vars)
     session.run(init_y_vars)
 
-    for i in range(opts.schedule.sub_nets_num_it):
+    for _ in range(opts.schedule.sub_nets_num_it):
         session.run(model.y_train_step, feed_dict = { model.x:xs, model.y:ys })
 
-    for i in range(opts.schedule.sub_nets_num_it):
+    for _ in range(opts.schedule.sub_nets_num_it):
         session.run(model.s_train_step, feed_dict = { model.x:xs, model.s:s })
         # print("NN sub: s accuracy: %2.4f" % (session.run(model.s_accuracy, feed_dict={model.x:xs, model.s:s})))
 
@@ -154,7 +154,14 @@ def print_processed_data():
 opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
 
+print(colored("Initialized system based on config:", "green"))
+opts.print_config()
+
 dataset = opts.dataset
+
+print(colored("Loaded dataset %s" % dataset.name(), "green"))
+dataset.print_stats()
+
 
 optimizer = tf.train.AdagradOptimizer(1.0)
 

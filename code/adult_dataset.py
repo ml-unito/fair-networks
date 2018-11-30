@@ -12,6 +12,9 @@ class AdultDataset(DatasetBase):
     """
     Helper class allowing to download and load into memory the adult dataset
     """
+    def name(self):
+        return "Adult"
+
     def all_columns(self):
         return [ "age","workclass","fnlwgt","education","education-num","marital-status","occupation","relationship","race","sex","capital-gain","capital-loss","hours-per-week","native-country","label" ]
 
