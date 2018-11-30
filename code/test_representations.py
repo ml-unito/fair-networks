@@ -5,6 +5,7 @@ import numpy as np
 import os
 import sys
 import json
+import traceback
 from termcolor import colored
 
 
@@ -77,14 +78,15 @@ def process_dir(path):
         train_s, train_y, test_s, test_y = eval_accuracies_on_representation(os.path.join(representations_dir, file))
         experiments_results.append( { "model_name":file, "train_s":train_s, "train_y": train_y, "test_s": test_s, "test_y": test_y } )
 
-    output_data = {
-        "experiment_name": os.path.split(path)[-1],
+    if len(experiments_results) == 0:
+        return { "experiment_name": path, "error": "No representation found in dir %s" % representations_dir }
+
+    return {
+        "experiment_name": os.path.split(path),
         "commit_id": read_commit_id(os.path.join(path, "commit-id")),
         "config": opts.config_struct(),
-        "model_performances": experiments_results
+        "performances": experiments_results
     }
-
-    return output_data
 
 
 # Read files in a given representations directory and write a report about each representation
@@ -110,8 +112,14 @@ def process_dir(path):
 results = []
 for dir in os.listdir(sys.argv[1]):
     try:
+        print("Processing dir %s/%s" % (sys.argv[1], dir))
         results.append(process_dir(os.path.join(sys.argv[1], dir)))
     except:
-        results.append({ "experiment_name": dir, "error": str(sys.exc_info()) })
+        error_info = sys.exc_info()
+        results.append({ 
+            "experiment_name": dir, 
+            "error": str(error_info[1]),
+            "trace:": traceback.format_exc()
+        })
 
 print(json.dumps(results, indent=4))

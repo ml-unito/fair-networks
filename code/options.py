@@ -96,7 +96,10 @@ class Schedule:
         return int(epoch_spec[1:])
 
 class Options:
-    """Handles the options given to the main script
+    """Handles the options given to the main script.
+
+        NOTE: all relative paths are assumed to be rooted in the same directory as the config file
+           (defaults to the current directory when the config file is not provided)
 
         See the definition of the PARAMS_DESCRIPTION constant for a description of some of
         the options.
@@ -220,12 +223,24 @@ class Options:
         if len(argv) >= 2 and Path(argv[1]).is_file():
             file_to_read = argv[1]
             argv.pop(1)
+            self.config_base_path = os.path.dirname(file_to_read)
             return json.loads(open(file_to_read).read())
+        else:
+            self.config_base_path = os.getcwd()
 
         if Path('.fn-config').is_file():
             return json.loads(open('.fn-config').read())
 
         return {}
+
+    def path_for(self, path):
+        if path == None:
+            return None
+            
+        if os.path.isabs(path):
+            return path
+
+        return os.path.join(self.config_base_path, path)
 
     def try_update_opts(self, config_opts, parsed_args):
         setted_args = { k:v for k,v in vars(parsed_args).items() if v != None }
@@ -260,7 +275,7 @@ class Options:
         result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
 
         self.dataset_name = result.dataset
-        self.dataset_base_path = result.dataset_base_path
+        self.dataset_base_path = self.path_for(result.dataset_base_path)
         print("dataset base path:%s" % (self.dataset_base_path))
 
         self.dataset = datasets[self.dataset_name](self.dataset_base_path)
@@ -268,11 +283,11 @@ class Options:
 
 
         if result.output == None:
-            self.checkpoint_output = result.checkpoint
+            self.checkpoint_output = self.path_for(result.checkpoint)
         else:
-            self.checkpoint_output = result.output
+            self.checkpoint_output = self.path_for(result.output)
 
-        self._model_fname = result.checkpoint
+        self._model_fname = self.checkpoint_output
         self.resume_learning = tf.train.checkpoint_exists(self.input_fname())
 
         self.set_layers(result)
@@ -281,7 +296,7 @@ class Options:
             self.schedule = Schedule(result.schedule)
 
         self.eval_stats = result.eval_stats
-        self.eval_data_path = result.eval_data
+        self.eval_data_path = self.path_for(result.eval_data)
         self.fairness_importance = result.fairness_importance
         self.random_seed = result.random_seed
 
