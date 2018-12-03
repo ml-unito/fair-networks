@@ -7,6 +7,8 @@ sys.path.append('code')
 
 from options import Options
 
+RANDOM_SEED=42
+
 USAGE="""
 Proper usage is as follows:
     random_networks <config.fn-json file> --eval-data=<path for the output file> [-H <num features>]
@@ -30,6 +32,7 @@ dataset = opts.dataset
 num_features = opts.hidden_layers[-1][0]
 
 train_xs, train_ys, train_s = dataset.train_all_data()
+np.random.seed(seed=RANDOM_SEED)
 model_data_representation = np.random.uniform(size=(len(train_xs), num_features))
 
 result = np.hstack((model_data_representation, train_s, train_ys))
