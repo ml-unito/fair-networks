@@ -159,7 +159,7 @@ class Options:
         match = re.search(r'^[sl]?(\d+)$', spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
-            
+
 
         return int(match.group(1))
 
@@ -167,7 +167,7 @@ class Options:
         match = re.search(r'^([sl]?)\d+$', spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
-            
+
 
 
         if match.group(1) == '' or match.group(1) == 's':
@@ -177,7 +177,7 @@ class Options:
             return None
 
         raise ParseError('Error in parsing layer specification for element:' + spec + '. This is a bug.')
-        
+
 
     def parse_layers(self, str):
         layers_specs = str.split(':')
@@ -197,20 +197,11 @@ class Options:
 
 
     def set_layers(self, options):
-        if self.resume_learning:
-            with open(self.input_fname() + "_used_options.json", "r") as json_file:
-                parsed_json = json.loads(json_file.read())
-            self.hidden_layers_specs = parsed_json['hidden_layers']
-            self.sensible_layers_specs = parsed_json['sensible_layers']
-            self.class_layers_specs = parsed_json['class_layers']
+        self.hidden_layers_specs = options.hidden_layers
+        self.sensible_layers_specs = options.sensible_layers
+        self.class_layers_specs = options.class_layers
 
-            self.check_layers_specs(from_json=True)
-        else:
-            self.hidden_layers_specs = options.hidden_layers
-            self.sensible_layers_specs = options.sensible_layers
-            self.class_layers_specs = options.class_layers
-
-            self.check_layers_specs(from_json=False)
+        self.check_layers_specs(from_json=False)
 
         self.hidden_layers = self.parse_layers(self.hidden_layers_specs)
         self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
