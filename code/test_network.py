@@ -23,6 +23,9 @@ class Model:
 
         self.loss = tf.losses.sigmoid_cross_entropy(self.s, self.out)
 
+        equal_check = tf.equal(tf.argmax(self.s, axis=1), tf.argmax(self.out, axis=1))
+        self.accuracy = tf.reduce_mean( tf.cast(equal_check, tf.float32) )
+
 
 
 
@@ -56,6 +59,7 @@ for epoch in range(EPOCHS):
         session.run(train_step, feed_dict={model.x: batch_x, model.s: batch_s })
 
     print(session.run(model.loss, feed_dict={model.x: batch_x, model.s: batch_s }))
+    print(session.run(model.accuracy, feed_dict={model.x: h_test, model.s: s_test }))
 
 
 
