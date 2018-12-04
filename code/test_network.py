@@ -58,8 +58,9 @@ for epoch in range(EPOCHS):
 
         session.run(train_step, feed_dict={model.x: batch_x, model.s: batch_s })
 
-    print(session.run(model.loss, feed_dict={model.x: batch_x, model.s: batch_s }))
-    print(session.run(model.accuracy, feed_dict={model.x: h_test, model.s: s_test }))
+    print("loss:" + str(session.run(model.loss, feed_dict={model.x: batch_x, model.s: batch_s })))
+    print("train:" + str(session.run(model.accuracy, feed_dict={model.x: h_train, model.s: s_train })))
+    print("test:" + str(session.run(model.accuracy, feed_dict={model.x: h_test, model.s: s_test })))
 
 
 
