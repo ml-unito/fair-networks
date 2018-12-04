@@ -111,23 +111,25 @@ def process_dir(path):
 #
 #file = sys.argv[1]
 
-results = []
-for dir in os.listdir(sys.argv[1]):
-    try:
-        if re.search(r'^_.*', dir):
-            print(colored("Name of directory %s starts with _, skipping to the next" % dir, "green"))
-            continue
+results = None
+dir = sys.argv[1]
 
-        experiment_base_dir = os.path.join(sys.argv[1], dir)
+try:
+    if re.search(r'^_.*', dir):
+        print(colored("Name of directory %s starts with _, skipping to the next" % dir, "green"))
+    else:
+        experiment_base_dir = dir
 
         print(colored("Processing directory: %s" % experiment_base_dir, "green"))
-        results.append(process_dir(experiment_base_dir))
-    except:
-        error_info = sys.exc_info()
-        results.append({
-            "experiment_name": dir,
-            "error": str(error_info[1]),
-            "trace:": traceback.format_exc()
-        })
+        results = process_dir(experiment_base_dir)
+except:
+    error_info = sys.exc_info()
+    results = {
+        "experiment_name": dir,
+        "error": str(error_info[1]),
+        "trace:": traceback.format_exc()
+    }
 
-print(json.dumps(results, indent=4))
+output_path = os.path.join(dir, "performances.json")
+with open(output_path, "w") as file:
+    file.write(json.dumps(results, indent=4))
