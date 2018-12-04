@@ -248,6 +248,7 @@ class Options:
         parser.add_argument('-s', '--schedule', type=str, help="Specifies how to schedule training epochs (see the main description for more information.)")
         parser.add_argument('-f', '--fairness-importance', type=float, help="Specify how important is fairness w.r.t. the error")
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
+        parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth'], help="dataset to be loaded")
@@ -278,6 +279,7 @@ class Options:
         self.resume_learning = tf.train.checkpoint_exists(self.input_fname())
 
         self.set_layers(result)
+        self.batch_size = result.batch_size
 
         if result.schedule != None:
             self.schedule = Schedule(result.schedule)

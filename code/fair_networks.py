@@ -173,7 +173,7 @@ test_xs, test_ys, test_s = dataset.test_all_data()
 train_feed = { model.x:train_xs, model.y:train_ys, model.s:train_s }
 test_feed = { model.x:test_xs, model.y:test_ys, model.s:test_s }
 
-trainset = dataset.train_dataset().batch(100).shuffle(1000)
+trainset = dataset.train_dataset().batch(opts.batch_size).shuffle(1000)
 trainset_it = trainset.make_initializable_iterator()
 trainset_next = trainset_it.get_next()
 
