@@ -1,5 +1,7 @@
 data/
 __pycache__
+__*
+.vscode/*
 logdir/
 models/
 *.pyc
