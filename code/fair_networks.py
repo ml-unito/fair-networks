@@ -36,7 +36,6 @@ def print_stats(session, model, dataset):
 
 def print_processed_data(session, model, dataset):
     train_xs, train_ys, train_s = dataset.train_all_data()
-    test_xs, test_ys, test_s = dataset.test_all_data()
 
     model_data_representation = session.run(model.model_last_hidden_layer, feed_dict={model.x:train_xs, model.y:train_ys, model.s:train_s})
 

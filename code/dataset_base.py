@@ -183,7 +183,7 @@ class DatasetBase:
         """
 
         for (dataurl, filepath) in self.files_to_retrieve():
-            self.download( dataurl, "%s/%s" % (self.workingdir, filepath) )
+            self.download( dataurl, filepath )
 
     def num_features(self):
         return self._traindata[0].shape[1]
