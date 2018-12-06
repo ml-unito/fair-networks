@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import sys
 import numpy as np
 import tensorflow as tf
@@ -11,7 +13,6 @@ sys.path.append('code')
 from model import Model
 from options import Options
 from fair_networks_training import FairNetworksTraining
-
 
 
 def print_stats(session, model, dataset):
