@@ -30,9 +30,9 @@ class AdultDataset(DatasetBase):
     def files_to_retrieve(self):
         return [
             ('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data',
-             'adult.data'),
+             '%s/adult.data' % self.workingdir),
             ('https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.test',
-             'adult.test')
+             '%s/adult.test' % self.workingdir)
         ]
 
     def sensible_columns(self):
