@@ -3,6 +3,8 @@
 import pandas
 import sklearn.model_selection as ms
 import sklearn.svm as svm
+import sklearn.tree as tree
+import sklearn.linear_model as lm
 import numpy as np
 import os
 import sys
@@ -19,6 +21,11 @@ sys.path.append('code')
 from model import Model
 from options import Options
 from sklearn.metrics import confusion_matrix
+
+# Reads representations from experiments in the given directory (must be the root of the 
+# experiments directory, the one containg the config.json file) and writes a "perfomrances.json"
+# file containing the performances of several learning algorithms on the representations built
+# for the experiment.
 
 def read_commit_id(file_path):
     if os.path.exists(file_path):
@@ -39,6 +46,40 @@ def eval_accuracies_on_representation(file):
     s_train = np.argmax(s_train, axis=1)
     s_test = np.argmax(s_test, axis=1)
 
+    results = []
+    results.append(svc_performances(h_train, y_train, h_test, y_test, s_train, s_test))
+    results.append(trees_performances(
+        h_train, y_train, h_test, y_test, s_train, s_test))
+    results.append(logistic_regression_performances(
+        h_train, y_train, h_test, y_test, s_train, s_test))
+    return results
+
+
+def logistic_regression_performances(h_train, y_train, h_test, y_test, s_train, s_test):
+    logistic_regression_y = lm.LogisticRegression(random_state=RANDOM_SEED)
+
+    logistic_regression_y.fit(h_train, y_train)
+    pred_y_train = logistic_regression_y.predict(h_train)
+    pred_y_test = logistic_regression_y.predict(h_test)
+
+    acc_y_train = sum(pred_y_train == y_train)/float(len(y_train))
+    acc_y_test = sum(pred_y_test == y_test)/float(len(y_test))
+
+    logistic_regression_s = lm.LogisticRegression(random_state=RANDOM_SEED)
+
+    logistic_regression_s.fit(h_train, s_train)
+
+    pred_s_train = logistic_regression_s.predict(h_train)
+    pred_s_test = logistic_regression_s.predict(h_test)
+
+    acc_s_train = sum(pred_s_train == s_train)/float(len(s_train))
+    acc_s_test = sum(pred_s_test == s_test)/float(len(s_test))
+
+    return {"classifier": "logistic_regression", "accuracies": {"s": {"train": acc_s_train, "test": acc_s_test},
+                                                                "y": {"train": acc_y_train, "test": acc_y_test}}}
+
+
+def svc_performances(h_train, y_train, h_test, y_test, s_train, s_test):
     svc_y = svm.SVC(random_state=RANDOM_SEED)
 
     svc_y.fit(h_train, y_train)
@@ -58,8 +99,32 @@ def eval_accuracies_on_representation(file):
     acc_s_train = sum(pred_s_train == s_train)/float(len(s_train))
     acc_s_test = sum(pred_s_test == s_test)/float(len(s_test))
 
-    return (acc_s_train, acc_y_train, acc_s_test, acc_y_test)
+    return { "classifier": "svc", "accuracies": { "s": {"train": acc_s_train, "test": acc_s_test},
+                                                  "y": {"train": acc_y_train, "test": acc_y_test } } }
 
+
+def trees_performances(h_train, y_train, h_test, y_test, s_train, s_test):
+    tree_y = tree.DecisionTreeClassifier(max_depth=4, random_state=RANDOM_SEED)
+
+    tree_y.fit(h_train, y_train)
+    pred_y_train = tree_y.predict(h_train)
+    pred_y_test = tree_y.predict(h_test)
+
+    acc_y_train = sum(pred_y_train == y_train)/float(len(y_train))
+    acc_y_test = sum(pred_y_test == y_test)/float(len(y_test))
+
+    tree_s = tree.DecisionTreeClassifier(max_depth=4, random_state=RANDOM_SEED)
+
+    tree_s.fit(h_train, s_train)
+
+    pred_s_train = tree_s.predict(h_train)
+    pred_s_test = tree_s.predict(h_test)
+
+    acc_s_train = sum(pred_s_train == s_train)/float(len(s_train))
+    acc_s_test = sum(pred_s_test == s_test)/float(len(s_test))
+
+    return {"classifier": "tree", "accuracies": {"s": {"train": acc_s_train, "test": acc_s_test},
+                                                "y": {"train": acc_y_train, "test": acc_y_test}}}
 
 def process_dir(path):
     config_path = os.path.join(path, "config.json")
@@ -79,8 +144,8 @@ def process_dir(path):
 
     experiments_results = []
     for file in os.listdir(representations_dir):
-        train_s, train_y, test_s, test_y = eval_accuracies_on_representation(os.path.join(representations_dir, file))
-        experiments_results.append( { "model_name":file, "train_s":train_s, "train_y": train_y, "test_s": test_s, "test_y": test_y } )
+        results = eval_accuracies_on_representation(os.path.join(representations_dir, file))
+        experiments_results.append( { "model_name":file, "results": results } )
 
     if len(experiments_results) == 0:
         return { "experiment_name": path, "error": "No representation found in dir %s" % representations_dir }
