@@ -281,6 +281,7 @@ class Options:
 
         self.set_layers(result)
         self.batch_size = result.batch_size
+        self.learning_rate = result.learning_rate
 
         if result.schedule != None:
             self.schedule = Schedule(result.schedule)
