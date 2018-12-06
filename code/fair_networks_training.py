@@ -49,11 +49,12 @@ class FairNetworksTraining:
                 self.session.run(self.model.s_train_step, feed_dict={self.model.x: batch_x, self.model.s: batch_s})
 
     def run_epoch_new_approach(self):
-        print("\n")
         dataset_size = len(self.train_xs)
         batch = 0
         tot_batches = dataset_size / self.options.batch_size
         self.session.run(self.trainset_it.initializer)
+
+        epoch = self.session.run(self.model.epoch)
 
         while True:
             try:
@@ -65,12 +66,12 @@ class FairNetworksTraining:
 
                 batch += 1
                 perc_complete = (float(batch) / tot_batches) * 100
-                print("\rProcessing epoch (%2.2f%%) batch:%d/%d" % (perc_complete, batch, tot_batches), end="")
+                print("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
+                      (epoch, perc_complete, batch, tot_batches), end="")
 
                 if batch % int(tot_batches / 20)  == 0:
                     print("\n")
                     self.log_stats()
-                    print("\n")
 
             except tf.errors.OutOfRangeError:
                 break
