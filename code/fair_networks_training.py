@@ -67,7 +67,7 @@ class FairNetworksTraining:
                 batch += 1
                 perc_complete = (float(batch) / tot_batches) * 100
                 print("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
-                      (epoch, perc_complete, batch, tot_batches), end="")
+                      (epoch, batch, tot_batches, perc_complete), end="")
 
                 if batch % int(tot_batches / 20)  == 0:
                     print("\n")
