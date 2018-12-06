@@ -83,7 +83,7 @@ opts.print_config()
 print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
 opts.dataset.print_stats()
 
-optimizer = tf.train.AdagradOptimizer(1.0)
+optimizer = tf.train.AdagradOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)
 
 session = tf.Session()

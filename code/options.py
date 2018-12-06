@@ -249,6 +249,7 @@ class Options:
         parser.add_argument('-f', '--fairness-importance', type=float, help="Specify how important is fairness w.r.t. the error")
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
         parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
+        parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth'], help="dataset to be loaded")
