@@ -48,6 +48,26 @@ def print_processed_data(session, model, dataset):
     pandas.DataFrame(result, columns=h_header + s_header + y_header).to_csv(opts.eval_data_path, index=False)
 
 
+def init_model(opts, session, saver, writer):
+    if tf.train.checkpoint_exists(opts.input_fname()):
+        model_to_resume = opts.input_fname()
+
+        print(colored("Restoring model: %s" % (model_to_resume), 'yellow'))
+        saver.restore(session, model_to_resume)
+
+        graph_fairness_importance = session.run(
+            tf.get_default_graph().get_tensor_by_name("fairness_importance:0"))
+
+        if graph_fairness_importance != opts.fairness_importance:
+            print(colored("Warning:", "yellow") +
+                  "Fairness importance changed by the options, but it is part of the model.")
+            exit(1)
+    else:
+        print(colored("Initializing a new model", 'yellow'))
+        init = tf.global_variables_initializer()
+        session.run(init)
+        writer.add_graph(session.graph)
+
 
 # --------------------------------------------------------------------------------
 # main
@@ -69,23 +89,7 @@ session = tf.Session()
 saver = tf.train.Saver()
 writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
-if tf.train.checkpoint_exists(opts.input_fname()):
-    model_to_resume = opts.input_fname()
-
-    print(colored("Restoring model: %s" % (model_to_resume), 'yellow'))
-    saver.restore(session, model_to_resume)
-
-    graph_fairness_importance = session.run(tf.get_default_graph().get_tensor_by_name("fairness_importance:0"))
-
-    if graph_fairness_importance != opts.fairness_importance:
-        print(colored("Warning:", "yellow") +
-                "Fairness importance changed by the options, but it is part of the model.")
-        exit(1)
-else:
-    print(colored("Initializing a new model", 'yellow'))
-    init = tf.global_variables_initializer()
-    session.run(init)
-    writer.add_graph(session.graph)
+init_model(opts, session, saver, writer)
 
 
 if opts.eval_stats:

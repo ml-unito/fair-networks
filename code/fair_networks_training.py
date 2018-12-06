@@ -1,6 +1,6 @@
+from __future__ import print_function
 import tensorflow as tf
 from termcolor import colored
-
 
 
 class FairNetworksTraining:
@@ -33,6 +33,9 @@ class FairNetworksTraining:
 
 
     def run_train_s(self, xs, s):
+        if self.options.fairness_importance == 0:
+            return
+            
         self.session.run(self.init_s_vars)
 
         for _ in range(self.options.schedule.sub_nets_num_it):
@@ -46,9 +49,10 @@ class FairNetworksTraining:
                 self.session.run(self.model.s_train_step, feed_dict={self.model.x: batch_x, self.model.s: batch_s})
 
     def run_epoch_new_approach(self):
-        print("dataset size: %d" % len(self.train_xs))
-
-        count = 0
+        print("\n")
+        dataset_size = len(self.train_xs)
+        batch = 0
+        tot_batches = dataset_size / self.options.batch_size
         self.session.run(self.trainset_it.initializer)
 
         while True:
@@ -59,8 +63,16 @@ class FairNetworksTraining:
                 self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
                 self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
 
-                count += len(xs)
-                print("analyzed: %d examples" % count)
+                batch += 1
+                perc_complete = (float(batch) / tot_batches) * 100
+                print("\rProcessing epoch (%2.2f%%) batch:%d tot:%d xx:%d" % (
+                    perc_complete, batch, tot_batches, batch % (tot_batches / 100)), end="")
+
+                if batch % int(tot_batches / 100)  == 0:
+                    print("\n")
+                    self.log_stats()
+                    print("\n")
+
             except tf.errors.OutOfRangeError:
                 break
 
@@ -74,13 +86,13 @@ class FairNetworksTraining:
             self.save_model(epoch)
 
             self.updateTensorboardStats(epoch)
-            self.logStats()
+            self.log_stats()
 
             self.session.run(self.model.inc_epoch)
 
         self.saver.save(self.session, self.options.output_fname())
 
-    def logStats(self):
+    def log_stats(self):
         self.run_train_s(self.train_xs, self.train_s)
 
         nn_y_accuracy = self.session.run(self.model.y_accuracy, feed_dict = {self.model.x: self.test_xs, self.model.y: self.test_ys})
