@@ -151,7 +151,7 @@ def process_dir(path):
         return { "experiment_name": path, "error": "No representation found in dir %s" % representations_dir }
 
     return {
-        "experiment_name": path,
+        "experiment_name": os.path.abspath(path),
         "commit_id": read_commit_id(os.path.join(path, "commit-id")),
         "config": opts.config_struct(),
         "performances": experiments_results
@@ -192,7 +192,7 @@ try:
 except:
     error_info = sys.exc_info()
     results = {
-        "experiment_name": dir,
+        "experiment_name": os.path.abspath(dir),
         "error": str(error_info[1]),
         "trace:": traceback.format_exc()
     }
