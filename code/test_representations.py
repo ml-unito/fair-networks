@@ -46,12 +46,10 @@ def eval_accuracies_on_representation(file):
     s_train = np.argmax(s_train, axis=1)
     s_test = np.argmax(s_test, axis=1)
 
-    results = []
-    results.append(svc_performances(h_train, y_train, h_test, y_test, s_train, s_test))
-    results.append(trees_performances(
-        h_train, y_train, h_test, y_test, s_train, s_test))
-    results.append(logistic_regression_performances(
-        h_train, y_train, h_test, y_test, s_train, s_test))
+    results = {}
+    results["svc"] = svc_performances(h_train, y_train, h_test, y_test, s_train, s_test)
+    results["tree"] = trees_performances(h_train, y_train, h_test, y_test, s_train, s_test)
+    results["lr"] = logistic_regression_performances(h_train, y_train, h_test, y_test, s_train, s_test)
     return results
 
 
@@ -75,8 +73,10 @@ def logistic_regression_performances(h_train, y_train, h_test, y_test, s_train, 
     acc_s_train = sum(pred_s_train == s_train)/float(len(s_train))
     acc_s_test = sum(pred_s_test == s_test)/float(len(s_test))
 
-    return {"classifier": "logistic_regression", "accuracies": {"s": {"train": acc_s_train, "test": acc_s_test},
-                                                                "y": {"train": acc_y_train, "test": acc_y_test}}}
+    return  {
+        "s": {"train": acc_s_train, "test": acc_s_test},
+        "y": {"train": acc_y_train, "test": acc_y_test}
+        }
 
 
 def svc_performances(h_train, y_train, h_test, y_test, s_train, s_test):
@@ -99,8 +99,10 @@ def svc_performances(h_train, y_train, h_test, y_test, s_train, s_test):
     acc_s_train = sum(pred_s_train == s_train)/float(len(s_train))
     acc_s_test = sum(pred_s_test == s_test)/float(len(s_test))
 
-    return { "classifier": "svc", "accuracies": { "s": {"train": acc_s_train, "test": acc_s_test},
-                                                  "y": {"train": acc_y_train, "test": acc_y_test } } }
+    return {
+        "s": {"train": acc_s_train, "test": acc_s_test},
+        "y": {"train": acc_y_train, "test": acc_y_test } 
+        }
 
 
 def trees_performances(h_train, y_train, h_test, y_test, s_train, s_test):
@@ -123,8 +125,10 @@ def trees_performances(h_train, y_train, h_test, y_test, s_train, s_test):
     acc_s_train = sum(pred_s_train == s_train)/float(len(s_train))
     acc_s_test = sum(pred_s_test == s_test)/float(len(s_test))
 
-    return {"classifier": "tree", "accuracies": {"s": {"train": acc_s_train, "test": acc_s_test},
-                                                "y": {"train": acc_y_train, "test": acc_y_test}}}
+    return {
+        "s": {"train": acc_s_train, "test": acc_s_test},
+        "y": {"train": acc_y_train, "test": acc_y_test}
+        }
 
 def process_dir(path):
     config_path = os.path.join(path, "config.json")
@@ -142,10 +146,10 @@ def process_dir(path):
         return { "experiment_name": path, "error": "Cannot find representation directory" }
 
 
-    experiments_results = []
+    experiments_results = {}
     for file in os.listdir(representations_dir):
         results = eval_accuracies_on_representation(os.path.join(representations_dir, file))
-        experiments_results.append( { "model_name":file, "results": results } )
+        experiments_results[file] = results
 
     if len(experiments_results) == 0:
         return { "experiment_name": path, "error": "No representation found in dir %s" % representations_dir }
