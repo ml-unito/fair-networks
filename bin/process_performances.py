@@ -23,12 +23,14 @@ for experiment_name in results["performances"]:
         cp = experiment[classifier] # classifier performances
         rp = rnp[classifier] # random networks performances for this classifier
 
-        print("%s\t%2.4f\t%2.4f\t%2.4f\t%2.4f\t%2.4f\t%2.4f\t%2.4f\t%2.4f" % (
-            classifier, 
-                cp["s"]["train"], rp["s"]["train"], cp["y"]["train"], rp["y"]["train"],
-                cp["s"]["test"], rp["s"]["test"], cp["y"]["test"], rp["y"]["test"]
-        ))
-    
+        print(  "{classifier}"
+                "\t{cp_s_train:2.5f}\t{rnd_s_train:2.4f}"
+                "\t{cp_y_train:2.4f}\t{rnd_y_train:2.4f}"
+                "\t{cp_s_test:2.5f}\t{rnd_s_test:2.4f}"
+                "\t{cp_y_test:2.4f}\t{rnd_y_test:2.4f}".format(
+                classifier=classifier, 
+                cp_s_train=cp["s"]["train"], rnd_s_train=rp["s"]["train"],
+                cp_y_train=cp["y"]["train"], rnd_y_train=rp["y"]["train"],
+                cp_s_test=cp["s"]["test"], rnd_s_test=rp["s"]["test"],
+                cp_y_test=cp["y"]["test"], rnd_y_test=rp["y"]["test"]))
 
-
-    
