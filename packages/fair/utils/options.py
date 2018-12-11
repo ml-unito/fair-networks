@@ -3,6 +3,7 @@ from fair.datasets.bank_marketing_dataset import BankMarketingDataset
 from fair.datasets.adult_dataset import AdultDataset
 from fair.datasets.synth_dataset import SynthDataset
 from fair.datasets.german_dataset import GermanDataset
+from fair.datasets.synth_easy_dataset import SynthEasyDataset
 import argparse
 import textwrap
 import os
@@ -252,12 +253,12 @@ class Options:
         parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
 
         if not dataset_already_given:
-            parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth'], help="dataset to be loaded")
+            parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth', 'synth-easy'], help="dataset to be loaded")
 
     def parse(self, argv):
         config_opts = self.try_load_opts(argv)
 
-        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'german':GermanDataset, 'synth': SynthDataset }
+        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'german':GermanDataset, 'synth': SynthDataset, 'synth-easy': SynthEasyDataset }
         parser = argparse.ArgumentParser(description=PARAMS_DESCRIPTION, formatter_class=argparse.RawDescriptionHelpFormatter)
 
         self.configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts, dataset_already_given='dataset' in config_opts)
