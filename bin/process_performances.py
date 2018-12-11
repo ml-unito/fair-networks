@@ -1,7 +1,7 @@
 import json
 import sys
 
-RANDOM_NETS_MODEL_NAME = "random_networks_repr.json"
+RANDOM_NETS_MODEL_NAME = "random_networks_repr.csv"
 
 with open(sys.argv[1], "r") as file:
     results = json.load(file)
