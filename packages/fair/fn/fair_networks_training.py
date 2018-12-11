@@ -69,7 +69,7 @@ class FairNetworksTraining:
                 print("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
                       (epoch, batch, tot_batches, perc_complete), end="")
 
-                if batch % int(tot_batches / 20)  == 0:
+                if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
                     print("\n")
                     self.log_stats()
 
