@@ -7,8 +7,6 @@ import time
 import pandas
 import sklearn.model_selection as ms
 
-sys.path.append('code')
-
 EPOCHS = 100
 BATCH_SIZE = 100
 RANDOM_SEED = 42

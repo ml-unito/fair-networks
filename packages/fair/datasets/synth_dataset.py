@@ -1,4 +1,4 @@
-from dataset_base import DatasetBase
+from .dataset_base import DatasetBase
 import pandas
 import sklearn
 from sklearn.model_selection import train_test_split

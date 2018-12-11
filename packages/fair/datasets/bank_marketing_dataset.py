@@ -9,7 +9,7 @@ import sklearn
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from dataset_base import DatasetBase
+from fair.datasets.dataset_base import DatasetBase
 
 from tqdm import tqdm
 

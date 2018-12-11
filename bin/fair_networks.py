@@ -8,11 +8,9 @@ import pandas
 import sklearn.svm as svm
 from termcolor import colored
 
-sys.path.append('code')
-
-from model import Model
-from options import Options
-from fair_networks_training import FairNetworksTraining
+from fair.fn.model import Model
+from fair.utils.options import Options
+from fair.fn.fair_networks_training import FairNetworksTraining
 
 
 def print_stats(session, model, dataset):

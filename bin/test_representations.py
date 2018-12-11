@@ -15,11 +15,8 @@ from termcolor import colored
 
 RANDOM_SEED=42
 
-
-sys.path.append('code')
-
-from model import Model
-from options import Options
+from fair.fn.model import Model
+from fair.utils.options import Options
 from sklearn.metrics import confusion_matrix
 
 # Reads representations from experiments in the given directory (must be the root of the 

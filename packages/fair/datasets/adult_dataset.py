@@ -6,7 +6,7 @@ import numpy as np
 
 from tqdm import tqdm
 
-from dataset_base import DatasetBase
+from .dataset_base import DatasetBase
 
 class AdultDataset(DatasetBase):
     """

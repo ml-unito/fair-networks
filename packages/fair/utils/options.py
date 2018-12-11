@@ -1,8 +1,8 @@
 import sys
-from bank_marketing_dataset import BankMarketingDataset
-from adult_dataset import AdultDataset
-from synth_dataset import SynthDataset
-from german_dataset import GermanDataset
+from fair.datasets.bank_marketing_dataset import BankMarketingDataset
+from fair.datasets.adult_dataset import AdultDataset
+from fair.datasets.synth_dataset import SynthDataset
+from fair.datasets.german_dataset import GermanDataset
 import argparse
 import textwrap
 import os

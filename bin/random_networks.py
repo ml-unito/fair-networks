@@ -5,9 +5,8 @@ import numpy as np
 import pandas
 from termcolor import colored
 
-sys.path.append('code')
 
-from options import Options
+from fair.utils.options import Options
 
 RANDOM_SEED=42
 
