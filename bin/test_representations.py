@@ -51,8 +51,8 @@ def eval_accuracies_on_representation(file):
     datasets = (h_train, y_train, h_test, y_test, s_train, s_test)
 
     results = {}
-    results["svc"] = test_performances(klass=svm.SVC, kargs={"random_state": RANDOM_SEED, "kernel":"linear"}, datasets=datasets)
-    results["tree"] = test_performances(klass=tree.DecisionTreeClassifier, kargs={"random_state":RANDOM_SEED, "max_depth":4}, datasets=datasets )
+    results["svc"] = test_performances(klass=svm.SVC, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
+    results["tree"] = test_performances(klass=tree.DecisionTreeClassifier, kargs={"random_state":RANDOM_SEED}, datasets=datasets )
     results["lr"] = test_performances(klass=lm.LogisticRegression, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
     return results
 

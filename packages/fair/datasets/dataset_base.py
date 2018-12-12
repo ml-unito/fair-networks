@@ -9,6 +9,7 @@ import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from termcolor import colored
+import logging
 
 from tqdm import tqdm
 
@@ -58,32 +59,40 @@ class DatasetBase:
         name (indeed this must be true for the sensible and the class columns, but it would be indeed better
         to enforce the constraint on all columns).
         """
+        logging.info("Reading dataset: {}".format(self.dataset_path()))
 
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
+        logging.debug("[LOAD BEGIN] y sums:\n {}".format(dataset.groupby("y").nunique()))
+
         s_col_names = self.sensible_columns()
         y_col_names = self.y_columns()
 
         assert len(s_col_names) <= 1, "multiple s columns not yet supported"
         assert len(y_col_names) <= 1, "multiple y columns not yet supported"
 
+        logging.info("Getting dummy variables for columns: {}".format(list(self.one_hot_columns())))
         df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
 
+        logging.info("Scaling values for columns: {}".format(list(non_hot_cols)))
         scaler = MinMaxScaler()
         df[non_hot_cols] = scaler.fit_transform(df[non_hot_cols].astype(np.float64))
 
         s_1h_col_names = df.columns[[colname for s_col_name in s_col_names for colname in df.columns.str.startswith(s_col_name)]]
         y_1h_col_names = df.columns[[colname for y_col_name in y_col_names for colname in df.columns.str.startswith(y_col_name)]]
-        all_non_y_names = [col for col in df.columns if col not in y_1h_col_names]
+        all_non_y_non_s_names = [col for col in df.columns if col not in y_1h_col_names and col not in s_1h_col_names]
 
         self._num_s_columns = len(s_1h_col_names)
         self._num_y_columns = len(y_1h_col_names)
 
-        xs = df[all_non_y_names]
+        xs = df[all_non_y_non_s_names]
         ys = df[y_1h_col_names]
         s = df[s_1h_col_names]
 
-        return (xs.values,ys.values,s.values)
+        logging.debug("y values sums:{}".format(list(ys.sum(axis=0))))
+        logging.debug("s values sums:{}".format(list(s.sum(axis=0))))
+
+        return (xs.values, ys.values, s.values)
 
     def num_s_columns(self):
         return self._num_s_columns

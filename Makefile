@@ -10,7 +10,7 @@ all: representations evaluations
 
 representations: experiments
 	echo "Building representations..."
-	python code/build_representations.py /app/code experiments
+	python bin/build_representations.py /app/bin experiments
 	echo "Building representations: done!"
 
 evaluations: $(experiment_list)
@@ -28,4 +28,4 @@ clean_representations:
 
 %performances.json:
 	echo "Evaluating performances for experiment $(dir $@)" 
-	python code/test_representations.py $(dir $@)
+	python bin/test_representations.py $(dir $@)

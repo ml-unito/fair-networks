@@ -34,7 +34,7 @@ class Model:
         self.y = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
         self.s = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
 
-        in_layer = self.x
+        in_layer = self.x 
 
         h_layer, self.hidden_layers_variables   = self.build_layer(in_layer, "hidden", options.hidden_layers)
         s_layer, self.sensible_layers_variables = self.build_layer(h_layer, "sensible", options.sensible_layers)
