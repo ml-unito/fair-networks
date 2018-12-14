@@ -44,10 +44,10 @@ class Model:
         # self.model_last_hidden_layer = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "hidden-layer-%d" % (len(options.hidden_layers)))[0]
 
         with tf.name_scope("s_out"):
-            self.s_out = tf.layers.dense(s_layer, num_s_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer(), name="s_out")
+            self.s_out = tf.layers.dense(s_layer, num_s_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="s_out")
 
         with tf.name_scope("y_out"):
-            self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=tf.nn.sigmoid, kernel_initializer = tf.truncated_normal_initializer(), name="y_out")
+            self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="y_out")
 
         with tf.name_scope("y_loss"):
             self.y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
