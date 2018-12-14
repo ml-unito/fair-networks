@@ -18,9 +18,11 @@ If -H is not given the script will use the number of neurons in the last hidden 
 in the .fn-json file.
 """
 
-print(colored("Generating representation using the random model", "green"))
-print(colored("Note: this script accept all options of fair_networks.py, but uses only few of them.", "yellow"))
-print(colored("\n" + USAGE, "yellow"))
+if("-h" in sys.argv):
+    print(colored("Generating representation using the random model", "green"))
+    print(colored("Note: this script accept all options of fair_networks.py, but uses only few of them.", "yellow"))
+    print(colored("\n" + USAGE, "yellow"))
+    exit(1)
 
 
 opts = Options(sys.argv)

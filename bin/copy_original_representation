@@ -16,9 +16,11 @@ Proper usage is as follows:
     copy_original_representation <config.json file> --eval-data=<path for the output file>
 """
 
-print(colored("Copying original representation into place", "green"))
-print(colored("Note: this script accept all options of fair_networks.py, but uses only few of them.", "yellow"))
-print(colored("\n" + USAGE, "yellow"))
+if("-h" in sys.argv):
+    print(colored("Copying original representation into place", "green"))
+    print(colored("Note: this script accept all options of fair_networks.py, but uses only few of them.", "yellow"))
+    print(colored("\n" + USAGE, "yellow"))
+    exit(1)
 
 logging.basicConfig(level=logging.WARN)
 
@@ -37,6 +39,6 @@ cols_y = ["y_{:d}".format(i) for i in range(y.shape[1])]
 data = np.hstack([x,s,y])
 
 
-
+print(colored("Saving data representations onto {}".format(opts.eval_data_path), "green"))
 pandas.DataFrame(data, columns=[cols_x+cols_s+cols_y]).to_csv(opts.eval_data_path, index=False)
 

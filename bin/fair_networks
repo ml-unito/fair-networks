@@ -75,11 +75,12 @@ def init_model(opts, session, saver, writer):
 opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
 
-print(colored("Initialized system based on config:", "green"))
-opts.print_config()
+if opts.verbose:
+    print(colored("Initialized system based on config:", "green"))
+    opts.print_config()
 
-print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
-opts.dataset.print_stats()
+    print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
+    opts.dataset.print_stats()
 
 optimizer = tf.train.AdagradOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)

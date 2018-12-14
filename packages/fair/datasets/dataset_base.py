@@ -62,7 +62,7 @@ class DatasetBase:
         logging.info("Reading dataset: {}".format(self.dataset_path()))
 
         dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
-        logging.debug("[LOAD BEGIN] y sums:\n {}".format(dataset.groupby("y").nunique()))
+        logging.debug("[LOAD BEGIN] y sums:\n {}".format(dataset.groupby(self.y_columns()).nunique()))
 
         s_col_names = self.sensible_columns()
         y_col_names = self.y_columns()

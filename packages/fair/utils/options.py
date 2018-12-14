@@ -253,6 +253,7 @@ class Options:
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
         parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
         parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
+        parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2'], help="dataset to be loaded")
@@ -295,6 +296,8 @@ class Options:
         self.eval_data_path = self.path_for(result.eval_data)
         self.fairness_importance = result.fairness_importance
         self.random_seed = result.random_seed
+
+        self.verbose = result.verbose
 
         return result
 
