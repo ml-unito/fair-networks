@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
 
 
 from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
@@ -56,11 +57,15 @@ tacc1 = sum(tree1.predict(xxx) == s)/len(s)
 
 assert abs(tacc1-tacc0) < 0.01, "predictions on scaled and unscaled data should be the same (they are instead: {} and {})".format(tacc0, tacc1)
 
+# Le'ts try logistic regression
 
+log0 = LogisticRegression()
+log0.fit(xx, s)
+lacc0 = sum(log0.predict(xx) == s)/len(s)
 
 
 #
-#  Dataset
+#  Working Dataset
 #
 
 ds = SynthEasy2Dataset('data')
