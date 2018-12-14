@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+import os
+import sys
+from termcolor import colored
+import subprocess
+import json
+import re
+
+
+def extract_model_path(config_path):
+    config_string = open(config_path, "r").read()
+    config = json.loads(config_string)
+    return config["checkpoint"]
+
+
+experiments_path = sys.argv[1]
+approaches = ['fair_networks', 'random_networks', 'copy_original_representation']
+
+print(colored("Entering directory %s" % experiments_path, "green"))
+for approach in approaches:
+    print(colored("\tBuilding representations with approach %s" % approach, "yellow"))
+    try:
+        script_path = approach
+        output_path = os.path.join("representations", "%s_repr.csv" % approach)
+        config_path = os.path.join(experiments_path, "config.json")
+
+        if os.path.exists(config_path):
+            model_path = os.path.join(experiments_path, extract_model_path(config_path))
+
+            # cmd = ["python", script_path, config_path, "-E", output_path, "-c", model_path]
+            cmd = [script_path, config_path, "-E", output_path]
+            subprocess.check_output(cmd)
+        else:
+            print(colored("Error: cannot find config file in path %s" % config_path, "red"))
+
+    except subprocess.CalledProcessError as e:
+        print(colored("Error in building representation for command %s" % str(cmd), "red"))
+        print("Log of the command is:\n %s" % e.output)
+
+print(colored("Done", "green"))

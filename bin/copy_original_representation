@@ -20,7 +20,7 @@ print(colored("Copying original representation into place", "green"))
 print(colored("Note: this script accept all options of fair_networks.py, but uses only few of them.", "yellow"))
 print(colored("\n" + USAGE, "yellow"))
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARN)
 
 opts = Options(sys.argv)
 
