@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+# argv[1]: old experiment name
+# argv[2]: new experimen name
+
+import os
+import sys
+from termcolor import colored
+import subprocess
+
+try:
+    print(colored("Creating directory", "green"))
+    cmd = ["mkdir", sys.argv[2]]
+    print(subprocess.check_output(cmd))
+    cmd = ["mkdir", os.path.join(sys.argv[2], "models")]
+    print(subprocess.check_output(cmd))
+    cmd = ["mkdir", os.path.join(sys.argv[2], "logdir")]
+    print(subprocess.check_output(cmd))
+    cmd = ["mkdir", os.path.join(sys.argv[2], "representations")]
+    print(subprocess.check_output(cmd))
+    cmd = ["cp", os.path.join(sys.argv[1], "config.json"), sys.argv[2]]
+    print(subprocess.check_output(cmd))
+
+    print(colored("Launching editing of config.json", "green"))
+    cmd=["vim", os.path.join(sys.argv[2], "config.json")]
+    subprocess.call(cmd)
+except subprocess.CalledProcessError as e:
+    print("Error -- log of the command is:\n %s" % e.output)

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import pandas
 import sklearn.model_selection as ms
@@ -52,7 +52,7 @@ def eval_accuracies_on_representation(file):
 
     results = {}
     results["svc"] = test_performances(klass=svm.SVC, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
-    results["tree"] = test_performances(klass=tree.DecisionTreeClassifier, kargs={"random_state":RANDOM_SEED}, datasets=datasets )
+    results["tree"] = test_performances(klass=tree.DecisionTreeClassifier, kargs={"random_state":RANDOM_SEED, "max_depth":4}, datasets=datasets )
     results["lr"] = test_performances(klass=lm.LogisticRegression, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
     return results
 

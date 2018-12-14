@@ -100,7 +100,7 @@ def synth_easy2():
     x = np.reshape(np.random.randint(0, high=50001, size=DS_SIZE), [DS_SIZE, 1])
     s = np.reshape(np.random.randint(0, high=2, size=DS_SIZE), [DS_SIZE, 1])
 
-    x = x + s*20000
+    x = x + s*30000
     noise = 0
     # noise = np.reshape(np.random.normal(scale=2000, size=DS_SIZE), [DS_SIZE, 1])
 
