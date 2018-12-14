@@ -33,14 +33,18 @@ def read_commit_id(file_path):
 def accuracy(pred, y):
     return np.average(y == pred)
 
-def eval_accuracies_on_representation(file):
-    print("processing: {}".format(file))
-    df = pandas.read_csv(file)
-    y_columns = df.filter(regex=("y.*")).values
-    s_columns = df.filter(regex=("s.*")).values
-    h_columns = df.filter(regex=("h.*")).values
+def eval_accuracies_on_representation(train_path, test_path):
+    df_train = pandas.read_csv(train_path)
+    y_train = df_train.filter(regex="y.*").values
+    s_train = df_train.filter(regex="s.*").values
+    h_train = df_train.filter(regex="h.*").values
 
-    h_train, h_test, s_train, s_test, y_train, y_test = ms.train_test_split(h_columns, s_columns, y_columns, random_state=RANDOM_SEED)
+    df_test = pandas.read_csv(test_path)
+    y_test = df_test.filter(regex="y.*").values
+    s_test = df_test.filter(regex="s.*").values
+    h_test = df_test.filter(regex="h.*").values
+
+    # h_train, h_test, s_train, s_test, y_train, y_test = ms.train_test_split(h_columns, s_columns, y_columns, random_state=RANDOM_SEED)
     
 
     y_train = np.argmax(y_train, axis=1)
@@ -48,7 +52,7 @@ def eval_accuracies_on_representation(file):
     s_train = np.argmax(s_train, axis=1)
     s_test = np.argmax(s_test, axis=1)
 
-    datasets = (h_train, y_train, h_test, y_test, s_train, s_test)
+    datasets = (h_train, h_test, y_train, y_test, s_train, s_test)
 
     results = {}
     results["svc"] = test_performances(klass=svm.SVC, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
@@ -58,7 +62,7 @@ def eval_accuracies_on_representation(file):
 
 
 def test_performances(klass, kargs, datasets):
-    h_train, y_train, h_test, y_test, s_train, s_test = datasets
+    h_train, h_test, y_train, y_test, s_train, s_test = datasets
     classifier_y = klass(**kargs)
 
     classifier_y.fit(h_train, y_train)
@@ -83,6 +87,13 @@ def test_performances(klass, kargs, datasets):
         "y": {"train": acc_y_train, "test": acc_y_test}
         }
 
+def experiment_stem(file):
+    return re.sub(r"_train\.csv|_test\.csv", "", file)
+
+def list_experiments(dir):
+    files = os.listdir(dir)
+    experiment_stems = map( experiment_stem, files)
+    return set(experiment_stems)
 
 def process_dir(path):
     config_path = os.path.join(path, "config.json")
@@ -101,9 +112,11 @@ def process_dir(path):
 
 
     experiments_results = {}
-    for file in os.listdir(representations_dir):
-        results = eval_accuracies_on_representation(os.path.join(representations_dir, file))
-        experiments_results[file] = results
+    for experiment in list_experiments(representations_dir):
+        train_path = os.path.join(representations_dir, experiment+"_train.csv")
+        test_path = os.path.join(representations_dir, experiment+"_test.csv")
+        results = eval_accuracies_on_representation(train_path, test_path)
+        experiments_results[experiment] = results
 
     if len(experiments_results) == 0:
         return { "experiment_name": path, "error": "No representation found in dir %s" % representations_dir }

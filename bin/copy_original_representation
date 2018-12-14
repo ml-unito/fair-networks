@@ -16,6 +16,17 @@ Proper usage is as follows:
     copy_original_representation <config.json file> --eval-data=<path for the output file>
 """
 
+def process_data(x,y,s):
+    cols_x = ["h_{:d}".format(i) for i in range(x.shape[1])]
+    cols_s = ["s_{:d}".format(i) for i in range(s.shape[1])]
+    cols_y = ["y_{:d}".format(i) for i in range(y.shape[1])]
+    header = cols_x+cols_s+cols_y
+    data = np.hstack([x, s, y])
+    return data, header
+
+
+
+
 if("-h" in sys.argv):
     print(colored("Copying original representation into place", "green"))
     print(colored("Note: this script accept all options of fair_networks.py, but uses only few of them.", "yellow"))
@@ -31,14 +42,17 @@ if(opts.eval_data_path == None):
         "ERROR: this script can only be used witht the '--eval-data' option", "red"))
     exit(1)
 
-x,y,s = opts.dataset.train_all_data()
-cols_x = ["h_{:d}".format(i) for i in range(x.shape[1])]
-cols_s = ["s_{:d}".format(i) for i in range(s.shape[1])]
-cols_y = ["y_{:d}".format(i) for i in range(y.shape[1])]
+x_train,y_train,s_train = opts.dataset.train_all_data()
+data, header = process_data(x_train, y_train, s_train)
 
-data = np.hstack([x,s,y])
+to_path = opts.eval_data_path + '_train.csv'
+print(colored("Saving train representations onto {}".format(to_path), "green"))
+pandas.DataFrame(data, columns=header).to_csv(to_path, index=False)
 
 
-print(colored("Saving data representations onto {}".format(opts.eval_data_path), "green"))
-pandas.DataFrame(data, columns=[cols_x+cols_s+cols_y]).to_csv(opts.eval_data_path, index=False)
+x_test, y_test, s_test = opts.dataset.test_all_data()
+data, header = process_data(x_test, y_test, s_test)
 
+to_path = opts.eval_data_path + '_test.csv'
+print(colored("Saving test representations onto {}".format(to_path), "green"))
+pandas.DataFrame(data, columns=header).to_csv(to_path, index=False)

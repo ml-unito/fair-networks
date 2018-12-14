@@ -35,16 +35,29 @@ def print_stats(session, model, dataset):
 
 def print_processed_data(session, model, dataset):
     train_xs, train_ys, train_s = dataset.train_all_data()
+    result, header = process_data(session, model, train_xs, train_ys, train_s)
 
-    model_data_representation = session.run(model.model_last_hidden_layer, feed_dict={model.x:train_xs, model.y:train_ys, model.s:train_s})
+    to_path = opts.eval_data_path+'_train.csv'
+    print(colored("Saving data representations onto {}".format(to_path), "green"))
+    pandas.DataFrame(result, columns=header).to_csv(to_path, index=False)
 
-    result = np.hstack((model_data_representation, train_s, train_ys))
+    test_xs, test_ys, test_s = dataset.test_all_data()
+    result_test, header_test = process_data(session, model, test_xs, test_ys, test_s)
+
+    to_path = opts.eval_data_path+'_test.csv'
+    print(colored("Saving data representations onto {}".format(to_path), "green"))
+    pandas.DataFrame(result_test, columns=header_test).to_csv(to_path, index=False)
+
+
+def process_data(session, model, xs, ys, s):
+    model_data_representation = session.run(model.model_last_hidden_layer, feed_dict={model.x:xs, model.y:ys, model.s:s})
+
+    result = np.hstack((model_data_representation, s, ys))
     h_header = ["h_"+str(index) for index in range(len(model_data_representation[0]))]
-    s_header = ["s_"+str(index) for index in range(len(train_s[0]))]
-    y_header = ["y_"+str(index) for index in range(len(train_ys[0]))]
-
-    print(colored("Saving data representations onto %s" % opts.eval_data_path, "green"))
-    pandas.DataFrame(result, columns=h_header + s_header + y_header).to_csv(opts.eval_data_path, index=False)
+    s_header = ["s_"+str(index) for index in range(len(s[0]))]
+    y_header = ["y_"+str(index) for index in range(len(ys[0]))]
+    header = h_header + s_header + y_header
+    return result, header
 
 
 def init_model(opts, session, saver, writer):
