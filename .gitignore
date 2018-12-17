@@ -1,3 +1,4 @@
+venv/
 data/
 __pycache__
 __*
@@ -13,3 +14,4 @@ pip-selfcheck.json
 *experiments/
 representations/
 ICML2019
+.commit-id

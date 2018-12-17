@@ -1,15 +1,18 @@
 FROM tensorflow/tensorflow:latest-gpu
 
 RUN mkdir /app
-RUN mkdir /app/code
+RUN mkdir /app/bin
+RUN mkdir /app/packages
 
-COPY ./.git/refs/heads/master /app/commit-id
-COPY ./code/*.py /app/code/
+COPY ./.commit-id /app
+COPY ./packages /app/packages/
+COPY ./bin/ /app/bin/
+COPY ./docker_requirements.txt /app
 COPY Makefile /app
 
-RUN pip install --trusted-host pypi.python.org requests tqdm pathlib
-RUN chmod a+x /app/code/fair_networks.py /app/code/random_networks.py /app/code/test_network.py /app/code/test_representations.py
-ENV PATH="/app/code:${PATH}"
+RUN pip install -r /app/docker_requirements.txt
+ENV PATH="/app/bin:${PATH}"
+ENV PYTHONPATH="/app/packages:${PYTHONPATH}"
 
-CMD ["python", "./fair_networks.py", "-h"]
+CMD ["fair_networks", "-h"]
 
