@@ -79,3 +79,9 @@ list_results:
 
 view_results:
 	view $(performance_tables)
+
+publish:
+	git rev-parse HEAD
+	docker build -t gitlab.c3s.unito.it:5000/fresposi/fair-networks .
+	docker push gitlab.c3s.unito.it:5000/fresposi/fair-networks
+
