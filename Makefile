@@ -52,3 +52,6 @@ clean_dir:
 
 list_results:
 	echo $(foreach result, $(performance_tables), "$(result)\n")
+
+view_results:
+	view $(performance_tables)
