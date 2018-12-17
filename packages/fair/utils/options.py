@@ -313,7 +313,7 @@ class Options:
     def log_fname(self):
         name = self.output_fname().split('/')[-1]
         name = name.split('.ckpt')[0]
-        return 'logdir/log_%s' % name
+        return self.path_for('logdir/log_%s' % name)
 
     def save_at_epoch(self, epoch):
         early_saves = epoch < 1000 and epoch % 10 == 0
