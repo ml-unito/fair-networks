@@ -130,7 +130,8 @@ class Options:
         self.hidden_layers: array of tuples specifying how to build the hidden layer
         self.sensible_layers: array of tuples specifying how to build the sensible layer
         self.class_layers: array of tuples specifying how to build the class layer
-        self.random_units: array of tuples specifying how many random neurons should be contained in each hidden layer
+        self.random_units: array of tuples specifying how many random neurons should be 
+            contained in each hidden layer
 
         if result.schedule: array containing the schedule for the training of the network
 
@@ -188,6 +189,11 @@ class Options:
         return [(self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
                for spec in layers_specs ]
 
+    def parse_random_layers(self, str):
+        layers_specs = str.split(':')
+        return [int(spec) for spec in layers_specs]
+
+
     def check_layers_specs(self, from_json=False):
         if self.hidden_layers_specs != None and self.sensible_layers_specs != None and self.class_layers_specs != None:
             return
@@ -211,7 +217,7 @@ class Options:
         self.hidden_layers = self.parse_layers(self.hidden_layers_specs)
         self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
         self.class_layers = self.parse_layers(self.class_layers_specs)
-        self.random_units = self.parse_layers(self.random_units_specs)
+        self.random_units = self.parse_random_layers(self.random_units_specs)
 
     def try_load_opts(self, argv):
         if len(argv) >= 2 and Path(argv[1]).is_file():

@@ -32,11 +32,12 @@ class Model:
         
         num_nodes_in = in_layer.shape[1] 
 
-        for index, hidden_layer in enumerate(hidden_layers_variables):
+        for index, hidden_layer in enumerate(hidden_layers):
             num_nodes_out, activation, initializer = hidden_layer
             with tf.name_scope("%s-layer-%d" % ("hidden", index+1)):
-                w = tf.get_variable(name="{}-layer-{}-deterministic".format("hidden", index+1), initializer=initializer(), shape=[num_nodes_in, num_nodes_out])
-                w_rand = tf.random_normal(name="{}-layer-{}-random".format("hidden", index+1), shape=[random_units[index], num_nodes_out])
+                w_rand = tf.random_normal(
+                    shape=[random_units[index], num_nodes_out], name="{}-layer-{}-random".format("hidden", index+1))
+                w = tf.get_variable(initializer=initializer(), shape=[num_nodes_in, num_nodes_out], name="{}-layer-{}-deterministic".format("hidden", index+1))
                 layer_out = activation(tf.matmul(in_layer, w) + tf.matmul(in_layer, w_rand))
             num_nodes_in = num_nodes_out
             in_layer = layer_out 
@@ -64,7 +65,7 @@ class Model:
         if options.random_units == [0]:
             h_layer, self.hidden_layers_variables = self.build_layer(in_layer, "hidden", options.hidden_layers)
         else:
-            h_layer, self.hidden_layer_variables  = self.build_layer_random(in_layer, options.hidden_layers, options.random_units)
+            h_layer, self.hidden_layers_variables  = self.build_layer_random(in_layer, options.hidden_layers, options.random_units)
 
         s_layer, self.sensible_layers_variables = self.build_layer(h_layer, "sensible", options.sensible_layers)
         y_layer, self.class_layers_variables    = self.build_layer(h_layer, "class", options.class_layers)
