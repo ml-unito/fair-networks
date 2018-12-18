@@ -45,7 +45,12 @@ class Model:
         
         return in_layer, hidden_layers_variables
 
-    def _build(self, options, optimizer):
+    def _build(self, options):
+
+
+        self.optimizer = tf.train.AdagradOptimizer(opts.learning_rate)
+        self.optimizer_s = tf.train.AdagradOptimizer(opts.learning_rate_s)
+
         num_features = options.num_features
         num_s_labels = options.dataset.num_s_columns()
         num_y_labels = options.dataset.num_y_columns()
@@ -119,14 +124,28 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step = optimizer.minimize(self.y_loss - self.fairness_importance * self.s_loss, var_list=self.hidden_layers_variables)
-        self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
-        self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
+        self.set_train_steps()
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
 
         return self
+
+    def set_train_steps()(self):
+        all_vars = self.hidden_layers_variables + self.y_variables + self.s_variables
+        self.loss = self.y_loss - self.fairness_importance * self.s_loss
+
+        grads = tf.gradients(self.loss, all_vars)
+
+        len_h = len(self.hidden_layers_variables)
+        len_y = len(self.y_variables)
+        grads_h = grads[:len_h]
+        grads_y = grads[len_h:(len_h + len_y)]
+        grads_s = grads[(len_h+len_y):]
+
+        self.h_train_step = self.optimizer.apply_gradients(zip(grad_h, self.hidden_layers_variables))
+        self.y_train_step = self.optimizer.apply_gradients(zip(grad_y, self.y_variables))
+        self.s_train_step = self.optimizer_s.apply_gradients(zip(grad_s, self.s_variables))
 
 
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
