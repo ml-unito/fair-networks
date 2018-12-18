@@ -123,8 +123,10 @@ class Model:
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
 
-        self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
-        self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
+        self.train_stats_s = tf.summary.merge([self.s_train_loss_stat, self.s_train_accuracy_stat])
+        self.train_stats_y = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat])
+        self.test_stats_s = tf.summary.merge([self.s_test_loss_stat, self.s_test_accuracy_stat])
+        self.test_stats_y = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat])
 
         return self
 
