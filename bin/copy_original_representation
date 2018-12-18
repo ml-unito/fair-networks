@@ -33,9 +33,9 @@ if("-h" in sys.argv):
     print(colored("\n" + USAGE, "yellow"))
     exit(1)
 
-logging.basicConfig(level=logging.WARN)
-
 opts = Options(sys.argv)
+logging.basicConfig(level=opts.log_level)
+
 
 if(opts.eval_data_path == None):
     print(colored(
