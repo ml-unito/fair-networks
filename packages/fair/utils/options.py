@@ -264,6 +264,7 @@ class Options:
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
         parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
         parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
+        parser.add_argument('-L', '--learning-rate-s', type=float, help="Specifies the (initial) learning rate for the s component")
         parser.add_argument('-g', '--get-info', choices=['epoch', 'none'], default='none', help="Returns a textual representation of model parameters")
         parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
         parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
@@ -301,6 +302,7 @@ class Options:
         self.set_layers(result)
         self.batch_size = result.batch_size
         self.learning_rate = result.learning_rate
+        self.learning_rate_s = result.learning_rate_s
 
         if result.schedule != None:
             self.schedule = Schedule(result.schedule)

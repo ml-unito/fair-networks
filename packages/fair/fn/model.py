@@ -5,8 +5,8 @@ import sys
 
 
 class Model:
-    def __init__(self, options, optimizer):
-        self._build(options, optimizer)
+    def __init__(self, options):
+        self._build(options)
 
     def build_layer(self, in_layer, layer_name, layers):
         layers_variables = []
@@ -48,8 +48,8 @@ class Model:
     def _build(self, options):
 
 
-        self.optimizer = tf.train.AdagradOptimizer(opts.learning_rate)
-        self.optimizer_s = tf.train.AdagradOptimizer(opts.learning_rate_s)
+        self.optimizer = tf.train.AdagradOptimizer(options.learning_rate)
+        self.optimizer_s = tf.train.AdagradOptimizer(options.learning_rate_s)
 
         num_features = options.num_features
         num_s_labels = options.dataset.num_s_columns()
@@ -133,7 +133,7 @@ class Model:
 
         return self
 
-    def set_train_steps()(self):
+    def set_train_steps(self):
         all_vars = self.hidden_layers_variables + self.y_variables + self.s_variables
         self.loss = self.y_loss - self.fairness_importance * self.s_loss
 
