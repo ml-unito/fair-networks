@@ -12,6 +12,8 @@ from fair.fn.model import Model
 from fair.utils.options import Options
 from fair.fn.fair_networks_training import FairNetworksTraining
 
+import logging
+
 
 def print_stats(session, model, dataset):
     print("Learning rate:")
@@ -64,7 +66,9 @@ def init_model(opts, session, saver, writer):
     if tf.train.checkpoint_exists(opts.input_fname()):
         model_to_resume = opts.input_fname()
 
-        print(colored("Restoring model: %s" % (model_to_resume), 'yellow'))
+        if opts.log_level <= logging.INFO:
+            logging.info(colored("Restoring model: %s" % (model_to_resume), 'yellow'))
+
         saver.restore(session, model_to_resume)
 
         graph_fairness_importance = session.run(
@@ -80,6 +84,11 @@ def init_model(opts, session, saver, writer):
         session.run(init)
         writer.add_graph(session.graph)
 
+def print_model_information(session, model, requested_info):
+    assert requested_info == 'epoch', "--get-info specifies an supported value (should not get here)"
+    
+    print(int(session.run( model.epoch[0])))
+
 
 # --------------------------------------------------------------------------------
 # main
@@ -88,7 +97,7 @@ def init_model(opts, session, saver, writer):
 opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
 
-if opts.verbose:
+if opts.log_level <= logging.INFO:
     print(colored("Initialized system based on config:", "green"))
     opts.print_config()
 
@@ -109,6 +118,8 @@ if opts.eval_stats:
     print_stats(session, model, opts.dataset)
 elif opts.eval_data_path != None:
     print_processed_data(session, model, opts.dataset)
+elif opts.get_info != None:
+    print_model_information(session, model, opts.get_info)
 else:
     fnt = FairNetworksTraining(opts, session, model, saver, writer)
     fnt.training_loop()
