@@ -16,7 +16,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-main_dir=experiments_occam
+main_dir=experiments
 experiment_dirs=$(wildcard $(main_dir)/*/)
 excluded_experiment_dirs=$(wildcard $(main_dir)/_*/)
 non_excluded_experiments=$(filter-out $(excluded_experiment_dirs), $(experiment_dirs))

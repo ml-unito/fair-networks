@@ -55,12 +55,18 @@ class FairNetworksTraining:
         self.session.run(self.trainset_it.initializer)
 
         epoch = self.session.run(self.model.epoch)
+        first_batch = True
 
         while True:
             try:
                 xs, ys, s = self.session.run(self.trainset_next)
 
                 self.run_train_s(self.train_xs, self.train_s)
+
+                if first_batch:
+                    first_batch = False
+                    self.updateTensorboardStats_s(epoch-1)
+
                 self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
                 self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
 
@@ -85,7 +91,7 @@ class FairNetworksTraining:
 
             self.save_model(epoch)
 
-            self.updateTensorboardStats(epoch)
+            self.updateTensorboardStats_y(epoch)
             self.log_stats()
 
             self.session.run(self.model.inc_epoch)
@@ -99,12 +105,21 @@ class FairNetworksTraining:
         nn_s_accuracy = self.session.run(self.model.s_accuracy, feed_dict = {self.model.x: self.test_xs, self.model.s: self.test_s})
         print("y accuracy: %2.4f s accuracy: %2.4f" % (nn_y_accuracy, nn_s_accuracy))
 
-    def updateTensorboardStats(self, epoch):
-        stat_des = self.session.run(self.model.train_stats, feed_dict = { self.model.x:self.train_xs, self.model.y:self.train_ys, self.model.s: self.train_s })
+    def updateTensorboardStats_s(self, epoch):
+        stat_des = self.session.run(self.model.train_stats_s, feed_dict = { self.model.x:self.train_xs, self.model.s: self.train_s })
         self.writer.add_summary(stat_des, global_step = epoch)
 
-        stat_des = self.session.run(self.model.test_stats, feed_dict = { self.model.x:self.test_xs, self.model.y:self.test_ys, self.model.s: self.test_s })
+        stat_des = self.session.run(self.model.test_stats_s, feed_dict = { self.model.x:self.test_xs,  self.model.s: self.test_s })
         self.writer.add_summary(stat_des, global_step = epoch)
+
+    def updateTensorboardStats_y(self, epoch):
+        stat_des = self.session.run(self.model.train_stats_y, feed_dict={
+                                    self.model.x: self.train_xs, self.model.y: self.train_ys, })
+        self.writer.add_summary(stat_des, global_step=epoch)
+
+        stat_des = self.session.run(self.model.test_stats_y, feed_dict={
+                                    self.model.x: self.test_xs, self.model.y: self.test_ys})
+        self.writer.add_summary(stat_des, global_step=epoch)
 
     def save_model(self, epoch):
         if self.options.save_at_epoch(epoch):
