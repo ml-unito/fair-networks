@@ -48,7 +48,7 @@ clean_dir:
 
 %performances.tsv: %performances.json
 	echo "Creating table with results for experiment $@"
-	process_performances $< > $@
+	process_performances $(dir $<)/config.json > $@
 
 list_results:
 	echo $(foreach result, $(performance_tables), "$(result)\n")
