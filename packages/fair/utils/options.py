@@ -15,6 +15,7 @@ import tensorflow as tf
 from copy import copy, deepcopy
 from termcolor import colored
 from pathlib import Path
+import logging
 
 PARAMS_DESCRIPTION = """\
 or:
@@ -263,7 +264,9 @@ class Options:
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
         parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
         parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
-        parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console")
+        parser.add_argument('-g', '--get-info', choices=['epoch', 'none'], default='none', help="Returns a textual representation of model parameters")
+        parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
+        parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2'], help="dataset to be loaded")
@@ -308,6 +311,13 @@ class Options:
         self.random_seed = result.random_seed
 
         self.verbose = result.verbose
+        if self.verbose:
+            self.log_level = logging.DEBUG
+        else:
+            self.log_level = logging.getLevelName(result.log_level)
+
+
+        self.get_info = None if result.get_info == 'none' else result.get_info
 
         return result
 
