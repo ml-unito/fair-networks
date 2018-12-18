@@ -85,7 +85,8 @@ class Model:
             self.y_test_loss_stat = tf.summary.scalar("y_test_softmax_loss", self.y_loss)
 
         with tf.name_scope("s_loss"):
-            self.s_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out))
+            mean_kld, var_kld = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
+            self.s_loss = -var_kld
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss)
             self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss)
 
