@@ -35,10 +35,11 @@ class Model:
         for index, hidden_layer in enumerate(hidden_layers):
             num_nodes_out, activation, initializer = hidden_layer
             with tf.name_scope("%s-layer-%d" % ("hidden", index+1)):
-                w = tf.get_variable(name="{}-layer-{}-deterministic".format("hidden", index+1), initializer=initializer(), shape=[num_nodes_in+random_units[index], num_nodes_out])
-                x_rand = tf.random_normal(name="{}-layer-{}-random".format("hidden", index+1), shape=[random_units[index], 1])
+                w = tf.get_variable(name="{}-layer-{}-weights-deterministic".format("hidden", index+1), initializer=initializer(), shape=[num_nodes_in+random_units[index], num_nodes_out])
+                b = tf.get_variable(name="{}-layer-{}-bias-deterministic".format("hidden", index+1), initializer=initializer(), shape=[num_nodes_out])
+                x_rand = tf.random_normal(name="{}-layer-{}-weights-random".format("hidden", index+1), shape=[random_units[index], 1])
                 in_layer = tf.concat([in_layer, x_rand], axis=1)
-                layer_out = activation(tf.matmul(in_layer, w))
+                layer_out = activation(tf.matmul(in_layer, w) + b)
             in_layer = layer_out
             hidden_layers_variables.append(w)
         
