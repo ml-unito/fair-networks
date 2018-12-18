@@ -16,8 +16,9 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-experiment_dirs=$(wildcard experiments/*/)
-excluded_experiment_dirs=$(wildcard experiments/_*/)
+main_dir=experiments
+experiment_dirs=$(wildcard $(main_dir)/*/)
+excluded_experiment_dirs=$(wildcard $(main_dir)/_*/)
 non_excluded_experiments=$(filter-out $(excluded_experiment_dirs), $(experiment_dirs))
 performance_output_files=$(foreach dir, $(non_excluded_experiments), $(dir)performances.json)
 performance_tables=$(foreach dir, $(non_excluded_experiments), $(dir)performances.tsv)
