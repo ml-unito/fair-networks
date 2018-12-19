@@ -88,13 +88,13 @@ class Model:
             mean_kld, var_kld = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
             self.s_var_loss = var_kld
             self.s_mean_loss = mean_kld
-            self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss)
-            self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss)
+            self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_mean_loss)
+            self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_mean_loss)
 
         with tf.name_scope("h_loss"):
             self.h_loss = self.y_loss - self.fairness_importance * self.s_var_loss 
             self.h_train_loss_stat = tf.summary.scalar("train_total_loss", self.h_loss)
-            self.h_test_loss_stat = tf.summary.scalar("train_total_loss", self.h_loss)
+            self.h_test_loss_stat = tf.summary.scalar("test_total_loss", self.h_loss)
 
         with tf.name_scope("y_accuracy"):
             y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out,1), tf.argmax(self.y,1)), "float")
