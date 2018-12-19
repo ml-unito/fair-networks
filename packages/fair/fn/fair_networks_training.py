@@ -32,13 +32,13 @@ class FairNetworksTraining:
         self.init_y_vars = tf.variables_initializer(self.y_variables, name="init_y_vars")
 
 
-    def run_train_s(self, xs, s):
+    def run_train_s(self, xs, s, first_batch):
         if self.options.fairness_importance == 0:
             return
             
         self.session.run(self.init_s_vars)
 
-        for _ in range(self.options.schedule.sub_nets_num_it):
+        for sub_epoch in range(self.options.schedule.sub_nets_num_it):
 
             batch_pos = 0
             while batch_pos < len(xs):
@@ -47,6 +47,12 @@ class FairNetworksTraining:
                 batch_pos += self.options.batch_size
 
                 self.session.run(self.model.s_train_step, feed_dict={self.model.x: batch_x, self.model.s: batch_s})
+        
+            if first_batch:
+                stat = self.session.run(self.s_epoch_train_stats, feed_dict={self.model.x: self.train_xs, self.model.y: self.train_ys, self.model.s: self.train_s})
+                self.writer.add_summary(stat, global_step = sub_epoch)
+                stat = self.session.run(self.s_epoch_test_stats, feed_dict={self.model.x: self.test_xs, self.model.y: self.test_ys, self.model.s: self.test_s})
+                self.writer.add_summary(stat, global_step = sub_epoch)
 
     def run_epoch_new_approach(self):
         dataset_size = len(self.train_xs)
@@ -54,21 +60,28 @@ class FairNetworksTraining:
         tot_batches = dataset_size / self.options.batch_size
         self.session.run(self.trainset_it.initializer)
 
-        epoch = self.session.run(self.model.epoch)
+        epoch = int(self.session.run(self.model.epoch))
         first_batch = True
+
+        epoch_train_accuracy_summary = tf.summary.scalar("s_train_accuracy_epoch{}".format(epoch), self.model.s_accuracy)
+        epoch_train_loss_summary = tf.summary.scalar("s_train_loss_epoch{}".format(epoch), self.model.s_loss)
+        self.s_epoch_train_stats = tf.summary.merge([epoch_train_accuracy_summary, epoch_train_loss_summary])
+        epoch_test_accuracy_summary = tf.summary.scalar("s_test_accuracy_epoch{}".format(epoch), self.model.s_accuracy)
+        epoch_test_loss_summary = tf.summary.scalar("s_test_loss_epoch{}".format(epoch), self.model.s_loss)
+        self.s_epoch_test_stats = tf.summary.merge([epoch_test_accuracy_summary, epoch_test_loss_summary])
 
         while True:
             try:
                 xs, ys, s = self.session.run(self.trainset_next)
 
-                self.run_train_s(self.train_xs, self.train_s)
+                self.run_train_s(self.train_xs, self.train_s, first_batch)
                 #self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
 
                 if first_batch:
                     first_batch = False
-                    self.updateTensorboardStats_s(epoch-1)
+                    self.updateTensorboardStats_s_start(epoch)
 
-                self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
+                #self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
                 self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
 
                 batch += 1
@@ -78,10 +91,12 @@ class FairNetworksTraining:
 
                 if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
                     print("\n")
-                    self.log_stats()
+                    #self.log_stats()
+
 
             except tf.errors.OutOfRangeError:
                 break
+
 
     def training_loop(self):
         for _ in range(self.options.schedule.num_epochs):
@@ -92,8 +107,10 @@ class FairNetworksTraining:
 
             self.save_model(epoch)
 
+            self.updateTensorboardStats_s_end(epoch)
             self.updateTensorboardStats_y(epoch)
-            self.log_stats()
+            self.updateTensorboardStats_h(epoch)
+            #self.log_stats()
 
             self.session.run(self.model.inc_epoch)
 
@@ -106,16 +123,23 @@ class FairNetworksTraining:
         nn_s_accuracy = self.session.run(self.model.s_accuracy, feed_dict = {self.model.x: self.test_xs, self.model.s: self.test_s})
         print("y accuracy: %2.4f s accuracy: %2.4f" % (nn_y_accuracy, nn_s_accuracy))
 
-    def updateTensorboardStats_s(self, epoch):
-        stat_des = self.session.run(self.model.train_stats_s, feed_dict = { self.model.x:self.train_xs, self.model.s: self.train_s })
+    def updateTensorboardStats_s_start(self, epoch):
+        stat_des = self.session.run(self.model.train_stats_s_start, feed_dict = { self.model.x:self.train_xs, self.model.s: self.train_s })
         self.writer.add_summary(stat_des, global_step = epoch)
 
-        stat_des = self.session.run(self.model.test_stats_s, feed_dict = { self.model.x:self.test_xs,  self.model.s: self.test_s })
+        stat_des = self.session.run(self.model.test_stats_s_start, feed_dict = { self.model.x:self.test_xs,  self.model.s: self.test_s })
+        self.writer.add_summary(stat_des, global_step = epoch)
+
+    def updateTensorboardStats_s_end(self, epoch):
+        stat_des = self.session.run(self.model.train_stats_s_end, feed_dict = { self.model.x:self.train_xs, self.model.s: self.train_s })
+        self.writer.add_summary(stat_des, global_step = epoch)
+
+        stat_des = self.session.run(self.model.test_stats_s_end, feed_dict = { self.model.x:self.test_xs,  self.model.s: self.test_s })
         self.writer.add_summary(stat_des, global_step = epoch)
 
     def updateTensorboardStats_y(self, epoch):
         stat_des = self.session.run(self.model.train_stats_y, feed_dict={
-                                    self.model.x: self.train_xs, self.model.y: self.train_ys, })
+                                    self.model.x: self.train_xs, self.model.y: self.train_ys})
         self.writer.add_summary(stat_des, global_step=epoch)
 
         stat_des = self.session.run(self.model.test_stats_y, feed_dict={
@@ -124,11 +148,11 @@ class FairNetworksTraining:
 
     def updateTensorboardStats_h(self, epoch):
         stat_des = self.session.run(self.model.train_stats_h, feed_dict={
-                                    self.model.x: self.train_xs, self.model.y: self.train_ys, })
+                                    self.model.x: self.train_xs, self.model.y: self.train_ys, self.model.s: self.train_s})
         self.writer.add_summary(stat_des, global_step=epoch)
 
         stat_des = self.session.run(self.model.test_stats_h, feed_dict={
-                                    self.model.x: self.test_xs, self.model.y: self.test_ys})
+                                    self.model.x: self.test_xs, self.model.y: self.test_ys, self.model.s: self.test_s})
         self.writer.add_summary(stat_des, global_step=epoch)
 
 

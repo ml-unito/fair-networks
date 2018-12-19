@@ -88,11 +88,14 @@ class Model:
             mean_kld, var_kld = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
             self.s_var_loss = var_kld
             self.s_mean_loss = mean_kld
-            self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_mean_loss)
-            self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_mean_loss)
+            self.s_loss = mean_kld
+            self.s_train_loss_stat_start = tf.summary.scalar("s_train_softmax_loss_start", self.s_loss)
+            self.s_test_loss_stat_start = tf.summary.scalar("s_test_softmax_loss_start", self.s_loss)
+            self.s_train_loss_stat_end = tf.summary.scalar("s_train_softmax_loss_end", self.s_loss)
+            self.s_test_loss_stat_end = tf.summary.scalar("s_test_softmax_loss_end", self.s_loss)
 
         with tf.name_scope("h_loss"):
-            self.h_loss = self.y_loss - self.fairness_importance * self.s_var_loss 
+            self.h_loss = self.y_loss - self.fairness_importance * self.s_mean_loss 
             self.h_train_loss_stat = tf.summary.scalar("train_total_loss", self.h_loss)
             self.h_test_loss_stat = tf.summary.scalar("test_total_loss", self.h_loss)
 
@@ -105,8 +108,10 @@ class Model:
         with tf.name_scope("s_accuracy"):
             s_correct_predictions = tf.cast(tf.equal(tf.argmax(self.s_out,1), tf.argmax(self.s,1)), "float")
             self.s_accuracy = tf.cast(tf.reduce_mean(s_correct_predictions), "float")
-            self.s_train_accuracy_stat = tf.summary.scalar("s_train_accuracy", self.s_accuracy)
-            self.s_test_accuracy_stat = tf.summary.scalar("s_test_accuracy", self.s_accuracy)
+            self.s_train_accuracy_stat_start = tf.summary.scalar("s_train_accuracy_start", self.s_accuracy)
+            self.s_test_accuracy_stat_start = tf.summary.scalar("s_test_accuracy_start", self.s_accuracy)
+            self.s_train_accuracy_stat_end = tf.summary.scalar("s_train_accuracy_end", self.s_accuracy)
+            self.s_test_accuracy_stat_end = tf.summary.scalar("s_test_accuracy_end", self.s_accuracy)
 
         with tf.name_scope("svc_accuracies"):
             self.s_svc_accuracy = tf.placeholder(tf.float32)
@@ -126,17 +131,23 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step = optimizer.minimize(self.h_loss, var_list=self.hidden_layers_variables)
+        self.h_train_step = optimizer.minimize(-self.s_loss, var_list=self.hidden_layers_variables)
         #self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
-        self.s_train_step = optimizer.minimize(self.s_mean_loss, var_list=self.s_variables)
+        self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
 
-        self.train_stats_s = tf.summary.merge([self.s_train_loss_stat, self.s_train_accuracy_stat])
-        self.test_stats_s = tf.summary.merge([self.s_test_loss_stat, self.s_test_accuracy_stat])
+        self.train_stats_s_start = tf.summary.merge([self.s_train_loss_stat_start, self.s_train_accuracy_stat_start])
+        self.test_stats_s_start = tf.summary.merge([self.s_test_loss_stat_start, self.s_test_accuracy_stat_start])
+        self.train_stats_s_end = tf.summary.merge([self.s_train_loss_stat_end, self.s_train_accuracy_stat_end])
+        self.test_stats_s_end = tf.summary.merge([self.s_test_loss_stat_end, self.s_test_accuracy_stat_end])
+        self.train_stats_y = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat])
+        self.test_stats_y = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat])
+        self.train_stats_h = tf.summary.merge([self.h_train_loss_stat])
+        self.test_stats_h = tf.summary.merge([self.h_test_loss_stat])
         return self
 
 
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
-        measures = [["y", [self.y_loss, self.y_accuracy]], ["s", [self.s_loss, self.s_accuracy]]]
+        measures = [["y", [self.y_loss, self.y_accuracy]], ["s", [self.s_mean_loss, self.s_accuracy]]]
 
         print('|variable|acc. (train)|acc. (test)|loss (train)| loss(test)|')
         print('|:------:|-----------:|----------:|-----------:|----------:|')
