@@ -64,7 +64,7 @@ class Model:
         if options.random_units == [0]:
             h_layer, self.hidden_layers_variables = self.build_layer(in_layer, "hidden", options.hidden_layers)
         else:
-            h_layer, self.hidden_layer_variables  = self.build_layer_random(in_layer, options.hidden_layers, options.random_units)
+            h_layer, self.hidden_layers_variables  = self.build_layer_random(in_layer, options.hidden_layers, options.random_units)
 
         s_layer, self.sensible_layers_variables = self.build_layer(h_layer, "sensible", options.sensible_layers)
         y_layer, self.class_layers_variables    = self.build_layer(h_layer, "class", options.class_layers)
@@ -87,8 +87,14 @@ class Model:
         with tf.name_scope("s_loss"):
             mean_kld, var_kld = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
             self.s_loss = -var_kld
+            #self.s_loss = mean_kld
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss)
             self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss)
+
+        with tf.name_scope("h_loss"):
+            self.h_loss = self.y_loss + self.fairness_importance * self.s_loss 
+            self.h_train_loss_stat = tf.summary.scalar("train_total_loss", self.h_loss)
+            self.h_test_loss_stat = tf.summary.scalar("train_total_loss", self.h_loss)
 
         with tf.name_scope("y_accuracy"):
             y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out,1), tf.argmax(self.y,1)), "float")
@@ -120,12 +126,16 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step = optimizer.minimize(self.y_loss - self.fairness_importance * self.s_loss, var_list=self.hidden_layers_variables)
+        self.h_train_step = optimizer.minimize(self.h_loss, var_list=self.hidden_layers_variables)
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
         self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
 
-        self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
-        self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
+        self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, 
+                                             self.s_train_loss_stat, self.s_train_accuracy_stat,
+                                             self.h_train_loss_stat])
+        self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat,
+                                            self.s_test_loss_stat, self.s_test_accuracy_stat,
+                                            self.h_test_loss_stat])
 
         return self
 
