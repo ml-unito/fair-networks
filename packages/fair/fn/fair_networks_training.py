@@ -61,7 +61,7 @@ class FairNetworksTraining:
                 xs, ys, s = self.session.run(self.trainset_next)
 
                 self.run_train_s(self.train_xs, self.train_s)
-                self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
+                #self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
                 self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
 
                 batch += 1
