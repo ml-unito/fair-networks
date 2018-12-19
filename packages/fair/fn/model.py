@@ -85,13 +85,13 @@ class Model:
 
         with tf.name_scope("s_loss"):
             mean_kld, var_kld = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
-            self.s_loss = -var_kld
-            #self.s_loss = mean_kld
+            self.s_var_loss = var_kld
+            self.s_mean_loss = mean_kld
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss)
             self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss)
 
         with tf.name_scope("h_loss"):
-            self.h_loss = self.y_loss + self.fairness_importance * self.s_loss 
+            self.h_loss = self.y_loss - self.fairness_importance * self.s_var_loss 
             self.h_train_loss_stat = tf.summary.scalar("train_total_loss", self.h_loss)
             self.h_test_loss_stat = tf.summary.scalar("train_total_loss", self.h_loss)
 
@@ -127,7 +127,7 @@ class Model:
 
         self.h_train_step = optimizer.minimize(self.h_loss, var_list=self.hidden_layers_variables)
         self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
-        self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
+        self.s_train_step = optimizer.minimize(self.s_mean_loss, var_list=self.s_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, 
                                              self.s_train_loss_stat, self.s_train_accuracy_stat,
