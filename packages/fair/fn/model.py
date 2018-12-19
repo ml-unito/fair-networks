@@ -79,7 +79,8 @@ class Model:
             self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="y_out")
 
         with tf.name_scope("y_loss"):
-            self.y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
+            #self.y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
+            self.y_loss = tf.zeros([], dtype=np.float32)
             self.y_train_loss_stat = tf.summary.scalar("y_train_softmax_loss", self.y_loss)
             self.y_test_loss_stat = tf.summary.scalar("y_test_softmax_loss", self.y_loss)
 
@@ -126,7 +127,7 @@ class Model:
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
         self.h_train_step = optimizer.minimize(self.h_loss, var_list=self.hidden_layers_variables)
-        self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
+        #self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
         self.s_train_step = optimizer.minimize(self.s_mean_loss, var_list=self.s_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, 
