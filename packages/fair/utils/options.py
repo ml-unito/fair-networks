@@ -162,7 +162,7 @@ class Options:
         return vars(self.used_options)
 
     def parse_hidden_units(self, spec):
-        match = re.search(r'^[sl]?(\d+)$', spec)
+        match = re.search(r'^[slreh]?(\d+)$', spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
 
@@ -170,7 +170,7 @@ class Options:
         return int(match.group(1))
 
     def parse_activation(self, spec):
-        match = re.search(r'^([sl]?)\d+$', spec)
+        match = re.search(r'^([slreh]?)\d+$', spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
 
@@ -181,6 +181,15 @@ class Options:
 
         if match.group(1) == 'l':
             return None
+
+        if match.group(1) == 'r':
+            return tf.nn.relu
+    
+        if match.group(1) == 'e':
+            return tf.nn.leaky_relu
+
+        if match.group(1) == 'h':
+            return tf.nn.tanh
 
         raise ParseError('Error in parsing layer specification for element:' + spec + '. This is a bug.')
 
