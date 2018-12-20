@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import json
+import datetime
+from itertools import product
+
+from create_experiment import do_create
+
+def get_timestamp():
+    return str(datetime.datetime.now()).replace(' ', '_').split('.')[0]
+
+def parse_spec_file(spec_file_path):
+    with open(spec_file_path, 'r') as json_file:
+        specs = json.loads(json_file.read())
+        print(specs)
+        learning_rates = specs['learning_rates']
+        schedules = specs['schedules']
+        architectures = specs['architectures']
+        datasets = specs['datasets']
+        fairnesses = specs['fairnesses']
+        batch_sizes = specs['batch_sizes']
+        specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes)
+        print(specs)
+    return specs
+    
+def create_experiments(specs):
+    for spec in specs:
+        json_dict = create_experiment_json(spec)
+        print(json_dict)
+        json_path = 'tmp.json'
+        with open(json_path, 'w') as json_file:
+            json.dump(json_dict, json_file)
+        timestamp = get_timestamp
+        experiment_name = 'lr{}_sched{}_arch{}_data{}_{}'.format(spec[0], spec[1], spec[2], spec[3], timestamp)
+        #do_create(json_path, experiment_name)
+    os.remove('tmp.json')
+
+def create_experiment_json(experiment_spec):
+    lr, schedule, architecture, dataset, fairness, batch_size = experiment_spec
+    d = {}
+    d['learning_rate'] = lr
+    d['schedule'] = schedule
+    d['hidden_layers'] = architecture['hidden_layers']
+    d['class_layers'] = architecture['class_layers']
+    d['random_units'] = architecture['random_units']
+    d['sensible_layers'] = architecture['sensible_layers']
+    d['fairness_importance'] = fairness
+    d['dataset'] = dataset
+    d['batch_size'] = batch_size
+    return d
+
+if __name__ == '__main__':
+    spec_file_path = sys.argv[1]
+    specs = parse_spec_file(spec_file_path)
+    create_experiments(specs)
