@@ -16,12 +16,13 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-main_dir=experiments_occam
+main_dir=experiments
 experiment_dirs=$(wildcard $(main_dir)/*/)
 excluded_experiment_dirs=$(wildcard $(main_dir)/_*/)
 non_excluded_experiments=$(filter-out $(excluded_experiment_dirs), $(experiment_dirs))
 performance_output_files=$(foreach dir, $(non_excluded_experiments), $(dir)performances.json)
 performance_tables=$(foreach dir, $(non_excluded_experiments), $(dir)performances.tsv)
+experiment_models=$(foreach dir, $(non_excluded_experiments), $(dir)models/checkpoint)
 # representation_files=$(foreach dir, $(non_excluded_experiments), \
 # 	$(dir)representations/original_repr_train.csv \
 # 	$(dir)representations/fair_networks_repr_train.csv \
@@ -30,6 +31,9 @@ performance_tables=$(foreach dir, $(non_excluded_experiments), $(dir)performance
 
 
 all: $(performance_tables)
+	echo "All Done"
+
+experimentation: $(experiment_models)
 	echo "All Done"
 
 # clean: clean_performances clean_representations clean_performance_tables
@@ -57,6 +61,10 @@ deep_clean_dir:
 
 # clean_performance_tables:
 # 	rm -f $(performance_tables)
+
+%models/checkpoint: %config.json 
+	git rev-parse HEAD > $(dir $<)/commit-id
+	fair_networks $<
 
 %representations/fair_networks_repr_train.csv: %config.json
 	fair_networks $< -E representations/fair_networks_repr
