@@ -131,6 +131,8 @@ class Options:
         self.hidden_layers: array of tuples specifying how to build the hidden layer
         self.sensible_layers: array of tuples specifying how to build the sensible layer
         self.class_layers: array of tuples specifying how to build the class layer
+        self.random_units: array of tuples specifying how many random neurons should be 
+            contained in each hidden layer
 
         if result.schedule: array containing the schedule for the training of the network
 
@@ -160,7 +162,7 @@ class Options:
         return vars(self.used_options)
 
     def parse_hidden_units(self, spec):
-        match = re.search(r'^[sl]?(\d+)$', spec)
+        match = re.search(r'^[slreh]?(\d+)$', spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
 
@@ -168,7 +170,7 @@ class Options:
         return int(match.group(1))
 
     def parse_activation(self, spec):
-        match = re.search(r'^([sl]?)\d+$', spec)
+        match = re.search(r'^([slreh]?)\d+$', spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
 
@@ -180,6 +182,15 @@ class Options:
         if match.group(1) == 'l':
             return None
 
+        if match.group(1) == 'r':
+            return tf.nn.relu
+    
+        if match.group(1) == 'e':
+            return tf.nn.leaky_relu
+
+        if match.group(1) == 'h':
+            return tf.nn.tanh
+
         raise ParseError('Error in parsing layer specification for element:' + spec + '. This is a bug.')
 
 
@@ -187,6 +198,11 @@ class Options:
         layers_specs = str.split(':')
         return [(self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
                for spec in layers_specs ]
+
+    def parse_random_layers(self, str):
+        layers_specs = str.split(':')
+        return [int(spec) for spec in layers_specs]
+
 
     def check_layers_specs(self, from_json=False):
         if self.hidden_layers_specs != None and self.sensible_layers_specs != None and self.class_layers_specs != None:
@@ -204,12 +220,14 @@ class Options:
         self.hidden_layers_specs = options.hidden_layers
         self.sensible_layers_specs = options.sensible_layers
         self.class_layers_specs = options.class_layers
+        self.random_units_specs = options.random_units
 
         self.check_layers_specs(from_json=False)
 
         self.hidden_layers = self.parse_layers(self.hidden_layers_specs)
         self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
         self.class_layers = self.parse_layers(self.class_layers_specs)
+        self.random_units = self.parse_random_layers(self.random_units_specs)
 
     def try_load_opts(self, argv):
         if len(argv) >= 2 and Path(argv[1]).is_file():
@@ -246,6 +264,7 @@ class Options:
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs')
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs')
+        parser.add_argument('-R', '--random-units', type=str, help='hidden random units specs')
         parser.add_argument('-r', '--random-seed', type=int, help='sets the random seed used in the experiment')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
         parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')

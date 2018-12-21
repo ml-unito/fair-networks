@@ -1,11 +1,28 @@
 .SILENT:
 .SECONDARY:
 
-experiment_dirs=$(wildcard experiments/*/)
-excluded_experiment_dirs=$(wildcard experiments/_*/)
+
+# Check that given variables are set and all have non-empty values,
+# die with an error otherwise.
+#
+# Params:
+#   1. Variable name(s) to test.
+#   2. (optional) Error message to print.
+check_defined = \
+    $(strip $(foreach 1,$1, \
+        $(call __check_defined,$1,$(strip $(value 2)))))
+__check_defined = \
+    $(if $(value $1),, \
+      $(error Undefined $1$(if $2, ($2))))
+
+
+main_dir=experiments
+experiment_dirs=$(wildcard $(main_dir)/*/)
+excluded_experiment_dirs=$(wildcard $(main_dir)/_*/)
 non_excluded_experiments=$(filter-out $(excluded_experiment_dirs), $(experiment_dirs))
 performance_output_files=$(foreach dir, $(non_excluded_experiments), $(dir)performances.json)
 performance_tables=$(foreach dir, $(non_excluded_experiments), $(dir)performances.tsv)
+experiment_models=$(foreach dir, $(non_excluded_experiments), $(dir)models/checkpoint)
 # representation_files=$(foreach dir, $(non_excluded_experiments), \
 # 	$(dir)representations/original_repr_train.csv \
 # 	$(dir)representations/fair_networks_repr_train.csv \
@@ -16,10 +33,22 @@ performance_tables=$(foreach dir, $(non_excluded_experiments), $(dir)performance
 all: $(performance_tables)
 	echo "All Done"
 
+experimentation: $(experiment_models)
+	echo "All Done"
+
 # clean: clean_performances clean_representations clean_performance_tables
 # 	echo "Cleaning: done!"
 
 clean_dir:
+	:$(call check_defined, DIR)
+	rm -f $(DIR)/performances.json
+	rm -f $(DIR)/representations/*_repr_*.csv
+	rm -f $(DIR)/performances.tsv
+
+deep_clean_dir:
+	:$(call check_defined, DIR)
+	rm -rf $(DIR)/models/*
+	rm -rf $(DIR)/logdir/*
 	rm -f $(DIR)/performances.json
 	rm -f $(DIR)/representations/*_repr_*.csv
 	rm -f $(DIR)/performances.tsv
@@ -32,6 +61,10 @@ clean_dir:
 
 # clean_performance_tables:
 # 	rm -f $(performance_tables)
+
+%models/checkpoint: %config.json 
+	git rev-parse HEAD > $(dir $<)/commit-id
+	fair_networks $<
 
 %representations/fair_networks_repr_train.csv: %config.json
 	fair_networks $< -E representations/fair_networks_repr

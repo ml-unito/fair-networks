@@ -1,0 +1,17 @@
+{
+    "dataset_base_path": "/app/data",
+    "checkpoint": "models/synth-easy2.ckpt", 
+    "class_layers": "5", 
+    "dataset": "synth-easy2", 
+    "eval_data": null, 
+    "eval_stats": false, 
+    "hidden_layers": "5", 
+    "sensible_layers": "5",
+    "random_units": "1",
+    "random_seed": 42,
+    "output": null, 
+    "schedule": "m500:c50", 
+    "fairness_importance": 3.0,
+    "batch_size": 100,
+    "learning_rate": 0.01
+}
