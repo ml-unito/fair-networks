@@ -63,7 +63,7 @@ def process_data(session, model, xs, ys, s):
 
 
 def init_model(opts, session, saver, writer):
-    if tf.train.checkpoint_exists(opts.input_fname()):
+    if opts.resume_learning:
         model_to_resume = opts.input_fname()
 
         if opts.log_level <= logging.INFO:

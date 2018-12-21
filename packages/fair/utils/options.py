@@ -15,6 +15,7 @@ import tensorflow as tf
 from copy import copy, deepcopy
 from termcolor import colored
 from pathlib import Path
+import glob
 import logging
 
 PARAMS_DESCRIPTION = """\
@@ -259,8 +260,8 @@ class Options:
         return parsed_args
 
     def configure_parser(self, parser, checkpoint_already_given=None, dataset_already_given=None):
-        parser.add_argument('-c', '--checkpoint', metavar="FILENAME.ckpt", required=not checkpoint_already_given, type=str, help="Name of the checkpoint to be saved/loaded.")
-        parser.add_argument('-o', '--output', metavar="FILENAME.ckpt", type=str, help="Name of the checkpoint to be saved into. Defaults to the value given to the -c parameter if not given.")
+        parser.add_argument('-c', '--model-dir', type=str, help="Name of the directory where to save the model.")
+        parser.add_argument('-i', '--resume-ckpt', type=str, help="Resume operations from the given ckpt, resume latest ckpt if not provided.")
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs')
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs')
@@ -298,14 +299,10 @@ class Options:
         self.dataset = datasets[self.dataset_name](self.dataset_base_path)
         self.num_features = self.dataset.num_features()
 
+        self.model_dir = result.model_dir
+        self.resume_ckpt = result.resume_ckpt
 
-        if result.output == None:
-            self.checkpoint_output = self.path_for(result.checkpoint)
-        else:
-            self.checkpoint_output = self.path_for(result.output)
-
-        self._model_fname = self.checkpoint_output
-        self.resume_learning = tf.train.checkpoint_exists(self.input_fname())
+        self.resume_learning = self.input_fname() != None
 
         self.set_layers(result)
         self.batch_size = result.batch_size
@@ -330,19 +327,20 @@ class Options:
 
         return result
 
-    def model_fname(self, name):
-        return "%s" % (name)
+    def model_fname(self, epoch):
+        return self.path_for("{}/model-{}.ckpt".format(self.model_dir, epoch))
 
-    def output_fname(self):
-        return self.model_fname(self.checkpoint_output)
+    def output_fname(self, epoch):
+        return self.model_fname(epoch)
 
     def input_fname(self):
-        return self.model_fname(self._model_fname)
+        if self.resume_ckpt:
+            return self.resume_ckpt
+            
+        return tf.train.latest_checkpoint(self.path_for(self.model_dir))
 
     def log_fname(self):
-        name = self.output_fname().split('/')[-1]
-        name = name.split('.ckpt')[0]
-        return self.path_for('logdir/log_%s' % name)
+        return self.path_for('logdir/logs')
 
     def save_at_epoch(self, epoch):
         early_saves = epoch < 1000 and epoch % 10 == 0

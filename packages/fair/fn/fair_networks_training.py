@@ -83,14 +83,14 @@ class FairNetworksTraining:
 
             self.run_epoch_new_approach()
 
-            self.save_model(epoch)
+            self.save_model(int(epoch[0]))
 
             self.updateTensorboardStats(epoch)
             self.log_stats()
 
             self.session.run(self.model.inc_epoch)
 
-        self.saver.save(self.session, self.options.output_fname())
+        self.save_model("final")
 
     def log_stats(self):
         self.run_train_s(self.train_xs, self.train_s)
@@ -107,5 +107,6 @@ class FairNetworksTraining:
         self.writer.add_summary(stat_des, global_step = epoch)
 
     def save_model(self, epoch):
-        if self.options.save_at_epoch(epoch):
-            self.saver.save(self.session, self.options.output_fname())
+        print(epoch)
+        if epoch == "final" or self.options.save_at_epoch(epoch):
+            self.saver.save(self.session, self.options.output_fname(epoch))
