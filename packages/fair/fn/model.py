@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import time
 import sys
 
 
@@ -94,8 +93,11 @@ class Model:
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss)
             self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss)
 
+        with tf.name_scope("loss"):
+            self.loss = self.y_loss - self.fairness_importance * self.s_loss
+
         with tf.name_scope("y_accuracy"):
-            y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out,1), tf.argmax(self.y,1)), "float")
+            y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out, 1), tf.argmax(self.y,1)), "float")
             self.y_accuracy = tf.cast(tf.reduce_mean(y_correct_predictions), "float")
             self.y_train_accuracy_stat = tf.summary.scalar("y_train_accuracy", self.y_accuracy)
             self.y_test_accuracy_stat = tf.summary.scalar("y_test_accuracy", self.y_accuracy)
@@ -135,8 +137,6 @@ class Model:
 
     def set_train_steps(self):
         all_vars = self.hidden_layers_variables + self.y_variables + self.s_variables
-        self.loss = self.y_loss - self.fairness_importance * self.s_loss
-
         grads = tf.gradients(self.loss, all_vars)
 
         len_h = len(self.hidden_layers_variables)
@@ -145,9 +145,9 @@ class Model:
         grads_y = grads[len_h:(len_h + len_y)]
         grads_s = grads[(len_h+len_y):]
 
-        self.h_train_step = self.optimizer.apply_gradients(zip(grad_h, self.hidden_layers_variables))
-        self.y_train_step = self.optimizer.apply_gradients(zip(grad_y, self.y_variables))
-        self.s_train_step = self.optimizer_s.apply_gradients(zip(grad_s, self.s_variables))
+        self.h_train_step = self.optimizer.apply_gradients(zip(grads_h, self.hidden_layers_variables))
+        self.y_train_step = self.optimizer.apply_gradients(zip(grads_y, self.y_variables))
+        self.s_train_step = self.optimizer_s.apply_gradients(zip(grads_s, self.s_variables))
 
 
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):

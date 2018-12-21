@@ -1,21 +1,20 @@
-import sys
-from fair.datasets.bank_marketing_dataset import BankMarketingDataset
-from fair.datasets.adult_dataset import AdultDataset
-from fair.datasets.synth_dataset import SynthDataset
-from fair.datasets.german_dataset import GermanDataset
-from fair.datasets.synth_easy_dataset import SynthEasyDataset
-from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
-
 import argparse
-import textwrap
-import os
 import json
-import re
-import tensorflow as tf
-from copy import copy, deepcopy
-from termcolor import colored
-from pathlib import Path
 import logging
+import os
+import re
+from copy import copy, deepcopy
+from pathlib import Path
+
+import tensorflow as tf
+from termcolor import colored
+
+from fair.datasets.adult_dataset import AdultDataset
+from fair.datasets.bank_marketing_dataset import BankMarketingDataset
+from fair.datasets.german_dataset import GermanDataset
+from fair.datasets.synth_dataset import SynthDataset
+from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
+from fair.datasets.synth_easy_dataset import SynthEasyDataset
 
 PARAMS_DESCRIPTION = """\
 or:
