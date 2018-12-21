@@ -37,7 +37,7 @@ def create_experiments(specs):
 
 def fill_dictionary(d):
     d['dataset_base_path'] = '../../data'
-    d['checkpoint'] = 'models/model.ckpt'
+    d['checkpoint'] = 'models/'
     d['eval_data'] = None
     d['eval_stats'] = False
     d['random_seed'] = 42
