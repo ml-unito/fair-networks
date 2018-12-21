@@ -37,11 +37,12 @@ def create_experiments(specs):
 
 def fill_dictionary(d):
     d['dataset_base_path'] = '../../data'
-    d['checkpoint'] = 'models/model.ckpt'
+    d['model_dir'] = 'models/'
     d['eval_data'] = None
     d['eval_stats'] = False
     d['random_seed'] = 42
     d['output'] = None
+    d['resume_ckpt'] = None
     return d
 
 def create_experiment_json(experiment_spec):
