@@ -325,9 +325,6 @@ class Options:
 
         self.batched = result.batched
 
-        print(self.batched)
-
-
         self.get_info = None if result.get_info == 'none' else result.get_info
 
         return result

@@ -138,6 +138,12 @@ class FairNetworksTraining:
         stat_des = self.session.run(self.model.test_stats, feed_dict = { self.model.x:self.test_xs, self.model.y:self.test_ys, self.model.s: self.test_s })
         self.writer.add_summary(stat_des, global_step = epoch)
 
+        stat_des = self.session.run(self.model.grad_stats, feed_dict = { self.model.x:self.train_xs, self.model.y:self.train_ys, self.model.s: self.train_s })
+        self.writer.add_summary(stat_des, global_step = epoch)
+
+        stat_des = self.session.run(self.model.var_stats, feed_dict = { self.model.x:self.train_xs, self.model.y:self.train_ys, self.model.s: self.train_s })
+        self.writer.add_summary(stat_des, global_step = epoch)
+
     def save_model(self, epoch):
         print(epoch)
         if epoch == "final" or self.options.save_at_epoch(epoch):

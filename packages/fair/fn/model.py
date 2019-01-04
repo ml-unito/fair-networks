@@ -9,17 +9,18 @@ class Model:
         self._build(options, optimizer)
 
     def build_layer(self, in_layer, layer_name, layers):
-        layers_variables = []
+        layer_variables = []
 
         for index,layer in enumerate(layers):
             num_nodes, activation, initializer = layer
             with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
                 in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
+                with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
+                    w = tf.get_variable("kernel")
+                    b = tf.get_variable("bias")
+                    layer_variables.extend([w, b])
 
-            layers_variables.append(
-                    tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "%s-layer-%d" % (layer_name, index+1))[0])
-
-        return in_layer, layers_variables
+        return in_layer, layer_variables
 
     def build_layer_random(self, in_layer, hidden_layers, random_units):
         try:
@@ -40,7 +41,7 @@ class Model:
                 in_layer = tf.concat([in_layer, x_rand], axis=1)
                 layer_out = activation(tf.matmul(in_layer, w) + b)
             in_layer = layer_out
-            hidden_layers_variables.append(w)
+            hidden_layers_variables.extend([w, b])
         
         return in_layer, hidden_layers_variables
 
@@ -118,12 +119,28 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step = optimizer.minimize(self.y_loss - self.fairness_importance * self.s_loss, var_list=self.hidden_layers_variables)
-        self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
-        self.s_train_step = optimizer.minimize(self.s_loss, var_list=self.s_variables)
+        self.h_loss = self.y_loss - self.fairness_importance * self.s_loss
+
+        self.h_grads = optimizer.compute_gradients(self.h_loss, self.hidden_layers_variables)
+        self.h_train_step = optimizer.apply_gradients(self.h_grads)
+        self.s_grads = optimizer.compute_gradients(self.s_loss, self.sensible_layers_variables)
+        self.s_train_step = optimizer.apply_gradients(self.s_grads)
+        self.y_grads = optimizer.compute_gradients(self.y_loss, self.class_layers_variables)
+        self.y_train_step = optimizer.apply_gradients(self.y_grads)
+        
+
+        l2_norm = lambda t: tf.sqrt(tf.reduce_sum(tf.pow(t, 2)))
+        self.h_grads_stats = tf.summary.merge([tf.summary.histogram("%s-h-grad" % v.name, l2_norm(g)) for g, v in self.h_grads])
+        self.h_var_stats = tf.summary.merge([tf.summary.histogram("%s-h-var" % v.name, l2_norm(v)) for g, v in self.h_grads])
+        self.s_grads_stats = tf.summary.merge([tf.summary.histogram("%s-s-grad" % v.name, l2_norm(g)) for g, v in self.s_grads])
+        self.s_var_stats = tf.summary.merge([tf.summary.histogram("%s-s-var" % v.name, l2_norm(v)) for g, v in self.s_grads])
+        self.y_grads_stats = tf.summary.merge([tf.summary.histogram("%s-y-grad" % v.name, l2_norm(g)) for g, v in self.y_grads])
+        self.y_var_stats = tf.summary.merge([tf.summary.histogram("%s-y-var" % v.name, l2_norm(v)) for g, v in self.y_grads])
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
+        self.grad_stats = tf.summary.merge([self.h_grads_stats, self.s_grads_stats, self.y_grads_stats])
+        self.var_stats = tf.summary.merge([self.h_var_stats, self.s_var_stats, self.y_var_stats])
 
         return self
 
