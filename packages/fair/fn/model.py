@@ -30,9 +30,8 @@ class Model:
 
         hidden_layers_variables = []
         
-        num_nodes_in = in_layer.shape[1] 
-
         for index, hidden_layer in enumerate(hidden_layers):
+            num_nodes_in = in_layer.shape[1]
             num_nodes_out, activation, initializer = hidden_layer
             with tf.name_scope("%s-layer-%d" % ("hidden", index+1)):
                 w = tf.get_variable(name="{}-layer-{}-weights-deterministic".format("hidden", index+1), initializer=initializer(), shape=[num_nodes_in+random_units[index], num_nodes_out])

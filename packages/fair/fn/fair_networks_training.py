@@ -76,12 +76,44 @@ class FairNetworksTraining:
             except tf.errors.OutOfRangeError:
                 break
 
+    def run_epoch_batched(self):
+        dataset_size = len(self.train_xs)
+        batch = 0
+        tot_batches = dataset_size / self.options.batch_size
+        self.session.run(self.trainset_it.initializer)
+
+        epoch = self.session.run(self.model.epoch)
+
+        while True:
+            try:
+                xs, ys, s = self.session.run(self.trainset_next)
+
+                self.session.run(self.model.s_train_step, feed_dict = { self.model.x:xs, self.model.s:s })
+                self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
+                self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
+
+                batch += 1
+                perc_complete = (float(batch) / tot_batches) * 100
+                print("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
+                      (epoch, batch, tot_batches, perc_complete), end="")
+
+                if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
+                    print("\n")
+                    self.log_stats()
+
+            except tf.errors.OutOfRangeError:
+                break
+
+
     def training_loop(self):
         for _ in range(self.options.schedule.num_epochs):
             epoch = self.session.run(self.model.epoch)
             print("Running epoch number: %d" % epoch)
 
-            self.run_epoch_new_approach()
+            if self.options.batched:
+                self.run_epoch_batched()
+            else:
+                self.run_epoch_new_approach()
 
             self.save_model(int(epoch[0]))
 
