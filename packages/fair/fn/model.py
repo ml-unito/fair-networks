@@ -34,10 +34,10 @@ class Model:
         for index, hidden_layer in enumerate(hidden_layers):
             num_nodes_in = in_layer.shape[1]
             num_nodes_out, activation, initializer = hidden_layer
-            with tf.name_scope("%s-layer-%d" % ("hidden", index+1)):
-                w = tf.get_variable(name="{}-layer-{}-weights-deterministic".format("hidden", index+1), initializer=initializer(), shape=[num_nodes_in+random_units[index], num_nodes_out])
-                b = tf.get_variable(name="{}-layer-{}-bias-deterministic".format("hidden", index+1), initializer=initializer(), shape=[num_nodes_out])
-                x_rand = tf.random_normal(name="{}-layer-{}-weights-random".format("hidden", index+1), shape=[tf.shape(in_layer)[0], random_units[index]])
+            with tf.variable_scope("%s-layer-%d" % ("hidden", index+1)):
+                w = tf.get_variable(name="kernel", initializer=initializer(), shape=[num_nodes_in+random_units[index], num_nodes_out])
+                b = tf.get_variable(name="bias", initializer=initializer(), shape=[num_nodes_out])
+                x_rand = tf.random_normal(name="{}-layer-{}-random".format("hidden", index+1), shape=[tf.shape(in_layer)[0], random_units[index]])
                 in_layer = tf.concat([in_layer, x_rand], axis=1)
                 layer_out = activation(tf.matmul(in_layer, w) + b)
             in_layer = layer_out
@@ -131,16 +131,16 @@ class Model:
 
         l2_norm = lambda t: tf.sqrt(tf.reduce_sum(tf.pow(t, 2)))
         self.h_grads_stats = tf.summary.merge([tf.summary.histogram("%s-h-grad" % v.name, l2_norm(g)) for g, v in self.h_grads])
-        self.h_var_stats = tf.summary.merge([tf.summary.histogram("%s-h-var" % v.name, l2_norm(v)) for g, v in self.h_grads])
+        self.h_weight_stats = tf.summary.merge([tf.summary.histogram("%s-h-weights" % v.name, l2_norm(v)) for g, v in self.h_grads])
         self.s_grads_stats = tf.summary.merge([tf.summary.histogram("%s-s-grad" % v.name, l2_norm(g)) for g, v in self.s_grads])
-        self.s_var_stats = tf.summary.merge([tf.summary.histogram("%s-s-var" % v.name, l2_norm(v)) for g, v in self.s_grads])
+        self.s_weight_stats = tf.summary.merge([tf.summary.histogram("%s-s-weights" % v.name, l2_norm(v)) for g, v in self.s_grads])
         self.y_grads_stats = tf.summary.merge([tf.summary.histogram("%s-y-grad" % v.name, l2_norm(g)) for g, v in self.y_grads])
-        self.y_var_stats = tf.summary.merge([tf.summary.histogram("%s-y-var" % v.name, l2_norm(v)) for g, v in self.y_grads])
+        self.y_weight_stats = tf.summary.merge([tf.summary.histogram("%s-y-weights" % v.name, l2_norm(v)) for g, v in self.y_grads])
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
         self.grad_stats = tf.summary.merge([self.h_grads_stats, self.s_grads_stats, self.y_grads_stats])
-        self.var_stats = tf.summary.merge([self.h_var_stats, self.s_var_stats, self.y_var_stats])
+        self.weight_stats = tf.summary.merge([self.h_weight_stats, self.s_weight_stats, self.y_weight_stats])
 
         return self
 
