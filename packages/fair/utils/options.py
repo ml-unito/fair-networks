@@ -277,7 +277,8 @@ class Options:
         parser.add_argument('-g', '--get-info', choices=['epoch', 'none'], default='none', help="Returns a textual representation of model parameters")
         parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
         parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
-        parser.add_argument('-B', '--batched', type=bool, default=False, help="Train the subclassifiers with a batch-by-batch strategy")
+        parser.add_argument('-B', '--batched', action='store_const', const=True, default=False, help="Train the subclassifiers with a batch-by-batch strategy")
+        parser.add_argument('-V', '--var-loss', action='store_const', const=True, default=False, help="Use the s_loss variance (instead of the mean) to train the common layers.")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2'], help="dataset to be loaded")
@@ -324,6 +325,8 @@ class Options:
             self.log_level = logging.getLevelName(result.log_level)
 
         self.batched = result.batched
+
+        self.var_loss = result.var_loss
 
         self.get_info = None if result.get_info == 'none' else result.get_info
 

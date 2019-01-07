@@ -85,9 +85,19 @@ class Model:
             self.y_test_loss_stat = tf.summary.scalar("y_test_softmax_loss", self.y_loss)
 
         with tf.name_scope("s_loss"):
-            self.s_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out))
-            self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss)
-            self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss)
+            mean_kld, var_kld = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
+            self.s_var_loss = var_kld
+            self.s_mean_loss = mean_kld
+            self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_mean_loss)
+            self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_mean_loss)
+
+        with tf.name_scope("h_loss"):
+            if options.var_loss:
+                self.h_loss = self.y_loss - self.fairness_importance * self.s_var_loss
+            else:
+                self.h_loss = self.y_loss - self.fairness_importance * self.s_mean_loss
+            self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
+            self.h_test_loss_stat = tf.summary.scalar("h_test_loss", self.h_loss)
 
         with tf.name_scope("y_accuracy"):
             y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out,1), tf.argmax(self.y,1)), "float")
@@ -119,26 +129,25 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_loss = self.y_loss - self.fairness_importance * self.s_loss
-
         self.h_grads = optimizer.compute_gradients(self.h_loss, self.hidden_layers_variables)
         self.h_train_step = optimizer.apply_gradients(self.h_grads)
-        self.s_grads = optimizer.compute_gradients(self.s_loss, self.sensible_layers_variables)
+        self.s_grads = optimizer.compute_gradients(self.s_mean_loss, self.sensible_layers_variables)
         self.s_train_step = optimizer.apply_gradients(self.s_grads)
         self.y_grads = optimizer.compute_gradients(self.y_loss, self.class_layers_variables)
         self.y_train_step = optimizer.apply_gradients(self.y_grads)
-        
 
-        l2_norm = lambda t: tf.sqrt(tf.reduce_sum(tf.pow(t, 2)))
-        self.h_grads_stats = tf.summary.merge([tf.summary.histogram("%s-h-grad" % v.name, l2_norm(g)) for g, v in self.h_grads])
-        self.h_weight_stats = tf.summary.merge([tf.summary.histogram("%s-h-weights" % v.name, l2_norm(v)) for g, v in self.h_grads])
-        self.s_grads_stats = tf.summary.merge([tf.summary.histogram("%s-s-grad" % v.name, l2_norm(g)) for g, v in self.s_grads])
-        self.s_weight_stats = tf.summary.merge([tf.summary.histogram("%s-s-weights" % v.name, l2_norm(v)) for g, v in self.s_grads])
-        self.y_grads_stats = tf.summary.merge([tf.summary.histogram("%s-y-grad" % v.name, l2_norm(g)) for g, v in self.y_grads])
-        self.y_weight_stats = tf.summary.merge([tf.summary.histogram("%s-y-weights" % v.name, l2_norm(v)) for g, v in self.y_grads])
 
-        self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, self.s_train_accuracy_stat])
-        self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, self.s_test_accuracy_stat])
+        self.h_grads_stats = tf.summary.merge([tf.summary.histogram("%s-h-grad" % v.name, g) for g, v in self.h_grads])
+        self.h_weight_stats = tf.summary.merge([tf.summary.histogram("%s-h-weights" % v.name, v) for g, v in self.h_grads])
+        self.s_grads_stats = tf.summary.merge([tf.summary.histogram("%s-s-grad" % v.name, g) for g, v in self.s_grads])
+        self.s_weight_stats = tf.summary.merge([tf.summary.histogram("%s-s-weights" % v.name, v) for g, v in self.s_grads])
+        self.y_grads_stats = tf.summary.merge([tf.summary.histogram("%s-y-grad" % v.name, g) for g, v in self.y_grads])
+        self.y_weight_stats = tf.summary.merge([tf.summary.histogram("%s-y-weights" % v.name, v) for g, v in self.y_grads])
+
+        self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, 
+                            self.s_train_accuracy_stat, self.h_train_loss_stat])
+        self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, 
+                            self.s_test_accuracy_stat, self.h_test_loss_stat])
         self.grad_stats = tf.summary.merge([self.h_grads_stats, self.s_grads_stats, self.y_grads_stats])
         self.weight_stats = tf.summary.merge([self.h_weight_stats, self.s_weight_stats, self.y_weight_stats])
 
@@ -146,7 +155,7 @@ class Model:
 
 
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
-        measures = [["y", [self.y_loss, self.y_accuracy]], ["s", [self.s_loss, self.s_accuracy]]]
+        measures = [["y", [self.y_loss, self.y_accuracy]], ["s", [self.s_mean_loss, self.s_accuracy]]]
 
         print('|variable|acc. (train)|acc. (test)|loss (train)| loss(test)|')
         print('|:------:|-----------:|----------:|-----------:|----------:|')
