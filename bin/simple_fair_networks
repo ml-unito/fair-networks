@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+
+import sys
+sys.path.append(r"C:\Users\Visitor\Documents\fair-networks\packages")
+import numpy as np
+import tensorflow as tf
+import time
+import pandas
+import sklearn.svm as svm
+import argparse
+import math
+
+
+def create_layer(x, num_out, activation, prefix='h', num=0, 
+                 initializer=tf.truncated_normal_initializer):
+    variables = []
+    num_in = x.shape[1]
+    w = tf.get_variable("{}-{}-w".format(prefix, num), dtype=tf.float32, shape=[num_in, num_out], initializer=initializer())
+    b = tf.get_variable("{}-{}-b".format(prefix, num), dtype=tf.float32, shape=[num_out], initializer=initializer())
+    variables.extend([w, b])
+    out = activation(tf.matmul(x, w) + b)
+    return out, variables
+
+
+if __name__ == '__main__':
+    ## dataset loading
+    x_train = np.array([[1, 1], [0, 0]])
+    num_features = x_train.shape[1]
+    num_s_labels = 2
+    num_y_labels = 2
+    s_train = np.array([[0, 1], [0, 1]])
+    y_train = np.array([[0, 1], [1, 0]])
+    y_test = np.array([[0, 1], [0, 1]])
+    s_test = np.array([[0, 1], [0, 1]])
+    x_test = np.array([[1, 1], [0, 0]])
+    learning_rate = 0.001
+
+    ## hyperparameters
+    h_sizes = [5, 5]
+    s_sizes = [5, 5]
+    y_sizes = [5, 5]
+    batch_size = 2
+    fairness_importance = 0.5
+    num_epochs = 2000
+
+    ## model def
+    x_ph = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
+    y_ph = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
+    s_ph = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
+
+    h_vars = []
+    input_operation = x_ph
+    for i, h_size in enumerate(h_sizes):
+        out, vars = create_layer(input_operation, h_size, tf.nn.sigmoid, prefix="h", num=i)
+        print(out)
+        input_operation = out
+        h_vars.extend(vars)
+
+    s_vars = []
+    for i, s_size in enumerate(s_sizes):
+        out, vars = create_layer(input_operation, s_size, tf.nn.sigmoid, prefix="s", num=i)
+        input_operation = out
+        s_vars.extend(vars)
+    s_out, vars = create_layer(input_operation, num_s_labels, tf.identity, prefix='s', num=i+1)
+    s_vars.extend(vars)
+
+    y_vars = []
+    for i, y_size in enumerate(h_sizes):
+        out, vars = create_layer(input_operation, y_size, tf.nn.sigmoid, prefix="y", num=i)
+        input_operation = out
+        y_vars.extend(vars)
+    y_out, vars = create_layer(input_operation, num_y_labels, tf.identity, prefix="y", num=i+1)
+    y_vars.extend(vars)
+
+    y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_ph, logits=y_out))
+    s_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=s_ph, logits=s_out))
+    h_loss = y_loss - fairness_importance * s_loss
+
+    optimizer = tf.train.AdagradOptimizer(learning_rate)
+    y_train = optimizer.minimize(y_loss, var_list=y_vars)
+    s_train = optimizer.minimize(s_loss, var_list=s_vars)
+    h_train = optimizer.minimize(h_loss, var_list=h_vars)
+
+    ## tf housekeeping
+    init = tf.initializers.global_variables()
+    sess = tf.Session()
+    sess.run(init)
+
+    ## training loop
+    num_batches_per_epoch = math.ceil(len(x_train)/batch_size)
+    for i in range(num_epochs):
+        for j in range(num_batches_per_epoch):
+            start = batch_size * j 
+            end = batch_size * (j+1)
+            _, y_loss_value = sess.run([y_train, y_loss], feed_dict={x_ph: x_train[start:end], y_ph: y_train[start:end]})
+            _, s_loss_value = sess.run([s_train, s_loss], feed_dict={x_ph: x_train[start:end], s_ph: s_train[start:end]})
+            _, h_loss_value = sess.run([h_train, h_loss], feed_dict={x_ph: x_train[start:end], y_ph: y_train[start:end], s_ph: s_train[start:end]})
+        if i % 10 == 0:
+            _, y_loss_value = sess.run([y_train, y_loss], feed_dict={x_ph: x_test[start:end], y_ph: y_test[start:end]})
+            _, s_loss_value = sess.run([s_train, s_loss], feed_dict={x_ph: x_test[start:end], s_ph: s_test[start:end]})
+            _, h_loss_value = sess.run([h_train, h_loss], feed_dict={x_ph: x_test[start:end], y_ph: y_test[start:end], s_ph: s_test[start:end]})
+            print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(i, y_loss_value, s_loss_value, h_loss_value))
