@@ -71,7 +71,7 @@ class FairNetworksTraining:
 
                 if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
                     print("\n")
-                    self.log_stats()
+                    self.log_stats(epoch)
 
             except tf.errors.OutOfRangeError:
                 break
@@ -92,14 +92,9 @@ class FairNetworksTraining:
                 self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
                 self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
 
-                batch += 1
-                perc_complete = (float(batch) / tot_batches) * 100
-                print("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
-                      (epoch, batch, tot_batches, perc_complete), end="")
-
                 if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
                     print("\n")
-                    self.log_stats()
+                    self.log_stats(epoch)
 
             except tf.errors.OutOfRangeError:
                 break
@@ -108,7 +103,6 @@ class FairNetworksTraining:
     def training_loop(self):
         for _ in range(self.options.schedule.num_epochs):
             epoch = self.session.run(self.model.epoch)
-            print("Running epoch number: %d" % epoch)
 
             if self.options.batched:
                 self.run_epoch_batched()
@@ -118,18 +112,27 @@ class FairNetworksTraining:
             self.save_model(int(epoch[0]))
 
             self.updateTensorboardStats(epoch)
-            self.log_stats()
+
+            if int(epoch[0]) % 10 == 0:
+                self.log_losses(epoch)
 
             self.session.run(self.model.inc_epoch)
 
         self.save_model("final")
 
-    def log_stats(self):
+    def log_losses(self, epoch):
+        nn_y_loss = self.session.run(self.model.y_loss, feed_dict = {self.model.x: self.test_xs, self.model.y: self.test_ys})
+        nn_s_loss = self.session.run(self.model.s_mean_loss, feed_dict = {self.model.x: self.test_xs, self.model.s: self.test_s})
+        nn_h_loss = self.session.run(self.model.h_loss, feed_dict = {self.model.x: self.test_xs, self.model.s: self.test_s, self.model.y: self.test_ys})
+
+        print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss))
+
+    def log_stats(self, epoch):
         self.run_train_s(self.train_xs, self.train_s)
 
         nn_y_accuracy = self.session.run(self.model.y_accuracy, feed_dict = {self.model.x: self.test_xs, self.model.y: self.test_ys})
         nn_s_accuracy = self.session.run(self.model.s_accuracy, feed_dict = {self.model.x: self.test_xs, self.model.s: self.test_s})
-        print("y accuracy: %2.4f s accuracy: %2.4f" % (nn_y_accuracy, nn_s_accuracy))
+        print("Epoch %f y accuracy: %2.4f s accuracy: %2.4f" % (epoch[0], nn_y_accuracy, nn_s_accuracy))
 
     def updateTensorboardStats(self, epoch):
         stat_des = self.session.run(self.model.train_stats, feed_dict = { self.model.x:self.train_xs, self.model.y:self.train_ys, self.model.s: self.train_s })
@@ -138,13 +141,7 @@ class FairNetworksTraining:
         stat_des = self.session.run(self.model.test_stats, feed_dict = { self.model.x:self.test_xs, self.model.y:self.test_ys, self.model.s: self.test_s })
         self.writer.add_summary(stat_des, global_step = epoch)
 
-        stat_des = self.session.run(self.model.grad_stats, feed_dict = { self.model.x:self.train_xs, self.model.y:self.train_ys, self.model.s: self.train_s })
-        self.writer.add_summary(stat_des, global_step = epoch)
-
-        stat_des = self.session.run(self.model.weight_stats, feed_dict = { self.model.x:self.train_xs, self.model.y:self.train_ys, self.model.s: self.train_s })
-        self.writer.add_summary(stat_des, global_step = epoch)
 
     def save_model(self, epoch):
-        print(epoch)
         if epoch == "final" or self.options.save_at_epoch(epoch):
             self.saver.save(self.session, self.options.output_fname(epoch))

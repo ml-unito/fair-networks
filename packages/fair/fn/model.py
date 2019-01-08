@@ -129,27 +129,15 @@ class Model:
         self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_grads = optimizer.compute_gradients(self.h_loss, self.hidden_layers_variables)
-        self.h_train_step = optimizer.apply_gradients(self.h_grads)
-        self.s_grads = optimizer.compute_gradients(self.s_mean_loss, self.sensible_layers_variables)
-        self.s_train_step = optimizer.apply_gradients(self.s_grads)
-        self.y_grads = optimizer.compute_gradients(self.y_loss, self.class_layers_variables)
-        self.y_train_step = optimizer.apply_gradients(self.y_grads)
+        self.h_train_step = optimizer.minimize(self.h_loss)
+        self.s_train_step = optimizer.minimize(self.s_mean_loss)
+        self.y_train_step = optimizer.minimize(self.y_loss)
 
-
-        self.h_grads_stats = tf.summary.merge([tf.summary.histogram("%s-h-grad" % v.name, g) for g, v in self.h_grads])
-        self.h_weight_stats = tf.summary.merge([tf.summary.histogram("%s-h-weights" % v.name, v) for g, v in self.h_grads])
-        self.s_grads_stats = tf.summary.merge([tf.summary.histogram("%s-s-grad" % v.name, g) for g, v in self.s_grads])
-        self.s_weight_stats = tf.summary.merge([tf.summary.histogram("%s-s-weights" % v.name, v) for g, v in self.s_grads])
-        self.y_grads_stats = tf.summary.merge([tf.summary.histogram("%s-y-grad" % v.name, g) for g, v in self.y_grads])
-        self.y_weight_stats = tf.summary.merge([tf.summary.histogram("%s-y-weights" % v.name, v) for g, v in self.y_grads])
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, 
                             self.s_train_accuracy_stat, self.h_train_loss_stat])
         self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat, 
                             self.s_test_accuracy_stat, self.h_test_loss_stat])
-        self.grad_stats = tf.summary.merge([self.h_grads_stats, self.s_grads_stats, self.y_grads_stats])
-        self.weight_stats = tf.summary.merge([self.h_weight_stats, self.s_weight_stats, self.y_weight_stats])
 
         return self
 
