@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import time
 import sys
+import logging
 
 
 class Model:
@@ -50,10 +51,12 @@ class Model:
         num_s_labels = options.dataset.num_s_columns()
         num_y_labels = options.dataset.num_y_columns()
 
-        self.fairness_importance = tf.Variable(options.fairness_importance, name="fairness_importance")
 
         self.epoch = tf.get_variable("epoch", shape=[1], initializer=tf.zeros_initializer)
         self.inc_epoch = self.epoch.assign(self.epoch + 1)
+
+        self.fairness_importance = tf.Variable(options.fairness_importance, name="fairness_importance")
+        self.current_fairness = tf.reshape(2 / (1 + tf.exp(-self.fairness_importance * self.epoch)) - 1, [])
 
         self.x = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
         self.y = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
@@ -93,9 +96,9 @@ class Model:
 
         with tf.name_scope("h_loss"):
             if options.var_loss:
-                self.h_loss = self.y_loss - self.fairness_importance * self.s_var_loss
+                self.h_loss = self.y_loss - self.current_fairness * self.s_var_loss
             else:
-                self.h_loss = self.y_loss - self.fairness_importance * self.s_mean_loss
+                self.h_loss = self.y_loss - self.current_fairness * self.s_mean_loss
             self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
             self.h_test_loss_stat = tf.summary.scalar("h_test_loss", self.h_loss)
 
@@ -126,12 +129,19 @@ class Model:
             FN = tf.count_nonzero((predicted - 1) * actual)
             self.confusion_matrix = (TP,TN,FP,FN)
 
-        self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
+        self.y_variables = [self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step = optimizer.minimize(self.h_loss)
-        self.s_train_step = optimizer.minimize(self.s_mean_loss)
-        self.y_train_step = optimizer.minimize(self.y_loss)
+        print('here')
+        print(logging.root.level)
+        logging.debug("hidden variables:{}".format(self.hidden_layers_variables))
+        logging.debug("y variables:{}".format(self.y_variables))
+        logging.debug("s variables:{}".format(self.s_variables))
+
+        self.h_train_step = optimizer.minimize(
+            self.h_loss, var_list=self.hidden_layers_variables)
+        self.s_train_step = optimizer.minimize(self.s_mean_loss, var_list=self.s_variables)
+        self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
 
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, 
