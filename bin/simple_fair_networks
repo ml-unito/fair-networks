@@ -16,11 +16,15 @@ import math
 
 
 def create_layer(x, num_out, activation, prefix='h', num=0, 
-                 initializer=tf.truncated_normal_initializer):
+                 initializer=tf.truncated_normal_initializer,
+                 random_units=0):
     variables = []
     num_in = x.shape[1]
-    w = tf.get_variable("{}-{}-w".format(prefix, num), dtype=tf.float32, shape=[num_in, num_out], initializer=initializer())
+    w = tf.get_variable("{}-{}-w".format(prefix, num), dtype=tf.float32, shape=[num_in+random_units, num_out], initializer=initializer())
     b = tf.get_variable("{}-{}-b".format(prefix, num), dtype=tf.float32, shape=[num_out], initializer=initializer())
+    if random_units != 0:
+        x_rand = tf.random_normal(name="{}-{}-b".format(prefix, num), shape=[tf.shape(x)[0], random_units])
+        x = tf.concat([x, x_rand], axis=1)
     variables.extend([w, b])
     out = activation(tf.matmul(x, w) + b)
     return out, variables
@@ -52,6 +56,7 @@ if __name__ == '__main__':
     h_sizes = [5, 5]
     s_sizes = [5, 5]
     y_sizes = [5, 5]
+    r_units = [5, 5]
     batch_size = result.batch_size
     fairness_importance = result.fairness_importance
     num_epochs = result.num_epochs
@@ -64,7 +69,7 @@ if __name__ == '__main__':
     h_vars = []
     input_operation = x_ph
     for i, h_size in enumerate(h_sizes):
-        out, variables = create_layer(input_operation, h_size, tf.nn.sigmoid, prefix="h", num=i)
+        out, variables = create_layer(input_operation, h_size, tf.nn.sigmoid, prefix="h", num=i, random_units=r_units[i])
         input_operation = out
         h_vars.extend(variables)
     last_h = input_operation
