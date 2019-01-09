@@ -4,6 +4,14 @@ import time
 import sys
 
 
+@tf.custom_gradient
+def inv_grad(x):
+    def grad(dx):
+        return -dx
+    return x, grad
+
+
+
 class Model:
     def __init__(self, options, optimizer):
         self._build(options, optimizer)
@@ -14,13 +22,14 @@ class Model:
         for index,layer in enumerate(layers):
             num_nodes, activation, initializer = layer
             with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
-                in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
+                in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(stddev=0.01), name='%s-layer-%d' % (layer_name, index+1))
                 with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
                     w = tf.get_variable("kernel")
                     b = tf.get_variable("bias")
                     layer_variables.extend([w, b])
 
         return in_layer, layer_variables
+
 
     def build_layer_random(self, in_layer, hidden_layers, random_units):
         try:
@@ -66,6 +75,7 @@ class Model:
         else:
             h_layer, self.hidden_layers_variables  = self.build_layer_random(in_layer, options.hidden_layers, options.random_units)
 
+        h_layer = inv_grad(h_layer)
         s_layer, self.sensible_layers_variables = self.build_layer(h_layer, "sensible", options.sensible_layers)
         y_layer, self.class_layers_variables    = self.build_layer(h_layer, "class", options.class_layers)
         
@@ -126,13 +136,15 @@ class Model:
             FN = tf.count_nonzero((predicted - 1) * actual)
             self.confusion_matrix = (TP,TN,FP,FN)
 
-        self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
+        self.y_variables = [self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
+        self.all_variables = [self.class_layers_variables, self.sensible_layers_variables, self.hidden_layers_variables]
 
-        self.h_train_step = optimizer.minimize(self.h_loss)
-        self.s_train_step = optimizer.minimize(self.s_mean_loss)
-        self.y_train_step = optimizer.minimize(self.y_loss)
 
+        self.train_step = optimizer.minimize(self.h_loss, var_list=self.all_variables)
+        # self.h_train_step = optimizer.minimize(self.h_loss, var_list=self.hidden_layers_variables)
+        # self.s_train_step = optimizer.minimize(self.s_mean_loss, var_list=self.s_variables)
+        # self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, 
                             self.s_train_accuracy_stat, self.h_train_loss_stat])

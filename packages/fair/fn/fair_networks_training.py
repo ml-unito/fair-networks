@@ -88,9 +88,9 @@ class FairNetworksTraining:
             try:
                 xs, ys, s = self.session.run(self.trainset_next)
 
-                self.session.run(self.model.s_train_step, feed_dict = { self.model.x:xs, self.model.s:s })
-                self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
-                self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
+                # self.session.run(self.model.s_train_step, feed_dict = { self.model.x:xs, self.model.s:s })
+                # self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys })
+                self.session.run(self.model.train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s })
 
                 if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
                     print("\n")
@@ -127,12 +127,18 @@ class FairNetworksTraining:
 
         print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss))
 
+        h_vars = self.session.run(self.model.all_variables)
+        print("Hidden layer variables: {}".format(h_vars))
+
     def log_stats(self, epoch):
         self.run_train_s(self.train_xs, self.train_s)
 
         nn_y_accuracy = self.session.run(self.model.y_accuracy, feed_dict = {self.model.x: self.test_xs, self.model.y: self.test_ys})
         nn_s_accuracy = self.session.run(self.model.s_accuracy, feed_dict = {self.model.x: self.test_xs, self.model.s: self.test_s})
         print("Epoch %f y accuracy: %2.4f s accuracy: %2.4f" % (epoch[0], nn_y_accuracy, nn_s_accuracy))
+
+        h_vars = self.session.run(self.model.hidden_layers_variables)
+        print("Hidden layer variables: {}".format(h_vars))
 
     def updateTensorboardStats(self, epoch):
         stat_des = self.session.run(self.model.train_stats, feed_dict = { self.model.x:self.train_xs, self.model.y:self.train_ys, self.model.s: self.train_s })
