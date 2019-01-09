@@ -64,27 +64,27 @@ if __name__ == '__main__':
     h_vars = []
     input_operation = x_ph
     for i, h_size in enumerate(h_sizes):
-        out, vars = create_layer(input_operation, h_size, tf.nn.sigmoid, prefix="h", num=i)
+        out, variables = create_layer(input_operation, h_size, tf.nn.sigmoid, prefix="h", num=i)
         input_operation = out
-        h_vars.extend(vars)
+        h_vars.extend(variables)
     last_h = input_operation
 
     s_vars = []
     for i, s_size in enumerate(s_sizes):
-        out, vars = create_layer(input_operation, s_size, tf.nn.sigmoid, prefix="s", num=i)
+        out, variables = create_layer(input_operation, s_size, tf.nn.sigmoid, prefix="s", num=i)
         input_operation = out
-        s_vars.extend(vars)
-    s_out, vars = create_layer(input_operation, num_s_labels, tf.identity, prefix='s', num=i+1)
-    s_vars.extend(vars)
+        s_vars.extend(variables)
+    s_out, variables = create_layer(input_operation, num_s_labels, tf.identity, prefix='s', num=i+1)
+    s_vars.extend(variables)
 
     y_vars = []
     input_operation = last_h
-    for i, y_size in enumerate(h_sizes):
-        out, vars = create_layer(input_operation, y_size, tf.nn.sigmoid, prefix="y", num=i)
+    for i, y_size in enumerate(y_sizes):
+        out, variables = create_layer(input_operation, y_size, tf.nn.sigmoid, prefix="y", num=i)
         input_operation = out
-        y_vars.extend(vars)
-    y_out, vars = create_layer(input_operation, num_y_labels, tf.identity, prefix="y", num=i+1)
-    y_vars.extend(vars)
+        y_vars.extend(variables)
+    y_out, variables = create_layer(input_operation, num_y_labels, tf.identity, prefix="y", num=i+1)
+    y_vars.extend(variables)
 
     y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_ph, logits=y_out))
     s_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=s_ph, logits=s_out))
@@ -106,11 +106,36 @@ if __name__ == '__main__':
         for j in range(num_batches_per_epoch):
             start = batch_size * j 
             end = batch_size * (j+1)
-            _, y_loss_value = sess.run([y_step, y_loss], feed_dict={x_ph: x_train[start:end], y_ph: y_train[start:end]})
-            _, s_loss_value = sess.run([s_step, s_loss], feed_dict={x_ph: x_train[start:end], s_ph: s_train[start:end]})
-            _, h_loss_value = sess.run([h_step, h_loss], feed_dict={x_ph: x_train[start:end], y_ph: y_train[start:end], s_ph: s_train[start:end]})
+
+            sess.run([y_step], feed_dict={x_ph: x_train[start:end], y_ph: y_train[start:end]})
+            sess.run([s_step], feed_dict={x_ph: x_train[start:end], s_ph: s_train[start:end]})
+            sess.run([h_step], feed_dict={x_ph: x_train[start:end], y_ph: y_train[start:end], s_ph: s_train[start:end]})
+
         if i % 10 == 0:
-            _, y_loss_value = sess.run([y_step, y_loss], feed_dict={x_ph: x_test, y_ph: y_test})
-            _, s_loss_value = sess.run([s_step, s_loss], feed_dict={x_ph: x_test, s_ph: s_test})
-            _, h_loss_value = sess.run([h_step, h_loss], feed_dict={x_ph: x_test, y_ph: y_test, s_ph: s_test})
+            y_loss_value = sess.run(y_loss, feed_dict={x_ph: x_test, y_ph: y_test})
+            s_loss_value = sess.run(s_loss, feed_dict={x_ph: x_test, s_ph: s_test})
+            h_loss_value = sess.run(h_loss, feed_dict={x_ph: x_test, y_ph: y_test, s_ph: s_test})
             print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(i, y_loss_value, s_loss_value, h_loss_value))
+
+    repr_h_train = sess.run(last_h, feed_dict={x_ph: x_train})
+    repr_h_test = sess.run(last_h, feed_dict={x_ph: x_test})
+
+
+    result = np.hstack((repr_h_train, s_train, y_train))
+    h_header = ["h_"+str(index)
+                for index in range(len(repr_h_train[0]))]
+    s_header = ["s_"+str(index) for index in range(len(s_train[0]))]
+    y_header = ["y_"+str(index) for index in range(len(y_train[0]))]
+    header = h_header + s_header + y_header
+
+    pandas.DataFrame(result, columns=header).to_csv("simple_repr_train.csv", index=False)
+
+    result = np.hstack((repr_h_test, s_test, y_test))
+    h_header = ["h_"+str(index)
+                for index in range(len(repr_h_test[0]))]
+    s_header = ["s_"+str(index) for index in range(len(s_test[0]))]
+    y_header = ["y_"+str(index) for index in range(len(y_test[0]))]
+    header = h_header + s_header + y_header
+
+    pandas.DataFrame(result, columns=header).to_csv(
+        "simple_repr_test.csv", index=False)
