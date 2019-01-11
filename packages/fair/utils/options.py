@@ -276,7 +276,7 @@ class Options:
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
         parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
         parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
-        parser.add_argument('-g', '--get-info', choices=['epoch', 'variables', 'data-sample', 'none'], default='none', help="Returns a textual representation of model parameters")
+        parser.add_argument('-g', '--get-info', choices=['epoch', 'variables', 'data-sample', 'out-sample','none'], default='none', help="Returns a textual representation of model parameters")
         parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
         parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
         parser.add_argument('-B', '--batched', action='store_const', const=True, default=False, help="Train the subclassifiers with a batch-by-batch strategy")

@@ -94,13 +94,22 @@ def print_data_sample(options, session, model):
     print(colored("s", "yellow"))
     print(s[:15, :])
 
+def print_out_sample(options, session, model):
+    xs, ys, s = options.dataset.train_all_data()
+    print(colored("y", "yellow"))
+    print( "{}".format(session.run(model.y_out, feed_dict={model.x:xs[:15,:]}) ))
+    print(colored("s", "yellow"))
+    print( "{}".format(session.run(model.s_out, feed_dict={model.x:xs[:15,:]}) ))
+
 def print_model_information(options, session, model, requested_info):
-    assert requested_info in ['epoch', 'variables', 'data-sample'], "--get-info specifies an supported value (should not get here)"
+    assert requested_info in ['epoch', 'variables', 'data-sample', 'out-sample'], "--get-info specifies an supported value (should not get here)"
 
     if requested_info == 'epoch':
         print(int(session.run( model.epoch[0])))
     elif requested_info == 'variables':
         model.print_weights(session)
+    elif requested_info == 'out-sample':
+        print_out_sample(options, session, model)
     else:
         print_data_sample(options, session, model)
 
