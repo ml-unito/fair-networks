@@ -126,12 +126,12 @@ class Model:
             FN = tf.count_nonzero((predicted - 1) * actual)
             self.confusion_matrix = (TP,TN,FP,FN)
 
-        self.y_variables = [self.hidden_layers_variables, self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
+        self.y_variables = [self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step = optimizer.minimize(self.h_loss)
-        self.s_train_step = optimizer.minimize(self.s_mean_loss)
-        self.y_train_step = optimizer.minimize(self.y_loss)
+        self.h_train_step = optimizer.minimize(self.h_loss, var_list=self.hidden_layers_variables)
+        self.s_train_step = optimizer.minimize(self.s_mean_loss, var_list=self.s_variables)
+        self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
 
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, 
@@ -174,3 +174,9 @@ class Model:
                 print("index: %d pred: %d expected: %d" % (index, np.argmax(pred), np.argmax(exp)))
                 errors += 1
         print("accuracy: %f" % ((count - errors) / float(count)))
+
+    def print_weights(self, session):
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+        for var in variables:
+            var_value = session.run(var)
+            print("var[{}]={}".format(var.name, var_value))

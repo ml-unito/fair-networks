@@ -5,6 +5,7 @@ from fair.datasets.synth_dataset import SynthDataset
 from fair.datasets.german_dataset import GermanDataset
 from fair.datasets.synth_easy_dataset import SynthEasyDataset
 from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
+from fair.datasets.synth_easy3_dataset import SynthEasy3Dataset
 
 import argparse
 import textwrap
@@ -152,6 +153,7 @@ class Options:
 
         self.used_options = self.parse(self.args)
 
+
         # with open(self.output_fname() + "_used_options.json", "w") as json_file:
         #     json_file.write(self.json_representation())
 
@@ -274,21 +276,21 @@ class Options:
         parser.add_argument('-d', '--dataset-base-path', type=str, help="Specify the base directory for storing and reading datasets")
         parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
         parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
-        parser.add_argument('-g', '--get-info', choices=['epoch', 'none'], default='none', help="Returns a textual representation of model parameters")
+        parser.add_argument('-g', '--get-info', choices=['epoch', 'variables', 'data-sample', 'none'], default='none', help="Returns a textual representation of model parameters")
         parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
         parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
         parser.add_argument('-B', '--batched', action='store_const', const=True, default=False, help="Train the subclassifiers with a batch-by-batch strategy")
         parser.add_argument('-V', '--var-loss', action='store_const', const=True, default=False, help="Use the s_loss variance (instead of the mean) to train the common layers.")
 
         if not dataset_already_given:
-            parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2'], help="dataset to be loaded")
+            parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3'], help="dataset to be loaded")
 
     def parse(self, argv):
         config_opts = self.try_load_opts(argv)
 
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 
                      'german':GermanDataset, 'synth': SynthDataset, 
-                     'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset }
+                     'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset }
         parser = argparse.ArgumentParser(description=PARAMS_DESCRIPTION, formatter_class=argparse.RawDescriptionHelpFormatter)
 
         self.configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts, dataset_already_given='dataset' in config_opts)
@@ -323,6 +325,8 @@ class Options:
             self.log_level = logging.DEBUG
         else:
             self.log_level = logging.getLevelName(result.log_level)
+
+        logging.root.level=self.log_level
 
         self.batched = result.batched
 

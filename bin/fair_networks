@@ -7,12 +7,12 @@ import time
 import pandas
 import sklearn.svm as svm
 from termcolor import colored
+import logging
 
 from fair.fn.model import Model
 from fair.utils.options import Options
 from fair.fn.fair_networks_training import FairNetworksTraining
 
-import logging
 
 
 def print_stats(session, model, dataset):
@@ -77,25 +77,43 @@ def init_model(opts, session, saver, writer):
         if graph_fairness_importance != opts.fairness_importance:
             print(colored("Warning:", "yellow") +
                   "Fairness importance changed by the options, but it is part of the model.")
-            exit(1)
+            print("graph: {} opts: {}".format(graph_fairness_importance, opts.fairness_importance))
+            # exit(1)
     else:
         print(colored("Initializing a new model", 'yellow'))
         init = tf.global_variables_initializer()
         session.run(init)
         writer.add_graph(session.graph)
 
-def print_model_information(session, model, requested_info):
-    assert requested_info == 'epoch', "--get-info specifies an supported value (should not get here)"
-    
-    print(int(session.run( model.epoch[0])))
+def print_data_sample(options, session, model):
+    xs, ys, s = options.dataset.train_all_data()
+    print(colored("xs", "yellow"))
+    print(xs[:15, :])
+    print(colored("ys", "yellow"))
+    print(ys[:15, :])
+    print(colored("s", "yellow"))
+    print(s[:15, :])
+
+def print_model_information(options, session, model, requested_info):
+    assert requested_info in ['epoch', 'variables', 'data-sample'], "--get-info specifies an supported value (should not get here)"
+
+    if requested_info == 'epoch':
+        print(int(session.run( model.epoch[0])))
+    elif requested_info == 'variables':
+        model.print_weights(session)
+    else:
+        print_data_sample(options, session, model)
 
 
 # --------------------------------------------------------------------------------
 # main
 # --------------------------------------------------------------------------------
 
+
 opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
+
+
 
 if opts.log_level <= logging.INFO:
     print(colored("Initialized system based on config:", "green"))
@@ -111,15 +129,18 @@ session = tf.Session()
 saver = tf.train.Saver()
 writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
+print("Initializing model")
 init_model(opts, session, saver, writer)
+print("Model initialized")
 
 
 if opts.eval_stats:
     print_stats(session, model, opts.dataset)
 elif opts.eval_data_path != None:
+    print("Evaluating representations")
     print_processed_data(session, model, opts.dataset)
 elif opts.get_info != None:
-    print_model_information(session, model, opts.get_info)
+    print_model_information(opts, session, model, opts.get_info)
 else:
     fnt = FairNetworksTraining(opts, session, model, saver, writer)
     fnt.training_loop()
