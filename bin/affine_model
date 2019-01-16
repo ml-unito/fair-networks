@@ -4,6 +4,7 @@ import sys
 
 from fair.datasets.adult_dataset import AdultDataset
 from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
+from fair.datasets.synth_easy3_dataset import SynthEasy3Dataset
 from sklearn.svm import SVC
 
 import numpy as np
@@ -58,7 +59,7 @@ def estimate_mean_and_variance(s, num_examples=1000):
 if __name__ == '__main__':
     ## argument handling
     parser = argparse.ArgumentParser()
-    parser.add_argument('dataset', choices=['adult', 'synth-easy2'], help="dataset to be loaded")
+    parser.add_argument('dataset', choices=['adult', 'synth-easy2', 'synth-easy3'], help="dataset to be loaded")
     parser.add_argument('-l', '--learning-rate', type=float, default=1e-4, help="Specifies the (initial) learning rate")
     parser.add_argument('-f', '--fairness-importance', type=float, default=5.0, help="Specify how important is fairness w.r.t. the error")
     parser.add_argument('-b', '--batch-size', type=int, default=100, help="Specifies the batch size to be used")
@@ -66,7 +67,7 @@ if __name__ == '__main__':
     result = parser.parse_args(sys.argv[1:])
 
     ## dataset loading
-    datasets = {'adult': AdultDataset, 'synth-easy2': SynthEasy2Dataset}
+    datasets = {'adult': AdultDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset}
     dataset_base_path = 'data/'
     dataset = datasets[result.dataset](dataset_base_path)
     x_train, y_train, s_train = dataset.train_all_data()
