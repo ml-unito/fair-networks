@@ -29,11 +29,11 @@ def create_layer(x, num_out, activation, prefix='h', num=0,
     out = activation(tf.matmul(x, w) + b)
     return out, variables
 
-def create_affine_layer(x, alpha_mu=0, alpha_sigma=1, beta_mu=0, beta_sigma=1,
+def create_affine_layer(x, mu=0, sigma=1,
                         initializer=tf.truncated_normal_initializer):
     variables = []
     num_in = x.shape[1]
-    beta_in = tf.random_normal(name="beta-in", shape=[tf.shape(x)[0], num_in], mean=beta_mu, stddev=beta_sigma)
+    beta_in = tf.truncated_normal(name="beta-in", shape=[tf.shape(x)[0], num_in], mean=mu, stddev=sigma)
     alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=tf.constant_initializer(1))
     w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=initializer())
     beta = tf.multiply(beta_in, w_beta)
@@ -76,7 +76,6 @@ if __name__ == '__main__':
     num_y_labels = dataset.num_y_columns()
     s_err_mean, s_err_var = estimate_mean_and_variance(s_train)
     print('Estimated mean and variance: {} {}'.format(s_err_mean, s_err_var))
-    sys.exit(1)
 
     ## hyperparameters
     learning_rate = result.learning_rate
@@ -141,8 +140,11 @@ if __name__ == '__main__':
 
         if i % 10 == 0:
             sl, yl, hl = sess.run([s_loss, y_loss, h_loss], feed_dict={x_ph: x_test, s_ph: s_test, y_ph: y_test})
-            print('Epoch {:4} s loss: {:07.6f} y loss: {:07.6f} h loss: {:07.6f}'.format(i, sl, yl, hl))
+            print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(i, yl, sl, hl))
 
+    ## print weight info
+    aw = sess.run(affine_variables)
+    print('alpha {} \n beta {}'.format(aw[0], aw[1]))
 
     ## saving representations to disk
     repr_h_train = sess.run(x_affine, feed_dict={x_ph: x_train})
