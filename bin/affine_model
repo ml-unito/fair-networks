@@ -33,7 +33,8 @@ def create_affine_layer(x, mu=0, sigma=1,
                         initializer=tf.truncated_normal_initializer):
     variables = []
     num_in = x.shape[1]
-    beta_in = tf.truncated_normal(name="beta-in", shape=[tf.shape(x)[0], num_in], mean=mu, stddev=sigma)
+    beta_in = np.random.rand(x.shape[1])
+    beta_in = tf.constant(beta_in, dtype=tf.float32)
     alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=tf.constant_initializer(1))
     w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=initializer())
     beta = tf.multiply(beta_in, w_beta)
