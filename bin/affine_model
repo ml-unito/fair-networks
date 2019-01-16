@@ -114,7 +114,7 @@ if __name__ == '__main__':
     mean_s_loss, var_s_loss = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=s_ph, logits=s_out), 0)
     y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_ph, logits=y_out))
     s_loss = mean_s_loss
-    h_loss = fairness * (tf.math.pow(mean_s_loss - s_err_mean, 2) - tf.math.pow(var_s_loss - s_err_var, 2)) - y_loss
+    h_loss = fairness * (tf.math.pow(mean_s_loss - s_err_mean, 2) + tf.math.pow(var_s_loss - s_err_var, 2)) + y_loss
 
     optimizer = tf.train.AdagradOptimizer(learning_rate)
 
