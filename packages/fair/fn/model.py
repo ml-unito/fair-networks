@@ -13,18 +13,18 @@ class Model:
         variables = []
 
         for index, layer in enumerate(layers):
-            in_layer, temp_variables = build_layer(in_layer, layer_name, layer, index)
+            in_layer, temp_variables = self.build_layer(in_layer, layer_name, layer, index)
             variables.extend(temp_variables)
 
-        return in_layer, layer_variables
+        return in_layer, variables
 
-    def build_hidden_layers(in_layer, hidden_layers):
+    def build_hidden_layers(self, in_layer, hidden_layers):
         hidden_variables = []
         for i, layer in enumerate(hidden_layers):
             layer_type = layer[0]
             if layer_type == 'n':
                 initializer = layer[3]
-                in_layer, variables = self.build_layer_affine(in_layer, initializer, i+1)
+                in_layer, variables = self.build_layer_noise(in_layer, initializer, i+1)
             else:
                 in_layer, variables = self.build_layer(in_layer, "hidden", layer, i+1)
             hidden_variables.extend(variables)
@@ -44,17 +44,17 @@ class Model:
         return in_layer, layer_variables
 
     def build_layer_noise(self, in_layer, initializer, index):
-        affine_layer_variables = []
+        variables = []
         
         with tf.variable_scope("%s-layer-%d" % ('noise', index)):
             num_in = in_layer.shape[1]
-            beta_in = np.random.rand(x.shape[1])
+            beta_in = np.random.rand(num_in)
             beta_in = tf.constant(beta_in, dtype=tf.float32)
-            alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=tf.constant_initializer(1))
-            w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=tf.constant_initializer(0))
+            alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.constant_initializer(1))
+            w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.constant_initializer(0))
             beta = tf.multiply(beta_in, w_beta)
-            out = tf.multiply(x, alpha) + beta
-            affine_layer_variables.extend([alpha, w_beta])
+            out = tf.multiply(in_layer, alpha) + beta
+            variables.extend([alpha, w_beta])
         return out, variables
 
     def _build(self, options, optimizer):

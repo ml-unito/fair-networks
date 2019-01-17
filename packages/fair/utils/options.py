@@ -102,6 +102,8 @@ class Schedule:
         return int(epoch_spec[1:])
 
 class Options:
+    HIDDEN_LAYER_SPEC_REGEXP = r'^([nslreh])?(\d+)?$'
+
     """Handles the options given to the main script.
 
         NOTE: all relative paths are assumed to be rooted in the same directory as the config file
@@ -165,21 +167,25 @@ class Options:
         return vars(self.used_options)
 
     def parse_hidden_units(self, spec):
-        match = re.search(r'^[slreh]?(\d+)$', spec)
+        match = re.search(self.HIDDEN_LAYER_SPEC_REGEXP, spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
 
+        if match.group(1) == 'n':
+            return None
 
-        return int(match.group(1))
+        if match.group(2) == None:
+            raise ParseError('Cannot parse layer specification for element {}: number of units missing from the specification'.format(spec))
+
+ 
+        return int(match.group(2))
 
     def parse_activation(self, spec):
-        match = re.search(r'^([slreh]?)\d+$', spec)
+        match = re.search(self.HIDDEN_LAYER_SPEC_REGEXP, spec)
         if match == None:
             raise ParseError('Cannot parse layer specification for element:' + spec)
 
-
-
-        if match.group(1) == '' or match.group(1) == 's':
+        if match.group(1) == None or match.group(1) == 's':
             return tf.nn.sigmoid
 
         if match.group(1) == 'l':
@@ -194,17 +200,24 @@ class Options:
         if match.group(1) == 'h':
             return tf.nn.tanh
 
+        if match.group(1) == 'n':
+            return None
+
+
         raise ParseError('Error in parsing layer specification for element:' + spec + '. This is a bug.')
 
 
     def parse_layers(self, str):
         layers_specs = str.split(':')
-        return [(self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
+        return [(self.parse_random_layer(spec), self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
                for spec in layers_specs ]
 
-    def parse_random_layers(self, str):
-        layers_specs = str.split(':')
-        return [int(spec) for spec in layers_specs]
+
+    def parse_random_layer(self, spec):
+        if spec == 'n':
+            return 'n'
+        else:
+            return None
 
 
     def check_layers_specs(self, from_json=False):
@@ -223,14 +236,12 @@ class Options:
         self.hidden_layers_specs = options.hidden_layers
         self.sensible_layers_specs = options.sensible_layers
         self.class_layers_specs = options.class_layers
-        self.random_units_specs = options.random_units
 
         self.check_layers_specs(from_json=False)
 
         self.hidden_layers = self.parse_layers(self.hidden_layers_specs)
         self.sensible_layers = self.parse_layers(self.sensible_layers_specs)
         self.class_layers = self.parse_layers(self.class_layers_specs)
-        self.random_units = self.parse_random_layers(self.random_units_specs)
 
     def try_load_opts(self, argv):
         if len(argv) >= 2 and Path(argv[1]).is_file():
@@ -267,7 +278,6 @@ class Options:
         parser.add_argument('-H', '--hidden-layers', type=str, help='hidden layers specs')
         parser.add_argument('-S', '--sensible-layers', type=str, help='sensible network specs')
         parser.add_argument('-Y', '--class-layers', type=str, help='output network specs')
-        parser.add_argument('-R', '--random-units', type=str, help='hidden random units specs')
         parser.add_argument('-r', '--random-seed', type=int, help='sets the random seed used in the experiment')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True, help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
         parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')
