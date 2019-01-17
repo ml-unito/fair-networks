@@ -43,8 +43,8 @@ def create_affine_layer(x, mu=0, sigma=1,
     variables.extend([alpha, w_beta])
     return out, variables
 
-def estimate_mean_and_variance(s, num_examples=1000):
-    num_features = len(s[0])
+def estimate_mean_and_variance(x, num_examples=1000):
+    num_features = len(x[0])
     svc = SVC()
     data = np.random.rand(num_examples, num_features)
     labels = [int(i > num_examples/2) for i in range(num_examples)]
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     num_features = dataset.num_features()
     num_s_labels = dataset.num_s_columns()
     num_y_labels = dataset.num_y_columns()
-    s_err_mean, s_err_var = estimate_mean_and_variance(s_train)
+    s_err_mean, s_err_var = estimate_mean_and_variance(x_train)
     print('Estimated mean and variance: {} {}'.format(s_err_mean, s_err_var))
 
     ## hyperparameters
