@@ -8,7 +8,7 @@ class Model:
     def __init__(self, options, optimizer):
         self._build(options, optimizer)
 
-    def build_layer(self, in_layer, layer_name, layers):
+    def build_layers(self, in_layer, layer_name, layers):
         layer_variables = []
 
         for index,layer in enumerate(layers):
@@ -22,28 +22,45 @@ class Model:
 
         return in_layer, layer_variables
 
-    def build_layer_random(self, in_layer, hidden_layers, random_units):
-        try:
-            assert len(random_units) == len(hidden_layers)
-        except AssertionError:
-            print('len(random_units) != len(hidden_layers): {} != {}'.format(len(random_units), len(hidden_layers)))
-            sys.exit(1)
+    def build_hidden_layers(in_layer, hidden_layers):
+        hidden_variables = []
+        for i, layer in enumerate(hidden_layers):
+            layer_type = layer[0]
+            if layer_type == 'affine':
+                initializer = layer[3]
+                in_layer, variables = self.build_layer_affine(in_layer, initializer, i+1)
+            else:
+                layer_parameters = layer[1:]
+                in_layer, variables = self.build_layer(in_layer, "hidden", layer_parameters, i+1)
+            hidden_variables.extend(variables)
+        return in_layer, hidden_variables
 
-        hidden_layers_variables = []
+    def build_layer(self, in_layer, layer_name, layer, index):
+        layer_variables = []
+
+        num_nodes, activation, initializer = layer
+        with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
+            in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
+            with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
+                w = tf.get_variable("kernel")
+                b = tf.get_variable("bias")
+                layer_variables.extend([w, b])
+
+        return in_layer, layer_variables
+
+    def build_layer_affine(self, in_layer, initializer, index):
+        affine_layer_variables = []
         
-        for index, hidden_layer in enumerate(hidden_layers):
-            num_nodes_in = in_layer.shape[1]
-            num_nodes_out, activation, initializer = hidden_layer
-            with tf.variable_scope("%s-layer-%d" % ("hidden", index+1)):
-                w = tf.get_variable(name="kernel", initializer=initializer(), shape=[num_nodes_in+random_units[index], num_nodes_out])
-                b = tf.get_variable(name="bias", initializer=initializer(), shape=[num_nodes_out])
-                x_rand = tf.random_normal(name="{}-layer-{}-random".format("hidden", index+1), shape=[tf.shape(in_layer)[0], random_units[index]])
-                in_layer = tf.concat([in_layer, x_rand], axis=1)
-                layer_out = activation(tf.matmul(in_layer, w) + b)
-            in_layer = layer_out
-            hidden_layers_variables.extend([w, b])
-        
-        return in_layer, hidden_layers_variables
+        with tf.variable_scope("%s-layer-%d" % (affine, index)):
+            num_in = in_layer.shape[1]
+            beta_in = np.random.rand(x.shape[1])
+            beta_in = tf.constant(beta_in, dtype=tf.float32)
+            alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=tf.constant_initializer(1))
+            w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=tf.constant_initializer(0))
+            beta = tf.multiply(beta_in, w_beta)
+            out = tf.multiply(x, alpha) + beta
+            affine_layer_variables.extend([alpha, w_beta])
+        return out, variables
 
     def _build(self, options, optimizer):
         num_features = options.num_features
@@ -61,17 +78,11 @@ class Model:
 
         in_layer = self.x 
 
-        if options.random_units == [0]:
-            h_layer, self.hidden_layers_variables = self.build_layer(in_layer, "hidden", options.hidden_layers)
-        else:
-            h_layer, self.hidden_layers_variables  = self.build_layer_random(in_layer, options.hidden_layers, options.random_units)
-
-        s_layer, self.sensible_layers_variables = self.build_layer(h_layer, "sensible", options.sensible_layers)
-        y_layer, self.class_layers_variables    = self.build_layer(h_layer, "class", options.class_layers)
+        h_layer, self.hidden_layers_variables  = self.build_hidden_layers(in_layer, options.hidden_layers)
+        s_layer, self.sensible_layers_variables = self.build_layers(h_layer, "sensible", options.sensible_layers)
+        y_layer, self.class_layers_variables    = self.build_layers(h_layer, "class", options.class_layers)
         
-
         self.model_last_hidden_layer = h_layer
-        # self.model_last_hidden_layer = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "hidden-layer-%d" % (len(options.hidden_layers)))[0]
 
         with tf.name_scope("s_out"):
             self.s_out = tf.layers.dense(s_layer, num_s_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="s_out")
