@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import time
 import sys
+from fair.utils.loss_utils import estimate_mean_and_variance
 
 
 class Model:
@@ -9,16 +10,11 @@ class Model:
         self._build(options, optimizer)
 
     def build_layers(self, in_layer, layer_name, layers):
-        layer_variables = []
+        variables = []
 
-        for index,layer in enumerate(layers):
-            num_nodes, activation, initializer = layer
-            with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
-                in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
-                with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
-                    w = tf.get_variable("kernel")
-                    b = tf.get_variable("bias")
-                    layer_variables.extend([w, b])
+        for index, layer in enumerate(layers):
+            in_layer, temp_variables = build_layer(in_layer, layer_name, layer, index)
+            variables.extend(temp_variables)
 
         return in_layer, layer_variables
 
@@ -26,19 +22,18 @@ class Model:
         hidden_variables = []
         for i, layer in enumerate(hidden_layers):
             layer_type = layer[0]
-            if layer_type == 'affine':
+            if layer_type == 'n':
                 initializer = layer[3]
                 in_layer, variables = self.build_layer_affine(in_layer, initializer, i+1)
             else:
-                layer_parameters = layer[1:]
-                in_layer, variables = self.build_layer(in_layer, "hidden", layer_parameters, i+1)
+                in_layer, variables = self.build_layer(in_layer, "hidden", layer, i+1)
             hidden_variables.extend(variables)
         return in_layer, hidden_variables
 
     def build_layer(self, in_layer, layer_name, layer, index):
         layer_variables = []
 
-        num_nodes, activation, initializer = layer
+        layer_type, num_nodes, activation, initializer = layer
         with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
             in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
             with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
@@ -48,10 +43,10 @@ class Model:
 
         return in_layer, layer_variables
 
-    def build_layer_affine(self, in_layer, initializer, index):
+    def build_layer_noise(self, in_layer, initializer, index):
         affine_layer_variables = []
         
-        with tf.variable_scope("%s-layer-%d" % (affine, index)):
+        with tf.variable_scope("%s-layer-%d" % ('noise', index)):
             num_in = in_layer.shape[1]
             beta_in = np.random.rand(x.shape[1])
             beta_in = tf.constant(beta_in, dtype=tf.float32)
@@ -76,9 +71,11 @@ class Model:
         self.y = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
         self.s = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
 
+        self.h_random_mean, self.h_random_var = estimate_mean_and_variance(num_features)
+
         in_layer = self.x 
 
-        h_layer, self.hidden_layers_variables  = self.build_hidden_layers(in_layer, options.hidden_layers)
+        h_layer, self.hidden_layers_variables   = self.build_hidden_layers(in_layer, options.hidden_layers)
         s_layer, self.sensible_layers_variables = self.build_layers(h_layer, "sensible", options.sensible_layers)
         y_layer, self.class_layers_variables    = self.build_layers(h_layer, "class", options.class_layers)
         
@@ -103,10 +100,8 @@ class Model:
             self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_mean_loss)
 
         with tf.name_scope("h_loss"):
-            if options.var_loss:
-                self.h_loss = self.y_loss - self.fairness_importance * self.s_var_loss
-            else:
-                self.h_loss = self.y_loss - self.fairness_importance * self.s_mean_loss
+            self.h_loss = self.y_loss + self.fairness_importance * (tf.math.pow(self.s_mean_loss - self.h_random_mean, 2) 
+                                                                 +  tf.math.pow(self.s_var_loss - self.h_random_var, 2))
             self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
             self.h_test_loss_stat = tf.summary.scalar("h_test_loss", self.h_loss)
 
