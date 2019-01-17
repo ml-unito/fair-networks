@@ -181,8 +181,16 @@ class Model:
                 errors += 1
         print("accuracy: %f" % ((count - errors) / float(count)))
 
+
+    def print_weight(self, session, index, variables=None):
+        if variables == None:
+            variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
+
+        var = variables[index]
+        var_value = session.run(var)
+        print("var[{}]={}".format(var.name, var_value))
+
     def print_weights(self, session):
         variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
-        for var in variables:
-            var_value = session.run(var)
-            print("var[{}]={}".format(var.name, var_value))
+        for index in range(len(variables)):
+            self.print_weight(session, index, variables)
