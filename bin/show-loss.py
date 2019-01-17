@@ -20,16 +20,9 @@ def loss(rand_avg, rand_var, xs, ys, s, txs, tys, ts, w):
     svc.fit(xs_, s[:,1])
     ts_ = svc.predict_proba(txs_)
 
-
-    # SynthEasy3    
     svc_y = SVC(probability=True)
     svc_y.fit(np.hstack((xs_, xs[:,1:])), ys[:,1])
     tys_ = svc_y.predict_proba(np.hstack((txs_, txs[:,1:])))
-
-    # SynthEasy2
-    # svc_y = SVC(probability=True)
-    # svc_y.fit(xs_, ys[:,1])
-    # tys_ = svc_y.predict_proba(txs_)
 
     err = np.average(np.square(ts[:, 1] - ts_[:, 1]))
     m_loss = np.power(err - rand_avg, 2)
@@ -40,9 +33,10 @@ def loss(rand_avg, rand_var, xs, ys, s, txs, tys, ts, w):
 
 
 def compute_losses(rand_avg, rand_var):
+    search_grid_size = 20
     losses = []
-    for w1 in np.linspace(-1, 1, num=20):
-        for w2 in np.linspace(-1, 1, num=20):
+    for w1 in np.linspace(-1, 1, num=search_grid_size):
+        for w2 in np.linspace(-1, 1, num=search_grid_size):
             ms_l, vs_l, y_l = loss(rand_avg, rand_var, xs,
                                    ys, s, txs, tys, ts, [w1, w2])
             losses.append([w1, w2, ms_l, vs_l, y_l])
@@ -76,8 +70,6 @@ def print_min_loss(losses, combined_loss, rand, trand):
     print("w1: {:6.2f} w2: {:6.2f}".format(losses[min_index, 0], losses[min_index, 1]))
 
     w = [losses[min_index, 0], losses[min_index, 1]]
-    # w = [0,0]
-
     print_loss(w, rand, trand)
 
 
@@ -103,15 +95,16 @@ def compute_random_performances(xs, s, txs, ts):
     return np.average(misclassifications), np.var(misclassifications) 
 
 
-ds = SynthEasy2Dataset('data')
+ds = SynthEasy3Dataset('data')
 
 xs, ys, s = ds.train_all_data()
 txs, tys, ts = ds.test_all_data()
 
 rand = np.random.uniform(size=len(xs))
 trand = np.random.uniform(size=len(txs))
+
 rand_avg, rand_std = compute_random_performances(xs, s, txs, ts)
-print(rand_avg, rand_std)
+print("Random model: mean s {:4.4} var s {:4.4}".format(rand_avg, rand_std))
 
 if os.path.exists("loss.csv"):
     losses = read_losses("loss.csv")
@@ -130,21 +123,10 @@ fairness = 1
 combined_loss = fairness*(losses[:, 2] + losses[:, 3]) + losses[:, 4]
 plot_loss(losses, combined_loss, 'combined (all losses)')
 
-print("Min loss")
+print("\nMin loss")
 print_min_loss(losses, combined_loss, rand, trand)
 
-print("Loss of w=[0,0]")
+print("\nLoss of w=[0,0]")
 print_loss([0.0,0,0], rand, trand)
 
 plt.show()
-
-
-  # SynthEasy3
-  # svc_y = SVC(probability=True)
-  # svc_y.fit(np.hstack((xs_, xs[:,1].reshape(-1,1))), ys[:,1])
-  # tys_ = svc_y.predict_proba(np.hstack((txs_, txs[:,1].reshape(-1,1))))
-
-  # SynthEasy2
-
-
-# plt.show()
