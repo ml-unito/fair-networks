@@ -206,12 +206,29 @@ class Options:
 
         raise ParseError('Error in parsing layer specification for element:' + spec + '. This is a bug.')
 
+    def fix_num_layers_for_noise_layers(self, layers):
+        """
+        Noise layers are "particular" since they do not provide the number of hidden units they work on.
+        They implicitly use the same number of features as the previous layer. This method assumes that
+        the parsing methods have set that information to None and update it by copying the number of
+        features of the previous layer (of the input dataset if no previous layer exists).
+        """
+        result = [[None, self.dataset.num_features]]
+        for line in layers:
+            result.append(line)
+            if line[0] == 'n':                
+                result[-1][1] = result[-2][1]
+
+        return result[1:]
+
+
 
     def parse_layers(self, str):
         layers_specs = str.split(':')
-        return [(self.parse_random_layer(spec), self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
+        result = [(self.parse_random_layer(spec), self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
                for spec in layers_specs ]
 
+        return self.fix_num_layers_for_noise_layers(result)
 
     def parse_random_layer(self, spec):
         if spec == 'n':
