@@ -213,12 +213,11 @@ class Options:
         the parsing methods have set that information to None and update it by copying the number of
         features of the previous layer (of the input dataset if no previous layer exists).
         """
-        result = [[None, self.dataset.num_features]]
+        result = [[None, self.dataset.num_features()]]
         for line in layers:
-            result.append(line)
+            result.append(list(line))
             if line[0] == 'n':                
                 result[-1][1] = result[-2][1]
-
         return result[1:]
 
 
