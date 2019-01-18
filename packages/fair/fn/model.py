@@ -47,12 +47,9 @@ class Model:
         variables = []
         
         with tf.variable_scope("%s-layer-%d" % ('noise', index)):
-            num_in = in_layer.shape[1]
-            beta_in = np.random.rand(num_in)
-            beta_in = tf.constant(beta_in, dtype=tf.float32)
             alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.constant_initializer(1))
             w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.constant_initializer(0))
-            beta = tf.multiply(beta_in, w_beta)
+            beta = tf.multiply(self.noise, w_beta)
             out = tf.multiply(in_layer, alpha) + beta
             variables.extend([alpha, w_beta])
         return out, variables
@@ -68,6 +65,7 @@ class Model:
         self.inc_epoch = self.epoch.assign(self.epoch + 1)
 
         self.x = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
+        self.noise = tf.placeholder(tf.float32, shape=[None, num_features], name="noise")
         self.y = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
         self.s = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
 
