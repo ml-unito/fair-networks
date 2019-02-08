@@ -14,3 +14,5 @@ pip-selfcheck.json
 representations/
 ICML2019
 .commit-id
+bin/
+*.log
