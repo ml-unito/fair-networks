@@ -121,6 +121,13 @@ class FairNetworksTraining:
                     print("\n")
                     self.log_stats(epoch)
 
+                grads = self.session.run(self.model.h_grads, feed_dict = { 
+                    self.model.x:xs, 
+                    self.model.y:ys, 
+                    self.model.s:s, 
+                    self.model.noise:noise })
+                print(grads[:5])
+
             except tf.errors.OutOfRangeError:
                 break
 

@@ -4,7 +4,7 @@
 
 
 
-#.SILENT:
+.SILENT:
 .SECONDARY:
 
 

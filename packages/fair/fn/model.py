@@ -47,8 +47,8 @@ class Model:
         variables = []
         
         with tf.variable_scope("%s-layer-%d" % ('noise', index)):
-            alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.constant_initializer([0, 1]))
-            w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.constant_initializer([0, 0]))
+            alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.initializers.truncated_normal())
+            w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.initializers.truncated_normal())
             beta = tf.multiply(self.noise, w_beta)
             out = tf.multiply(in_layer, alpha) + beta
             variables.extend([alpha, w_beta])
@@ -99,7 +99,7 @@ class Model:
 
         with tf.name_scope("h_loss"):
             #self.h_loss = self.y_loss + self.fairness_importance * (tf.math.pow(self.s_mean_loss - self.h_random_mean, 2) 
-            #                                                     +  tf.math.pow(self.s_var_loss - self.h_random_var, 2))
+                                                                 #+  tf.math.pow(self.s_var_loss - self.h_random_var, 2))
             self.h_loss = self.y_loss - (self.fairness_importance * self.s_mean_loss)
             self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
             self.h_test_loss_stat = tf.summary.scalar("h_test_loss", self.h_loss)
@@ -134,15 +134,7 @@ class Model:
         self.y_variables = [self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
         
-        h_grads_vars_s = optimizer.compute_gradients(self.s_mean_loss, var_list=self.hidden_layers_variables)
-        h_grads_vars_s = [(-gv[0], gv[1]) for gv in h_grads_vars_s]
-        h_grads_vars_y = optimizer.compute_gradients(self.y_loss, var_list=self.hidden_layers_variables)
-        h_s_step = optimizer.apply_gradients(h_grads_vars_s)
-        h_y_step = optimizer.apply_gradients(h_grads_vars_y)
-        self.h_train_step = tf.group(h_s_step, h_y_step) 
-        self.s_train_step = optimizer.minimize(self.s_mean_loss, var_list=self.s_variables)
-        self.y_train_step = optimizer.minimize(self.y_loss, var_list=self.y_variables)
-
+        self.h_train_step, self.y_train_step, self.s_train_step = self.create_train_steps(optimizer)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, 
                             self.s_train_accuracy_stat, self.h_train_loss_stat])
@@ -150,6 +142,23 @@ class Model:
                             self.s_test_accuracy_stat, self.h_test_loss_stat])
 
         return self
+
+    def create_train_steps(self, optimizer):
+        #h_grads_vars_s = optimizer.compute_gradients(self.s_mean_loss, var_list=self.hidden_layers_variables)
+        #h_grads_vars_s = [(-gv[0], gv[1]) for gv in h_grads_vars_s]
+        #h_grads_vars_y = optimizer.compute_gradients(self.y_loss, var_list=self.hidden_layers_variables)
+        h_grads = optimizer.compute_gradients(self.h_loss, var_list=self.hidden_layers_variables)
+        y_grads = optimizer.compute_gradients(self.y_loss, var_list=self.y_variables)
+        s_grads = optimizer.compute_gradients(self.s_mean_loss, var_list=self.s_variables)
+        #h_s_step = optimizer.apply_gradients(h_grads_vars_s)
+        #h_y_step = optimizer.apply_gradients(h_grads_vars_y)
+        #h_train_step = tf.group(h_s_step, h_y_step)
+        self.h_grads = h_grads
+        #h_train_step = tf.group(h_s_step, h_y_step)
+        h_train_step = optimizer.apply_gradients(h_grads)
+        y_train_step = optimizer.apply_gradients(y_grads)
+        s_train_step = optimizer.apply_gradients(s_grads)
+        return h_train_step, y_train_step, s_train_step
 
 
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
