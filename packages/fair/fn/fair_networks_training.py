@@ -126,7 +126,8 @@ class FairNetworksTraining:
                     self.model.y:ys, 
                     self.model.s:s, 
                     self.model.noise:noise })
-                print(grads[:5])
+                print(grads[:2])
+                sys.exit(1)
 
             except tf.errors.OutOfRangeError:
                 break
