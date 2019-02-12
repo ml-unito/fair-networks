@@ -145,16 +145,14 @@ class Model:
 
     def create_train_steps(self, optimizer):
         h_grads_vars_s = optimizer.compute_gradients(self.s_mean_loss, var_list=self.hidden_layers_variables)
-        h_grads_vars_s = [(-gv[0], gv[1]) for gv in h_grads_vars_s]
+        h_grads_vars_s = [(self.fairness_importance * -gv[0], gv[1]) for gv in h_grads_vars_s]
         h_grads_vars_y = optimizer.compute_gradients(self.y_loss, var_list=self.hidden_layers_variables)
-        #h_grads = optimizer.compute_gradients(self.h_loss, var_list=self.hidden_layers_variables)
         y_grads = optimizer.compute_gradients(self.y_loss, var_list=self.y_variables)
         s_grads = optimizer.compute_gradients(self.s_mean_loss, var_list=self.s_variables)
         h_s_step = optimizer.apply_gradients(h_grads_vars_s)
         h_y_step = optimizer.apply_gradients(h_grads_vars_y)
         self.h_grads = h_grads_vars_s + h_grads_vars_y
         h_train_step = tf.group(h_s_step, h_y_step)
-        #h_train_step = optimizer.apply_gradients(h_grads)
         y_train_step = optimizer.apply_gradients(y_grads)
         s_train_step = optimizer.apply_gradients(s_grads)
         return h_train_step, y_train_step, s_train_step

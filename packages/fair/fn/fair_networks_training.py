@@ -117,17 +117,6 @@ class FairNetworksTraining:
                     self.model.s:s, 
                     self.model.noise:noise })
 
-                if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
-                    print("\n")
-                    self.log_stats(epoch)
-
-                grads = self.session.run(self.model.h_grads, feed_dict = { 
-                    self.model.x:xs, 
-                    self.model.y:ys, 
-                    self.model.s:s, 
-                    self.model.noise:noise })
-                print(grads[:2])
-                sys.exit(1)
 
             except tf.errors.OutOfRangeError:
                 break
@@ -148,8 +137,10 @@ class FairNetworksTraining:
 
             if int(epoch[0]) % 10 == 0:
                 self.log_losses(epoch)
-                self.model.print_weight(self.session, 2)
-                self.model.print_weight(self.session, 3)
+                self.log_stats(epoch)
+                if self.options.verbose:
+                    self.model.print_weight(self.session, 2)
+                    self.model.print_weight(self.session, 3)
 
             self.session.run(self.model.inc_epoch)
 
@@ -186,7 +177,7 @@ class FairNetworksTraining:
             self.model.s: self.test_s,
             self.model.noise: self.test_noise})
 
-        print("Epoch %f y accuracy: %2.4f s accuracy: %2.4f" % (epoch[0], nn_y_accuracy, nn_s_accuracy))
+        print("Epoch %d y accuracy: %2.4f s accuracy: %2.4f" % (int(epoch[0]), nn_y_accuracy, nn_s_accuracy))
 
     def updateTensorboardStats(self, epoch):
         stat_des = self.session.run(self.model.train_stats, feed_dict = { 
