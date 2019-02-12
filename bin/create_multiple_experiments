@@ -52,7 +52,7 @@ def create_experiment_json(experiment_spec):
     d['schedule'] = schedule
     d['hidden_layers'] = architecture['hidden_layers']
     d['class_layers'] = architecture['class_layers']
-    d['random_units'] = architecture['random_units']
+    #d['random_units'] = architecture['random_units']
     d['sensible_layers'] = architecture['sensible_layers']
     d['fairness_importance'] = float(fairness)
     d['dataset'] = dataset
