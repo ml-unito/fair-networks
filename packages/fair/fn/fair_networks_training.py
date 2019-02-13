@@ -32,9 +32,10 @@ class FairNetworksTraining:
         self.init_s_vars = tf.variables_initializer(self.s_variables, name="init_s_vars")
 
 
-        self.y_variables = [var for varlist in self.model.y_variables for var in varlist]
-        self.init_y_vars = tf.variables_initializer(self.y_variables, name="init_y_vars")
-
+        self.y_variables_aux = [var for varlist in self.model.y_variables_aux for var in varlist]
+        self.init_y_vars_aux = tf.variables_initializer(self.y_variables_aux, name="init_y_vars_aux")
+        self.s_variables_aux = [var for varlist in self.model.s_variables_aux for var in varlist]
+        self.init_s_vars_aux = tf.variables_initializer(self.s_variables_aux, name="init_s_vars_aux")
 
     def run_train_s(self, xs, s):
         if self.options.fairness_importance == 0:
@@ -52,6 +53,30 @@ class FairNetworksTraining:
                 batch_pos += self.options.batch_size
 
                 self.session.run(self.model.s_train_step, feed_dict={
+                    self.model.x: batch_x, 
+                    self.model.s: batch_s,
+                    self.model.noise: noise })
+
+    def train_aux_classifiers(self, xs, s, ys):
+        self.session.run(self.init_s_vars_aux)
+        self.session.run(self.init_y_vars_aux)
+        print(self.options.schedule.sub_nets_num_it)
+
+        for _ in range(self.options.schedule.sub_nets_num_it):
+
+            batch_pos = 0
+            while batch_pos < len(xs):
+                batch_x = xs[batch_pos:(batch_pos+self.options.batch_size)]
+                batch_s =  s[batch_pos:(batch_pos+self.options.batch_size)]
+                noise = self.train_noise[batch_pos:(batch_pos + len(batch_x))]
+                batch_pos += self.options.batch_size
+
+                self.session.run(self.model.y_train_step_aux, feed_dict={
+                    self.model.x: batch_x, 
+                    self.model.y: batch_y,
+                    self.model.noise: noise })
+
+                self.session.run(self.model.s_train_step_aux, feed_dict={
                     self.model.x: batch_x, 
                     self.model.s: batch_s,
                     self.model.noise: noise })
@@ -166,13 +191,13 @@ class FairNetworksTraining:
         print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss))
 
     def log_stats(self, epoch):
-        self.run_train_s(self.train_xs, self.train_s)
+        self.train_aux_classifiers(self.train_xs, self.train_s, self.train_ys)
 
-        nn_y_accuracy = self.session.run(self.model.y_accuracy, feed_dict = {
+        nn_y_accuracy = self.session.run(self.model.y_accuracy_aux, feed_dict = {
             self.model.x: self.test_xs, 
             self.model.y: self.test_ys,
             self.model.noise: self.test_noise})
-        nn_s_accuracy = self.session.run(self.model.s_accuracy, feed_dict = {
+        nn_s_accuracy = self.session.run(self.model.s_accuracy_aux, feed_dict = {
             self.model.x: self.test_xs, 
             self.model.s: self.test_s,
             self.model.noise: self.test_noise})

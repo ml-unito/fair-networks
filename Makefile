@@ -70,7 +70,7 @@ deep_clean_dir:
 
 %models/model-final.ckpt.index: %config.json 
 	git rev-parse HEAD > $(dir $<)/commit-id
-	fair_networks $<
+	fair_networks $< -B
 
 %representations/fair_networks_repr_train.csv: %config.json
 	fair_networks $< -E representations/fair_networks_repr $(CKPT)
