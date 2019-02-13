@@ -5,6 +5,7 @@ import sklearn.model_selection as ms
 import sklearn.svm as svm
 import sklearn.tree as tree
 import sklearn.linear_model as lm
+import sklearn.ensemble as ens
 import numpy as np
 import os
 import sys
@@ -58,6 +59,7 @@ def eval_accuracies_on_representation(train_path, test_path):
     results["svc"] = test_performances(klass=svm.SVC, kargs={"random_state": RANDOM_SEED, "gamma":"auto"}, datasets=datasets,)
     results["tree"] = test_performances(klass=tree.DecisionTreeClassifier, kargs={"random_state":RANDOM_SEED, "max_depth":4}, datasets=datasets )
     results["lr"] = test_performances(klass=lm.LogisticRegression, kargs={"random_state": RANDOM_SEED, "solver":"lbfgs"}, datasets=datasets)
+    results["forest"] = test_performances(klass=ens.RandomForestClassifier, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
     return results
 
 
