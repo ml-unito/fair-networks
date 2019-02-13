@@ -2,6 +2,8 @@ from __future__ import print_function
 import tensorflow as tf
 import numpy as np
 from termcolor import colored
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 
 
 class FairNetworksTraining:
@@ -68,6 +70,8 @@ class FairNetworksTraining:
             while batch_pos < len(xs):
                 batch_x = xs[batch_pos:(batch_pos+self.options.batch_size)]
                 batch_s =  s[batch_pos:(batch_pos+self.options.batch_size)]
+                batch_y = ys[batch_pos:(batch_pos+self.options.batch_size)]
+
                 noise = self.train_noise[batch_pos:(batch_pos + len(batch_x))]
                 batch_pos += self.options.batch_size
 
@@ -162,7 +166,7 @@ class FairNetworksTraining:
 
             if int(epoch[0]) % 10 == 0:
                 self.log_losses(epoch)
-                self.log_stats(epoch)
+                self.log_stats_classifier(epoch)
                 if self.options.verbose:
                     self.model.print_weight(self.session, 2)
                     self.model.print_weight(self.session, 3)
@@ -190,19 +194,27 @@ class FairNetworksTraining:
 
         print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss))
 
-    def log_stats(self, epoch):
-        self.train_aux_classifiers(self.train_xs, self.train_s, self.train_ys)
-
-        nn_y_accuracy = self.session.run(self.model.y_accuracy_aux, feed_dict = {
+    def log_stats_classifier(self, epoch, classifier=DecisionTreeClassifier):
+        train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
+            self.model.x: self.train_xs, 
+            self.model.noise: self.train_noise})
+        test_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
             self.model.x: self.test_xs, 
-            self.model.y: self.test_ys,
             self.model.noise: self.test_noise})
-        nn_s_accuracy = self.session.run(self.model.s_accuracy_aux, feed_dict = {
-            self.model.x: self.test_xs, 
-            self.model.s: self.test_s,
-            self.model.noise: self.test_noise})
+        
+        cl = classifier()
+        cl.fit(train_repr, self.train_ys)
+        y_test_pred = cl.predict(test_repr)
+        cl = classifier()
+        cl.fit(train_repr, self.train_s)
+        s_test_pred = cl.predict(test_repr)
+        
+        s_test_acc  = sum(np.equal(s_test_pred, self.test_s )[:, 0]) / float(len(s_test_pred))
+        y_test_acc  = sum(np.equal(y_test_pred, self.test_ys)[:, 0]) / float(len(y_test_pred))
 
-        print("Epoch %d y accuracy: %2.4f s accuracy: %2.4f" % (int(epoch[0]), nn_y_accuracy, nn_s_accuracy))
+        print('Epoch {:4} y acc {:2.3f} s acc: {:2.3f}'.format(int(epoch[0]), y_test_acc, s_test_acc))
+
+        return y_test_acc, s_test_acc
 
     def updateTensorboardStats(self, epoch):
         stat_des = self.session.run(self.model.train_stats, feed_dict = { 

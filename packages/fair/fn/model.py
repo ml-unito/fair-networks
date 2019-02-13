@@ -76,8 +76,6 @@ class Model:
         h_layer, self.hidden_layers_variables   = self.build_hidden_layers(in_layer, options.hidden_layers)
         s_layer, self.sensible_layers_variables = self.build_layers(h_layer, "sensible", options.sensible_layers)
         y_layer, self.class_layers_variables    = self.build_layers(h_layer, "class", options.class_layers)
-        s_aux_layer, self.sensible_aux_layers_variables = self.build_layers(h_layer, "sensible_aux", options.sensible_layers)
-        y_aux_layer, self.class_aux_layers_variables    = self.build_layers(h_layer, "class_aux", options.class_layers)              
 
         self.model_last_hidden_layer = h_layer
 
@@ -86,12 +84,6 @@ class Model:
 
         with tf.name_scope("y_out"):
             self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="y_out")
-
-        with tf.name_scope("s_out_aux"):
-            self.s_out_aux = tf.layers.dense(s_layer, num_s_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="s_out_aux")
-
-        with tf.name_scope("y_out_aux"):
-            self.y_out_aux = tf.layers.dense(y_layer, num_y_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="y_out_aux")
 
         with tf.name_scope("y_loss"):
             self.y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
@@ -104,17 +96,6 @@ class Model:
             self.s_mean_loss = mean_kld
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_mean_loss)
             self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_mean_loss)
-
-        with tf.name_scope("y_loss_aux"):
-            self.y_loss_aux = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out_aux))
-            self.y_train_loss_stat = tf.summary.scalar("y_train_softmax_loss_aux", self.y_loss_aux)
-            self.y_test_loss_stat = tf.summary.scalar("y_test_softmax_loss_aux", self.y_loss_aux)
-
-        with tf.name_scope("s_loss_aux"):
-            self.s_loss_aux = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out_aux))
-            self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_loss_aux)
-            self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_loss_aux)
-
 
         with tf.name_scope("h_loss"):
             #self.h_loss = self.y_loss + self.fairness_importance * (tf.math.pow(self.s_mean_loss - self.h_random_mean, 2) 
@@ -135,18 +116,6 @@ class Model:
             self.s_train_accuracy_stat = tf.summary.scalar("s_train_accuracy", self.s_accuracy)
             self.s_test_accuracy_stat = tf.summary.scalar("s_test_accuracy", self.s_accuracy)
 
-        with tf.name_scope("y_accuracy_aux"):
-            y_correct_predictions = tf.cast(tf.equal(tf.argmax(self.y_out_aux,1), tf.argmax(self.y,1)), "float")
-            self.y_accuracy_aux = tf.cast(tf.reduce_mean(y_correct_predictions), "float")
-            self.y_train_accuracy_stat_aux = tf.summary.scalar("y_train_accuracy_aux", self.y_accuracy_aux)
-            self.y_test_accuracy_stat_aux = tf.summary.scalar("y_test_accuracy_aux", self.y_accuracy_aux)
-
-        with tf.name_scope("s_accuracy_aux"):
-            s_correct_predictions = tf.cast(tf.equal(tf.argmax(self.s_out_aux,1), tf.argmax(self.s,1)), "float")
-            self.s_accuracy_aux = tf.cast(tf.reduce_mean(s_correct_predictions), "float")
-            self.s_train_accuracy_stat_aux = tf.summary.scalar("s_train_accuracy_aux", self.s_accuracy_aux)
-            self.s_test_accuracy_stat_aux = tf.summary.scalar("s_test_accuracy_aux", self.s_accuracy_aux)
-
         with tf.name_scope("svc_accuracies"):
             self.s_svc_accuracy = tf.placeholder(tf.float32)
             self.y_svc_accuracy = tf.placeholder(tf.float32)
@@ -164,12 +133,9 @@ class Model:
 
         self.y_variables = [self.class_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
         self.s_variables = [self.sensible_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
-        self.y_variables_aux = [self.class_aux_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "y_out_aux")]
-        self.s_variables_aux = [self.sensible_aux_layers_variables, tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, "s_out_aux")]
         
 
         self.h_train_step, self.y_train_step, self.s_train_step = self.create_train_steps(optimizer)
-        self.y_train_step_aux, self.s_train_step_aux = self.create_aux_steps(optimizer)
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat, 
                             self.s_train_accuracy_stat, self.h_train_loss_stat])
@@ -191,15 +157,6 @@ class Model:
         y_train_step = optimizer.apply_gradients(y_grads)
         s_train_step = optimizer.apply_gradients(s_grads)
         return h_train_step, y_train_step, s_train_step
-
-    def create_aux_steps(self, optimizer):
-        y_grads = optimizer.compute_gradients(self.y_loss_aux, var_list=self.y_variables_aux)
-        s_grads = optimizer.compute_gradients(self.s_loss_aux, var_list=self.s_variables_aux)
-        y_train_step = optimizer.apply_gradients(y_grads)
-        s_train_step = optimizer.apply_gradients(s_grads)
-        return y_train_step, s_train_step
-
-
 
 
     def print_loss_and_accuracy(self, session, train_feed_dict, test_feed_dict):
