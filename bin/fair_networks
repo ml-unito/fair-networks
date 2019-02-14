@@ -134,6 +134,8 @@ if opts.log_level <= logging.INFO:
     print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
     opts.dataset.print_stats()
 
+print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
+
 optimizer = tf.train.AdagradOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)
 
@@ -143,6 +145,7 @@ writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
 print("Initializing model")
 init_model(opts, session, saver, writer)
+print("Model checkpoint: {}".format(opts.resume_ckpt))
 print("Model initialized")
 
 

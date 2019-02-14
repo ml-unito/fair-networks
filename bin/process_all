@@ -1,0 +1,21 @@
+#! bin/python
+import sys
+import glob
+import subprocess
+import os
+from termcolor import colored
+
+exp_dir = sys.argv[1]
+model_dir = exp_dir + '/models'
+glob_str = model_dir  + '/*ckpt*'
+ckpt_list = glob.glob(glob_str)
+ckpt_list = ['.'.join(ckpt.split('.')[:-1]) for ckpt in ckpt_list]
+print(colored('Processing {} performances'.format(len(ckpt_list)), "yellow"))
+
+for ckpt in ckpt_list:
+    num_epochs = ckpt.split('-')[1].split('.')[0]
+    #print('make CKPT="-i {}"'.format(ckpt))
+    #sys.exit(1)
+    subprocess.call('make CKPT="-i {}"'.format(ckpt), shell=True)
+    subprocess.check_output(['mv', exp_dir + '/performances.tsv', 
+                            exp_dir + '/performances{}.tsv'.format(num_epochs)])
