@@ -22,7 +22,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-main_dir=experiments
+main_dir=old_experiments
 experiment_dirs=$(wildcard $(main_dir)/*/)
 excluded_experiment_dirs=$(wildcard $(main_dir)/_*/)
 non_excluded_experiments=$(filter-out $(excluded_experiment_dirs), $(experiment_dirs))
@@ -49,7 +49,7 @@ clean_dir:
 	:$(call check_defined, DIR)
 	rm -f $(DIR)/performances.json
 	rm -f $(DIR)/representations/*_repr_*.csv
-	rm -f $(DIR)/performances.tsv
+	rm -f $(DIR)/performances*.tsv
 
 deep_clean_dir:
 	:$(call check_defined, DIR)
@@ -57,7 +57,7 @@ deep_clean_dir:
 	rm -rf $(DIR)/logdir/*
 	rm -f $(DIR)/performances.json
 	rm -f $(DIR)/representations/*_repr_*.csv
-	rm -f $(DIR)/performances.tsv
+	rm -f $(DIR)/performances*.tsv
 
 # clean_performances:
 # 	rm -f $(performance_output_files)
