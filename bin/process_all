@@ -19,3 +19,5 @@ for ckpt in ckpt_list:
     subprocess.call('make CKPT="-i {}"'.format(ckpt), shell=True)
     subprocess.check_output(['mv', exp_dir + '/performances.tsv', 
                             exp_dir + '/performances{}.tsv'.format(num_epochs)])
+    break
+subprocess.call('make')
