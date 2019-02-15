@@ -17,8 +17,6 @@ def process_dir(exp_dir):
     performances_path = exp_dir + '/performances.tsv'
     subprocess.check_output(['touch', all_performances_path])
     config_path = exp_dir + '/config.json'
-    print(config_path)
-    #print('random_networks {} -E representations/random_networks_repr'.format(config_path))
     subprocess.call('bin/random_networks {} -E representations/random_networks_repr'.format(config_path), shell=True)
     subprocess.call('copy_original_representation {} -E representations/original_repr'.format(config_path), shell=True)
 
@@ -29,9 +27,9 @@ def process_dir(exp_dir):
         subprocess.call('fair_networks {} -E representations/fair_networks_repr -i {}'.format(config_path, ckpt),
                         shell=True)
         subprocess.call('test_representations {}'.format(exp_dir), shell=True)
-        subprocess.call('process_performances {} > {}/performances.json'.format(config_path, exp_dir), shell=True)
+        subprocess.call('process_performances {} > {}/performances.tsv'.format(config_path, exp_dir), shell=True)
         subprocess.call('cat "Epochs {}" > {}'.format(num_epochs, all_performances_path), shell=True)
-        subprocess.call('cat {} > {}'.format(performances_path, all_performances_path), shell=True)
+        subprocess.call('cat {} >> {}'.format(performances_path, all_performances_path), shell=True)
         subprocess.check_output(['mv', exp_dir + '/performances.tsv', 
                                 exp_dir + '/performances{}.tsv'.format(num_epochs)])
         subprocess.check_output(['rm', exp_dir + '/performances.json'])
