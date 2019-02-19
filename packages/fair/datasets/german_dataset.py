@@ -38,7 +38,7 @@ class GermanDataset(DatasetBase):
 
     def prepare_all(self):
         if os.path.isfile(self.dataset_path()):
-            print("Adult dataset already exist. Using existing version.")
+            print("German dataset already exist. Using existing version.")
             return
 
         ds = pandas.read_csv(GermanDataset.DOWNLOAD_PATH, sep=' ', header=None)

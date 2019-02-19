@@ -51,7 +51,7 @@ class DatasetBase:
     def files_to_retrieve(self):
         return
 
-    def load_data(self):
+    def load_data(self, path):
         """
         Loads the file specified by the path parameter, parses it
         and returns three lists containing the resulting examples, labels and secret variables (xs,ys,s).
@@ -61,7 +61,7 @@ class DatasetBase:
         """
         logging.info("Reading dataset: {}".format(self.dataset_path()))
 
-        dataset = pandas.read_csv(self.dataset_path(), sep=self.sep())
+        dataset = pandas.read_csv(path, sep=self.sep())
         logging.debug("[LOAD BEGIN] y sums:\n {}".format(dataset.groupby(self.y_columns()).nunique()))
 
         s_col_names = self.sensible_columns()
@@ -140,7 +140,7 @@ class DatasetBase:
         be called before accessing to them using other methods that
         access to the train and the test set)
         """
-        xs,ys,s = self.load_data()
+        xs,ys,s = self.load_data(self.dataset_path())
 
         train_xs, test_xs, train_ys, test_ys, train_s, test_s = train_test_split(xs,ys,s,test_size=0.1, random_state=42)
 
@@ -150,6 +150,27 @@ class DatasetBase:
         self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 
+    def load_all_separate_paths(self):
+        """
+        An alternative to load_all where the dataset has already been separated into 
+        train and test files.
+        """
+        train_xs, train_ys, train_s = self.load_data(self.train_path())
+        test_xs, test_ys, test_s = self.load_data(self.test_path())
+
+        self._traindata = (train_xs, train_ys, train_s)
+        self._testdata = (test_xs, test_ys, test_s)
+
+        self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
+        self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
+
+
+    def load_all_with_validation(self):
+        """
+        An alternative to load_all where the dataset has already been separated
+        into train, test and validation splits.
+        """
+        pass #TODO
 
     def download(self, url, filename):
         """
@@ -160,7 +181,9 @@ class DatasetBase:
             print(filename + " already exists. Skipping download.")
             return
 
-        dataset = requests.get(url)
+            def load_all_separate_paths(self):
+                dataset = requests.get(url)
+
 
         print("Downloading %s" % (url))
         with open(filename, 'wb') as file:

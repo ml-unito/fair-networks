@@ -197,10 +197,10 @@ class FairNetworksTraining:
             self.model.x: self.test_xs, 
             self.model.noise: self.test_noise})
         
-        cl = classifier()
+        cl = classifier(max_depth=4)
         cl.fit(train_repr, self.train_ys)
         y_test_pred = cl.predict(test_repr)
-        cl = classifier()
+        cl = classifier(max_depth=4)
         cl.fit(train_repr, self.train_s)
         s_test_pred = cl.predict(test_repr)
         
