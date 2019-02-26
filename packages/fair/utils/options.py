@@ -6,6 +6,7 @@ from fair.datasets.german_dataset import GermanDataset
 from fair.datasets.synth_easy_dataset import SynthEasyDataset
 from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
 from fair.datasets.synth_easy3_dataset import SynthEasy3Dataset
+from fair.datasets.synth_easy4_dataset import SynthEasy4Dataset
 from fair.datasets.yale_b_dataset import YaleBDataset
 
 import argparse
@@ -318,7 +319,7 @@ class Options:
         datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 
                      'german':GermanDataset, 'synth': SynthDataset, 
                      'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset,
-                     'yale': YaleBDataset}
+                     'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset}
         parser = argparse.ArgumentParser(description=PARAMS_DESCRIPTION, formatter_class=argparse.RawDescriptionHelpFormatter)
 
         self.configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts, dataset_already_given='dataset' in config_opts)

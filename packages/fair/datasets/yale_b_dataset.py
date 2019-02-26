@@ -32,7 +32,10 @@ class YaleBDataset(DatasetBase):
     def one_hot_columns(self):
         return ['y', 's']
 
-    def dataset_path(self):
+    def test_path(self):
+        return "%s/yale_test.csv" % (self.workingdir)
+
+    def train_path(self):
         return "%s/yale_train.csv" % (self.workingdir)
 
     def sep(self):
@@ -42,10 +45,10 @@ class YaleBDataset(DatasetBase):
         pass
 
     def sensible_columns(self):
-        return["s"]
+        return ['s']
 
     def y_columns(self):
-        return ["y"]
+        return ['y']
 
     def prepare_all(self):
         pass

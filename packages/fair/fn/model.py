@@ -57,6 +57,7 @@ class Model:
     def _build(self, options, optimizer):
         num_features = options.num_features
         num_s_labels = options.dataset.num_s_columns()
+        print(num_s_labels)
         num_y_labels = options.dataset.num_y_columns()
 
         self.fairness_importance = tf.Variable(options.fairness_importance, name="fairness_importance")
