@@ -52,6 +52,10 @@ def eval_accuracies_on_representation(train_path, test_path):
     y_test = np.argmax(y_test, axis=1)
     s_train = np.argmax(s_train, axis=1)
     s_test = np.argmax(s_test, axis=1)
+    
+    # return majority class rate for random_networks_repr
+    if 'random' in train_path:
+        return get_majority_predictions(y_train, y_test, s_train, s_test)
 
     datasets = (h_train, h_test, y_train, y_test, s_train, s_test)
 
@@ -61,6 +65,23 @@ def eval_accuracies_on_representation(train_path, test_path):
     results["lr"] = test_performances(klass=lm.LogisticRegression, kargs={"random_state": RANDOM_SEED, "solver":"lbfgs"}, datasets=datasets)
     results["forest"] = test_performances(klass=ens.RandomForestClassifier, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
     return results
+
+def get_majority_predictions(y_train, y_test, s_train, s_test):
+    results = {}
+    acc_s_train = max(np.bincount(s_train)) / sum(np.bincount(s_train))
+    acc_y_train = max(np.bincount(y_train)) / sum(np.bincount(y_train))
+
+    result = {
+        "s": {"train": acc_s_train, "test": acc_s_train},
+        "y": {"train": acc_y_train, "test": acc_y_train}
+        }
+
+    results["svc"]    = result
+    results["tree"]   = result
+    results["lr"]     = result
+    results["forest"] = result
+    return results
+
 
 
 def test_performances(klass, kargs, datasets):

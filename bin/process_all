@@ -45,7 +45,7 @@ def process_dir(exp_dir):
         subprocess.check_output(['rm', exp_dir + '/performances.json'])
 
 exp_main_dir = sys.argv[1]
-all_exp_dirs = glob.glob(exp_main_dir + 'generated*')
+all_exp_dirs = glob.glob(exp_main_dir + '*')
 num_cores = 10
 executor = Parallel(n_jobs=num_cores)
 executor(delayed(process_dir)(exp_dir) for exp_dir in all_exp_dirs)
