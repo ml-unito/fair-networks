@@ -127,5 +127,24 @@ def synth_easy3():
     pd.DataFrame(data, columns=["x1", "x2", "s", "y"]).to_csv(
         "data/synth-easy3.csv", index=False)
 
-synth_easy3()
+def synth_easy4():
+    DS_SIZE = 1000
+
+    x2 = np.reshape(np.random.randint(0, high=50001, size=DS_SIZE), [DS_SIZE, 1])
+    s = np.reshape(np.random.randint(0, high=2, size=DS_SIZE), [DS_SIZE, 1])
+
+    noise = 0
+    # noise = np.reshape(np.random.normal(scale=2000, size=DS_SIZE), [DS_SIZE, 1])
+
+    x1 = s * 20000
+
+    y = (x1 + x2 + noise > 35000).astype(int)
+
+    data = np.hstack([x1, x2, s, s, y])
+    pd.DataFrame(data, columns=["x1", "x2", "hidden_s", "s", "y"]).to_csv(
+        "data/synth-easy3.csv", index=False)
+
+
+
+synth_easy4()
 
