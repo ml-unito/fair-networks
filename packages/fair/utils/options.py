@@ -326,6 +326,14 @@ class Options:
 
         result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
 
+        self.verbose = result.verbose
+        if self.verbose:
+            self.log_level = logging.DEBUG
+        else:
+            self.log_level = logging.getLevelName(result.log_level)
+
+        logging.root.level = self.log_level
+
         self.dataset_name = result.dataset
         self.dataset_base_path = self.path_for(result.dataset_base_path)
 
@@ -348,14 +356,6 @@ class Options:
         self.eval_data_path = self.path_for(result.eval_data)
         self.fairness_importance = result.fairness_importance
         self.random_seed = result.random_seed
-
-        self.verbose = result.verbose
-        if self.verbose:
-            self.log_level = logging.DEBUG
-        else:
-            self.log_level = logging.getLevelName(result.log_level)
-
-        logging.root.level=self.log_level
 
         self.batched = result.batched
 
