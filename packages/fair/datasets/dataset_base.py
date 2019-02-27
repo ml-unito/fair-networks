@@ -249,10 +249,6 @@ class DatasetBase:
             print(filename + " already exists. Skipping download.")
             return
 
-            def load_all_separate_paths(self):
-                dataset = requests.get(url)
-
-
         print("Downloading %s" % (url))
         with open(filename, 'wb') as file:
             for data in tqdm(dataset):
