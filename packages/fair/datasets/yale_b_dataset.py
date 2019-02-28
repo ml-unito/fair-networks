@@ -78,7 +78,8 @@ class YaleBDataset(DatasetBase):
             self._traindata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 
-
+    def column_indices(self, df, cols):
+        return [df.columns.get_loc(col) for col in cols]
 
     def load_data_separate_paths(self, train_path, test_path):
         """
@@ -109,36 +110,52 @@ class YaleBDataset(DatasetBase):
 
         df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
+        non_hot_cols_indices = self.column_indices(df, non_hot_cols)
 
-        train_dataset_non_hot = df.loc[:num_train_examples, non_hot_cols]
-        test_dataset_non_hot = df.loc[num_train_examples:, non_hot_cols]
+        train_dataset_non_hot = df.iloc[:num_train_examples, non_hot_cols_indices]
+        test_dataset_non_hot = df.iloc[num_train_examples:, non_hot_cols_indices]
 
         logging.info("Scaling values for columns: {}".format(list(non_hot_cols)))
 
         scaler = MinMaxScaler()
-        df.loc[:num_train_examples, non_hot_cols] = scaler.fit_transform(train_dataset_non_hot.astype(np.float64))
-        # FIXME: shouldn't the scaler be learnt again for the test set?
-        df.loc[num_train_examples:, non_hot_cols] = scaler.transform(test_dataset_non_hot.astype(np.float64))
+        df.iloc[:num_train_examples, non_hot_cols_indices] = scaler.fit_transform(train_dataset_non_hot.astype(np.float64))
+        df.iloc[num_train_examples:, non_hot_cols_indices] = scaler.transform(test_dataset_non_hot.astype(np.float64))
+
+        print("scaled post:\n{}".format(df.loc[10, non_hot_cols]))
 
         s_1h_col_names = df.columns[[colname for s_col_name in s_col_names for colname in df.columns.str.startswith(s_col_name)]]
         y_1h_col_names = df.columns[[colname for y_col_name in y_col_names for colname in df.columns.str.startswith(y_col_name)]]
         all_non_y_non_s_names = [col for col in df.columns if col not in y_1h_col_names and col not in s_1h_col_names]
+        s_1h_col_names_indices = self.column_indices(df, s_1h_col_names)
+        y_1h_col_names_indices = self.column_indices(df, y_1h_col_names)
+        all_non_y_non_s_names_indices = self.column_indices(df, all_non_y_non_s_names)
+
+        logging.debug("s len:{} y len:{} other len:{}".format(len(s_1h_col_names), len(y_1h_col_names), len(all_non_y_non_s_names)))
 
         self._num_s_columns = len(s_1h_col_names)
         self._num_y_columns = len(y_1h_col_names)
 
-        xs = df.loc[:num_train_examples, all_non_y_non_s_names]
-        ys = df.loc[:num_train_examples, y_1h_col_names]
-        s =  df.loc[:num_train_examples, s_1h_col_names]
+        xs = df.iloc[:num_train_examples, all_non_y_non_s_names_indices].values
+        ys = df.iloc[:num_train_examples, y_1h_col_names_indices].values
+        s =  df.iloc[:num_train_examples, s_1h_col_names_indices].values
         
-        xt = df.loc[num_train_examples:, all_non_y_non_s_names]
-        yt = df.loc[num_train_examples:, y_1h_col_names]
-        st = df.loc[num_train_examples:, s_1h_col_names]
+        xt = df.iloc[num_train_examples:, all_non_y_non_s_names_indices].values
+        yt = df.iloc[num_train_examples:, y_1h_col_names_indices].values
+        st = df.iloc[num_train_examples:, s_1h_col_names_indices].values
+
+        # FIXME: To be removed
+        from sklearn.linear_model import LogisticRegression
+        lr = LogisticRegression()
+        print(np.argmax(ys, axis=1))
+        lr.fit(xs, np.argmax(ys, axis=1))
+        y_pred = lr.predict(xt)
+        print("LR y error (post): {}".format(sum(y_pred == np.argmax(yt, axis=1)) / float(len(yt))))
+        # ----
 
         logging.debug("xs sample: {}".format(xs[:10]))
         logging.debug("ys sample: {}".format(ys[:10]))
         logging.debug("s sample: {}".format(s[:10]))
 
 
-        return (xs.values, ys.values, s.values), (xt.values, yt.values, st.values)
+        return (xs, ys, s), (xt, yt, st)
         
