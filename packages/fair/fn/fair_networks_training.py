@@ -198,14 +198,14 @@ class FairNetworksTraining:
             self.model.noise: self.test_noise})
         
         cl = classifier(max_depth=4)
-        cl.fit(train_repr, self.train_ys)
+        cl.fit(train_repr, np.argmax(self.train_ys, axis=1))
         y_test_pred = cl.predict(test_repr)
         cl = classifier(max_depth=4)
-        cl.fit(train_repr, self.train_s)
+        cl.fit(train_repr, np.argmax(self.train_s, axis=1))
         s_test_pred = cl.predict(test_repr)
         
-        s_test_acc  = sum(np.equal(s_test_pred, self.test_s )[:, 0]) / float(len(s_test_pred))
-        y_test_acc  = sum(np.equal(y_test_pred, self.test_ys)[:, 0]) / float(len(y_test_pred))
+        s_test_acc  = sum( np.equal(s_test_pred, np.argmax(self.test_s, axis=1) )) / float(len(s_test_pred))
+        y_test_acc  = sum( np.equal(y_test_pred, np.argmax(self.test_ys, axis=1) )) / float(len(y_test_pred))
 
         print('Epoch {:4} y acc {:2.3f} s acc: {:2.3f}'.format(int(epoch[0]), y_test_acc, s_test_acc))
 
