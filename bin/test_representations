@@ -71,9 +71,13 @@ def get_majority_predictions(y_train, y_test, s_train, s_test):
     acc_s_train = max(np.bincount(s_train)) / sum(np.bincount(s_train))
     acc_y_train = max(np.bincount(y_train)) / sum(np.bincount(y_train))
 
+    acc_s_test = max(np.bincount(s_test)) / sum(np.bincount(s_test))
+    acc_y_test = max(np.bincount(y_test)) / sum(np.bincount(y_test))
+
+
     result = {
-        "s": {"train": acc_s_train, "test": acc_s_train},
-        "y": {"train": acc_y_train, "test": acc_y_train}
+        "s": {"train": acc_s_train, "test": acc_s_test},
+        "y": {"train": acc_y_train, "test": acc_y_test}
         }
 
     results["svc"]    = result

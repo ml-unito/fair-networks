@@ -126,7 +126,6 @@ opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
 np.random.seed(opts.random_seed)
 
-
 if opts.log_level <= logging.INFO:
     print(colored("Initialized system based on config:", "green"))
     opts.print_config()
