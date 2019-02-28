@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 from termcolor import colored
 from sklearn.svm import SVC
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
 
 
 class FairNetworksTraining:
@@ -189,7 +189,7 @@ class FairNetworksTraining:
 
         print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss))
 
-    def log_stats_classifier(self, epoch, classifier=DecisionTreeClassifier):
+    def log_stats_classifier(self, epoch, classifier=LogisticRegression):
         train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
             self.model.x: self.train_xs, 
             self.model.noise: self.train_noise})
@@ -197,10 +197,10 @@ class FairNetworksTraining:
             self.model.x: self.test_xs, 
             self.model.noise: self.test_noise})
         
-        cl = classifier(max_depth=4)
+        cl = classifier(multi_class="auto", solver="sag", max_iter=1000)
         cl.fit(train_repr, np.argmax(self.train_ys, axis=1))
         y_test_pred = cl.predict(test_repr)
-        cl = classifier(max_depth=4)
+        cl = classifier(multi_class="auto", solver="sag", max_iter=1000)
         cl.fit(train_repr, np.argmax(self.train_s, axis=1))
         s_test_pred = cl.predict(test_repr)
         
