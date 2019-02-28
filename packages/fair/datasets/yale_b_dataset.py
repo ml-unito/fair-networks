@@ -115,13 +115,9 @@ class YaleBDataset(DatasetBase):
         train_dataset_non_hot = df.iloc[:num_train_examples, non_hot_cols_indices]
         test_dataset_non_hot = df.iloc[num_train_examples:, non_hot_cols_indices]
 
-        logging.info("Scaling values for columns: {}".format(list(non_hot_cols)))
-
         scaler = MinMaxScaler()
         df.iloc[:num_train_examples, non_hot_cols_indices] = scaler.fit_transform(train_dataset_non_hot.astype(np.float64))
         df.iloc[num_train_examples:, non_hot_cols_indices] = scaler.transform(test_dataset_non_hot.astype(np.float64))
-
-        print("scaled post:\n{}".format(df.loc[10, non_hot_cols]))
 
         s_1h_col_names = df.columns[[colname for s_col_name in s_col_names for colname in df.columns.str.startswith(s_col_name)]]
         y_1h_col_names = df.columns[[colname for y_col_name in y_col_names for colname in df.columns.str.startswith(y_col_name)]]
@@ -142,15 +138,6 @@ class YaleBDataset(DatasetBase):
         xt = df.iloc[num_train_examples:, all_non_y_non_s_names_indices].values
         yt = df.iloc[num_train_examples:, y_1h_col_names_indices].values
         st = df.iloc[num_train_examples:, s_1h_col_names_indices].values
-
-        # FIXME: To be removed
-        from sklearn.linear_model import LogisticRegression
-        lr = LogisticRegression()
-        print(np.argmax(ys, axis=1))
-        lr.fit(xs, np.argmax(ys, axis=1))
-        y_pred = lr.predict(xt)
-        print("LR y error (post): {}".format(sum(y_pred == np.argmax(yt, axis=1)) / float(len(yt))))
-        # ----
 
         logging.debug("xs sample: {}".format(xs[:10]))
         logging.debug("ys sample: {}".format(ys[:10]))
