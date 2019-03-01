@@ -39,7 +39,7 @@ class Model:
         _, num_nodes, activation, initializer = layer
         with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
             print("num_nodes:{}".format(num_nodes))
-            in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
+            in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, name='%s-layer-%d' % (layer_name, index+1))
             with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
                 w = tf.get_variable("kernel")
                 b = tf.get_variable("bias")
@@ -79,7 +79,8 @@ class Model:
         in_layer = self.x 
 
         h_layer, self.hidden_layers_variables   = self.build_hidden_layers(in_layer, options.hidden_layers)
-        s_layer, self.sensible_layers_variables = self.build_layers(h_layer, "sensible", options.sensible_layers)
+        s_layer, self.sensible_layers_variables = self.build_layers(tf.Variable([[0.1, 0.2], [0.1, 0.2]]), "sensible", options.sensible_layers)
+        # s_layer, self.sensible_layers_variables = self.build_layers(h_layer, "sensible", options.sensible_layers)
         y_layer, self.class_layers_variables    = self.build_layers(h_layer, "class", options.class_layers)
 
         self.model_last_hidden_layer = h_layer
@@ -88,7 +89,7 @@ class Model:
             self.s_out = tf.layers.dense(s_layer, num_s_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="s_out")
 
         with tf.name_scope("y_out"):
-            self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=None, kernel_initializer = tf.truncated_normal_initializer(), name="y_out")
+            self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=None, name="y_out")
 
         with tf.name_scope("y_loss"):
             self.y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
@@ -105,7 +106,8 @@ class Model:
         with tf.name_scope("h_loss"):
             #self.h_loss = self.y_loss + self.fairness_importance * (tf.math.pow(self.s_mean_loss - self.h_random_mean, 2) 
                                                                  #+  tf.math.pow(self.s_var_loss - self.h_random_var, 2))
-            self.h_loss = self.y_loss - (self.fairness_importance * self.s_mean_loss)
+            # self.h_loss = self.y_loss - (self.fairness_importance * self.s_mean_loss)
+            self.h_loss = (self.fairness_importance * self.s_mean_loss)
             self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
             self.h_test_loss_stat = tf.summary.scalar("h_test_loss", self.h_loss)
 
@@ -150,17 +152,23 @@ class Model:
         return self
 
     def create_train_steps(self, optimizer):
-        h_grads_vars_s = optimizer.compute_gradients(self.s_mean_loss, var_list=self.hidden_layers_variables)
-        h_grads_vars_s = [(self.fairness_importance * -gv[0], gv[1]) for gv in h_grads_vars_s]
-        h_grads_vars_y = optimizer.compute_gradients(self.y_loss, var_list=self.hidden_layers_variables)
-        y_grads = optimizer.compute_gradients(self.y_loss, var_list=self.y_variables)
-        s_grads = optimizer.compute_gradients(self.s_mean_loss, var_list=self.s_variables)
-        h_s_step = optimizer.apply_gradients(h_grads_vars_s)
-        h_y_step = optimizer.apply_gradients(h_grads_vars_y)
-        self.h_grads = h_grads_vars_s + h_grads_vars_y
-        h_train_step = tf.group(h_s_step, h_y_step)
-        y_train_step = optimizer.apply_gradients(y_grads)
-        s_train_step = optimizer.apply_gradients(s_grads)
+        # h_grads_vars_s = optimizer.compute_gradients(self.s_mean_loss, var_list=self.hidden_layers_variables)
+        # h_grads_vars_s = [(self.fairness_importance * -gv[0], gv[1]) for gv in h_grads_vars_s]
+        # h_grads_vars_y = optimizer.compute_gradients(self.y_loss, var_list=self.hidden_layers_variables)
+        # y_grads = optimizer.compute_gradients(self.y_loss, var_list=self.y_variables)
+        # s_grads = optimizer.compute_gradients(self.s_mean_loss, var_list=self.s_variables)
+        # h_s_step = optimizer.apply_gradients(h_grads_vars_s)
+        # h_y_step = optimizer.apply_gradients(h_grads_vars_y)
+        # self.h_grads = h_grads_vars_s + h_grads_vars_y
+        # h_train_step = tf.group(h_s_step, h_y_step)
+        # y_train_step = optimizer.apply_gradients(y_grads)
+        # s_train_step = optimizer.apply_gradients(s_grads)
+        h_train_step = tf.no_op()
+        y_train_step = optimizer.minimize(self.y_loss)
+        s_train_step = tf.no_op()
+        
+
+
         return h_train_step, y_train_step, s_train_step
 
 

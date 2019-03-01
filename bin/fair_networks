@@ -12,6 +12,7 @@ import logging
 from fair.fn.model import Model
 from fair.utils.options import Options
 from fair.fn.fair_networks_training import FairNetworksTraining
+from fair.datasets.yale_b_dataset import YaleBDataset
 
 
 
@@ -138,26 +139,67 @@ print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
 optimizer = tf.train.AdamOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)
 
+# session = tf.Session()
+# saver = tf.train.Saver()
+# writer = tf.summary.FileWriter(logdir=opts.log_fname())
+
+# print("Initializing model")
+# init_model(opts, session, saver, writer)
+# print("Model checkpoint: {}".format(opts.resume_ckpt))
+# print("Model initialized")
+
+
+# if opts.eval_stats:
+#     print_stats(session, model, opts.dataset)
+# elif opts.eval_data_path != None:
+#     print("Evaluating representations")
+#     print_processed_data(session, model, opts.dataset)
+# elif opts.get_info != None:
+#     print_model_information(opts, session, model, opts.get_info)
+# else:
+#     fnt = FairNetworksTraining(opts, session, model, saver, writer)
+#     fnt.training_loop()
+
+
+def log_losses(epoch, session, model, x, y):
+    accuracy = session.run(model.y_accuracy, feed_dict={
+                           model.x: x, model.y: y})
+    loss = session.run(model.y_loss, feed_dict={model.x: x, model.y: y})
+    print("epoch: {} loss: {:7.4f} accuracy: {:7.4f}".format(epoch, loss, accuracy))
+
+
+dataset = YaleBDataset('./data')
+dataset.load_all()
+x, y, s = dataset._traindata
+xt, yt, st = dataset._testdata
+
+
 session = tf.Session()
-saver = tf.train.Saver()
-writer = tf.summary.FileWriter(logdir=opts.log_fname())
+init = tf.global_variables_initializer()
+init_local = tf.local_variables_initializer()
 
-print("Initializing model")
-init_model(opts, session, saver, writer)
-print("Model checkpoint: {}".format(opts.resume_ckpt))
-print("Model initialized")
+session.run(init)
+session.run(init_local)
+batch_size = 16
 
+writer = tf.summary.FileWriter('logdir')
+writer.add_graph(session.graph)
 
-if opts.eval_stats:
-    print_stats(session, model, opts.dataset)
-elif opts.eval_data_path != None:
-    print("Evaluating representations")
-    print_processed_data(session, model, opts.dataset)
-elif opts.get_info != None:
-    print_model_information(opts, session, model, opts.get_info)
-else:
-    fnt = FairNetworksTraining(opts, session, model, saver, writer)
-    fnt.training_loop()
+for epoch in range(200):
+    batch_current = 0
+    while batch_current < len(x):
+        x_batch = x[batch_current:(batch_current+batch_size)]
+        y_batch = y[batch_current:(batch_current+batch_size)]
+        batch_current += batch_size
 
+        session.run(model.y_train_step, feed_dict={
+                    model.x: x_batch, model.y: y_batch})
+
+    if epoch % 10 == 0:
+        print("Train")
+        log_losses(epoch, session, model, x, y)
+
+        print("Test")
+        log_losses(epoch, session, model, xt, yt)
 
 
