@@ -161,7 +161,7 @@ class FairNetworksTraining:
 
             if int(epoch[0]) % 10 == 0:
                 self.log_losses(epoch)
-                self.log_stats_classifier(epoch)
+                # self.log_stats_classifier(epoch)
                 if self.options.verbose:
                     self.model.print_weight(self.session, 2)
                     self.model.print_weight(self.session, 3)
@@ -187,7 +187,14 @@ class FairNetworksTraining:
             self.model.y: self.test_ys,
             self.model.noise: self.test_noise})
 
+        nn_y_accuracy = self.session.run(self.model.y_accuracy, feed_dict = {
+            self.model.x: self.test_xs,
+            self.model.y: self.test_ys,
+            self.model.noise: self.test_noise
+            })
+
         print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss))
+        print("\ty accuracy: {:07.6f}".format(nn_y_accuracy))
 
     def log_stats_classifier(self, epoch, classifier=LogisticRegression):
         train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
@@ -197,10 +204,10 @@ class FairNetworksTraining:
             self.model.x: self.test_xs, 
             self.model.noise: self.test_noise})
         
-        cl = classifier(multi_class="auto", solver="sag", max_iter=1000)
+        cl = classifier(solver="sag", max_iter=1000)
         cl.fit(train_repr, np.argmax(self.train_ys, axis=1))
         y_test_pred = cl.predict(test_repr)
-        cl = classifier(multi_class="auto", solver="sag", max_iter=1000)
+        cl = classifier(solver="sag", max_iter=1000)
         cl.fit(train_repr, np.argmax(self.train_s, axis=1))
         s_test_pred = cl.predict(test_repr)
         

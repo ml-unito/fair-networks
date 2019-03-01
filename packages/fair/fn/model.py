@@ -13,8 +13,11 @@ class Model:
         variables = []
 
         for index, layer in enumerate(layers):
-            in_layer, temp_variables = self.build_layer(in_layer, layer_name, layer, index)
-            variables.extend(temp_variables)
+            if layer[0] == 'i':
+                pass
+            else:
+                in_layer, temp_variables = self.build_layer(in_layer, layer_name, layer, index)
+                variables.extend(temp_variables)
 
         return in_layer, variables
 
@@ -33,8 +36,9 @@ class Model:
     def build_layer(self, in_layer, layer_name, layer, index):
         layer_variables = []
 
-        layer_type, num_nodes, activation, initializer = layer
+        _, num_nodes, activation, initializer = layer
         with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
+            print("num_nodes:{}".format(num_nodes))
             in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializer(), name='%s-layer-%d' % (layer_name, index+1))
             with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
                 w = tf.get_variable("kernel")

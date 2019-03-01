@@ -28,7 +28,6 @@ x, y, s = dataset._traindata
 xt, yt, st = dataset._testdata
 
 model = create_original_model('sigmoid')
-model.fit(x, y, batch_size=16, epochs=200,
+model.fit(x, y, batch_size=16, epochs=200, 
           validation_data=(xt, yt))
-
 

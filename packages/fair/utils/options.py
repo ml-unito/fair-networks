@@ -58,12 +58,11 @@ example:
 
 "*_LAYERS" options specify the composition of sub networks;
 syntax is:
-    LAYER -> [sl]?INT
-    LAYER -> [sl]?INT:LAYER
+    LAYER -> [slehni]?INT
+    LAYER -> [slehni]?INT:LAYER
 
 where the integers are the number of hidden units in the layer being specified and the
-optional 's' or 'l' flags specify the activation unit to be used (s==sigmoid, l==linear,
-default=='s').
+optional flags specify the activation unit to be used (s==sigmoid, l==linear, e==leaky_relu, h==tanh, n==noise, i==identity, default=='s').
 
 examples:
      10       -- a single layer with 10 sigmoid neurons
@@ -104,7 +103,7 @@ class Schedule:
         return int(epoch_spec[1:])
 
 class Options:
-    HIDDEN_LAYER_SPEC_REGEXP = r'^([nslreh])?(\d+)?$'
+    HIDDEN_LAYER_SPEC_REGEXP = r'^([nslrieh])?(\d+)?$'
 
     """Handles the options given to the main script.
 
@@ -175,6 +174,9 @@ class Options:
 
         if match.group(1) == 'n':
             return None
+        
+        if match.group(1) == 'i':
+            return None
 
         if match.group(2) == None:
             raise ParseError('Cannot parse layer specification for element {}: number of units missing from the specification'.format(spec))
@@ -202,6 +204,9 @@ class Options:
         if match.group(1) == 'h':
             return tf.nn.tanh
 
+        if match.group(1) == 'i':
+            return tf.identity
+
         if match.group(1) == 'n':
             return None
 
@@ -218,7 +223,7 @@ class Options:
         result = [[None, self.dataset.num_features()]]
         for line in layers:
             result.append(list(line))
-            if line[0] == 'n':                
+            if line[0] == 'n' or line[0] == 'i':                
                 result[-1][1] = result[-2][1]
         return result[1:]
 
@@ -226,14 +231,16 @@ class Options:
 
     def parse_layers(self, str):
         layers_specs = str.split(':')
-        result = [(self.parse_random_layer(spec), self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
+        result = [(self.parse_layer_type(spec), self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
                for spec in layers_specs ]
 
         return self.fix_num_layers_for_noise_layers(result)
 
-    def parse_random_layer(self, spec):
+    def parse_layer_type(self, spec):
         if spec == 'n':
             return 'n'
+        elif spec == 'i':
+            return 'i'
         else:
             return None
 

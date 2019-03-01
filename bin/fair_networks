@@ -135,7 +135,7 @@ if opts.log_level <= logging.INFO:
 
 print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
 
-optimizer = tf.train.AdagradOptimizer(opts.learning_rate)
+optimizer = tf.train.AdamOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)
 
 session = tf.Session()
