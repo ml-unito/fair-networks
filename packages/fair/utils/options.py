@@ -104,6 +104,24 @@ class Schedule:
 
 class Options:
     HIDDEN_LAYER_SPEC_REGEXP = r'^([nslrieh])?(\d+)?$'
+    INITIALIZERS = {
+        'constant': tf.initializers.constant,
+        'glorot_normal': tf.initializers.glorot_uniform,
+        'glorot_uniform': tf.initializers.glorot_uniform,
+        'identity': tf.initializers.identity,
+        'ones': tf.initializers.ones,
+        'orthogonal': tf.initializers.orthogonal,
+        'random_normal': tf.initializers.random_normal,
+        'random_uniform': tf.initializers.random_uniform,
+        'truncated_normal': tf.initializers.truncated_normal,
+        'uniform_unit_scaling': tf.initializers.uniform_unit_scaling,
+        'variance_scaling': tf.initializers.variance_scaling,
+        'zeros': tf.initializers.zeros
+        }
+    DATASETS = {'adult': AdultDataset, 'bank': BankMarketingDataset,
+                'german': GermanDataset, 'synth': SynthDataset,
+                'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset,
+                'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset}
 
     """Handles the options given to the main script.
 
@@ -231,7 +249,11 @@ class Options:
 
     def parse_layers(self, str):
         layers_specs = str.split(':')
-        result = [(self.parse_layer_type(spec), self.parse_hidden_units(spec), self.parse_activation(spec), tf.truncated_normal_initializer)
+        initializers = (
+            self.INITIALIZERS[self.kernel_intializer],
+            self.INITIALIZERS[self.bias_initializer] )
+
+        result = [(self.parse_layer_type(spec), self.parse_hidden_units(spec), self.parse_activation(spec), initializers)
                for spec in layers_specs ]
 
         return self.fix_num_layers_for_noise_layers(result)
@@ -257,7 +279,7 @@ class Options:
 
 
 
-    def set_layers(self, options):
+    def _set_layers(self, options):
         self.hidden_layers_specs = options.hidden_layers
         self.sensible_layers_specs = options.sensible_layers
         self.class_layers_specs = options.class_layers
@@ -312,10 +334,12 @@ class Options:
         parser.add_argument('-b', '--batch-size', type=int, help="Specifies the batch size to be used")
         parser.add_argument('-l', '--learning-rate', type=float, help="Specifies the (initial) learning rate")
         parser.add_argument('-g', '--get-info', choices=['epoch', 'variables', 'data-sample', 'out-sample','none'], default='none', help="Returns a textual representation of model parameters")
-        parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
-        parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
         parser.add_argument('-B', '--batched', action='store_const', const=True, default=False, help="Train the subclassifiers with a batch-by-batch strategy")
         parser.add_argument('-V', '--var-loss', action='store_const', const=True, default=False, help="Use the s_loss variance (instead of the mean) to train the common layers.")
+        parser.add_argument('-v', '--verbose', type=bool, default=False, help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
+        parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
+        parser.add_argument('--kernel-initializer', choices=list(self.INITIALIZERS.keys()), help="Sets the initializer for the kernel term, defaults to glorot_uniform if not given or set to 'default'")
+        parser.add_argument('--bias-initializer', choices=list(self.INITIALIZERS.keys()), help="Sets the initializer function for the bias term, defaults to glorot_uniform if not given or set to 'default'")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=['adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3'], help="dataset to be loaded")
@@ -323,36 +347,21 @@ class Options:
     def parse(self, argv):
         config_opts = self.try_load_opts(argv)
 
-        datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 
-                     'german':GermanDataset, 'synth': SynthDataset, 
-                     'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset,
-                     'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset}
         parser = argparse.ArgumentParser(description=PARAMS_DESCRIPTION, formatter_class=argparse.RawDescriptionHelpFormatter)
-
         self.configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts, dataset_already_given='dataset' in config_opts)
 
         result = self.try_update_opts(config_opts, parser.parse_args(argv[1:]))
 
-        self.verbose = result.verbose
-        if self.verbose:
-            self.log_level = logging.DEBUG
-        else:
-            self.log_level = logging.getLevelName(result.log_level)
-
-        logging.root.level = self.log_level
-
-        self.dataset_name = result.dataset
-        self.dataset_base_path = self.path_for(result.dataset_base_path)
-
-        self.dataset = datasets[self.dataset_name](self.dataset_base_path)
-        self.num_features = self.dataset.num_features()
+        self._set_logging_level(result)
+        self._set_initializers(result)
+        self._set_datasets(result)
+        self._set_layers(result)
+        self.fairness_importance = result.fairness_importance
 
         self.model_dir = result.model_dir
         self.resume_ckpt = result.resume_ckpt
-
         self.resume_learning = self.input_fname() != None
 
-        self.set_layers(result)
         self.batch_size = result.batch_size
         self.learning_rate = result.learning_rate
 
@@ -361,16 +370,43 @@ class Options:
 
         self.eval_stats = result.eval_stats
         self.eval_data_path = self.path_for(result.eval_data)
-        self.fairness_importance = result.fairness_importance
         self.random_seed = result.random_seed
 
         self.batched = result.batched
-
         self.var_loss = result.var_loss
-
         self.get_info = None if result.get_info == 'none' else result.get_info
 
         return result
+
+
+    def _set_logging_level(self, result):
+        self.verbose = result.verbose
+        if self.verbose:
+            self.log_level = logging.DEBUG
+        else:
+            self.log_level = logging.getLevelName(result.log_level)
+
+        logging.root.level = self.log_level
+
+    def _set_initializers(self, result):
+        self.kernel_intializer = getattr(result, 'kernel_initializer', 'glorot_uniform')
+        self.bias_initializer = getattr(result, 'bias_initializer', 'glorot_uniform')
+
+        if self.kernel_intializer == "" or self.kernel_intializer == "default":
+            self.kernel_intializer = "glorot_uniform"
+
+        if self.bias_initializer == "" or self.bias_initializer == "default":
+            self.bias_initializer = "glorot_uniform"
+
+        logging.debug('Using kernel initializer: {}'.format(self.kernel_intializer))
+        logging.debug('Using bias initializer: {}'.format(self.bias_initializer))
+
+    def _set_datasets(self, result):
+        self.dataset_name = result.dataset
+        self.dataset_base_path = self.path_for(result.dataset_base_path)
+
+        self.dataset = self.DATASETS[self.dataset_name](self.dataset_base_path)
+        self.num_features = self.dataset.num_features()
 
     def model_fname(self, epoch):
         return self.path_for("{}/model-{}.ckpt".format(self.model_dir, epoch))
