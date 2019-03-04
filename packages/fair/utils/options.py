@@ -177,7 +177,7 @@ class Options:
         self.args = args
 
         self.used_options = self.parse(self.args)
-
+        
 
         # with open(self.output_fname() + "_used_options.json", "w") as json_file:
         #     json_file.write(self.json_representation())
@@ -253,7 +253,10 @@ class Options:
 
         return early_saves or normal_saves
 
+    def config_struct(self):
+        return vars(self.used_options)
 
+    #  PRIVATE METHODS
 
     def _configure_parser(self, parser, checkpoint_already_given=None, dataset_already_given=None):
         parser.add_argument('-c', '--model-dir', type=str,
@@ -300,8 +303,6 @@ class Options:
         if not dataset_already_given:
             parser.add_argument('dataset', choices=[
                                 'adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3'], help="dataset to be loaded")
-
-
 
     def _parse_hidden_units(self, spec):
         match = re.search(self.HIDDEN_LAYER_SPEC_REGEXP, spec)
