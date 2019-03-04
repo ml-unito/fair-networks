@@ -193,8 +193,8 @@ class FairNetworksTraining:
             self.model.noise: self.test_noise
             })
 
-        print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss))
-        print("\ty accuracy: {:07.6f}".format(nn_y_accuracy))
+        print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss), end='')
+        print(" y accuracy: {:07.6f}".format(nn_y_accuracy))
 
     def log_stats_classifier(self, epoch, classifier=LogisticRegression):
         train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
