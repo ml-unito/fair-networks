@@ -50,8 +50,8 @@ class Model:
         variables = []
         
         with tf.variable_scope("%s-layer-%d" % ('noise', index)):
-            alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.initializers.truncated_normal())
-            w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=tf.initializers.truncated_normal())
+            alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=initializer[0]())
+            w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[in_layer.get_shape()[1]], initializer=initializer[1]())
             beta = tf.multiply(self.noise, w_beta)
             out = tf.multiply(in_layer, alpha) + beta
             variables.extend([alpha, w_beta])
