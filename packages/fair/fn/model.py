@@ -38,7 +38,6 @@ class Model:
 
         _, num_nodes, activation, initializers = layer
         with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
-            print("num_nodes:{}".format(num_nodes))
             in_layer = tf.layers.dense(in_layer, num_nodes, activation=activation, kernel_initializer = initializers[0](), bias_initializer=initializers[1](), name='%s-layer-%d' % (layer_name, index+1))
             with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
                 w = tf.get_variable("kernel")
