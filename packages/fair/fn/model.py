@@ -219,8 +219,9 @@ class Model:
                             shape=[in_layer.get_shape()[1]], 
                             initializer=initializer[1]())
 
-            beta = tf.multiply(self.noise, w_beta)
-            out = tf.nn.sigmoid(tf.multiply(in_layer, alpha) + beta)
+            beta = tf.nn.sigmoid(tf.multiply(self.noise, w_beta))
+
+            out = (tf.nn.sigmoid(tf.multiply(in_layer, alpha)) + beta) / 2
             variables.extend([alpha, w_beta])
         return out, variables
 
