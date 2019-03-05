@@ -3,10 +3,11 @@ import requests
 import os.path
 import tensorflow as tf
 import numpy as np
-import pandas
+import pandas as pd
 import logging
+import tarfile
+import pickle
 from sklearn.preprocessing import MinMaxScaler
-
 
 from tqdm import tqdm
 
@@ -40,7 +41,10 @@ class YaleBDataset(DatasetBase):
         return ','
 
     def files_to_retrieve(self):
-        pass
+        return [ 
+            ("https://datacloud.di.unito.it/index.php/s/DNT284LEqNiFR3c/download",
+             "{}/yale_dataset.tar.gz".format(self.workingdir))
+            ]
 
     def sensible_columns(self):
         return ['s']
@@ -48,20 +52,83 @@ class YaleBDataset(DatasetBase):
     def y_columns(self):
         return ['y']
 
+    def _load_pickle(self, path):
+        logging.info("Reading pickle file: {}".format(path))
+
+        with open(path, 'rb') as f:
+            data_dict = pickle.load(f, encoding='latin1')
+
+        x = pd.DataFrame(data_dict['x'])
+        y = pd.DataFrame(data_dict['t'])
+        s = pd.DataFrame(data_dict['light'])
+        y = y.rename({0: 'y'}, axis=1)
+        s = s.rename({0: 's'}, axis=1)
+        ext = range(0, 504)
+        x = x.rename({e: 'x_' + str(e) for e in ext}, axis=1)
+        return x, y, s
+
+    def _pickle_files(self):
+        files = ['{}/set_{}.pdata'.format(self.workingdir, i) for i in range(0, 5)]
+        test_file = '{}/test.pdata'.format(self.workingdir)
+        return (files, test_file)
+
+    def _process_pickle_files(self):
+        if os.path.isfile(self.train_path()) and os.path.isfile(self.test_path()):
+            logging.info("Dataset already exists...")
+            return
+
+        logging.info("Processing pickle files...")
+
+        files, test_file = self._pickle_files()
+
+        x = pd.DataFrame([])
+        y = pd.DataFrame([])
+        s = pd.DataFrame([])
+
+        for path in files:
+            tx, ty, ts = self._load_pickle(path)
+            x = pd.concat([x, tx], axis=0)
+            y = pd.concat([y, ty], axis=0)
+            s = pd.concat([s, ts], axis=0)
+
+        y = pd.DataFrame(y)
+        s = pd.DataFrame(s)
+        train = pd.concat([x, y, s], axis=1)
+
+        xt, yt, st = self._load_pickle(test_file)
+        test = pd.concat([xt, yt, st], axis=1)
+        test = test[test['s'] < 5]
+
+        train.to_csv('{}/yale_train.csv'.format(self.workingdir), index=False)
+        test.to_csv('{}/yale_test.csv'.format(self.workingdir), index=False)
+
+    def _extract_pickles(self):
+        tarfile_path = '{}/yale_dataset.tar.gz'.format(self.workingdir)
+        train, test = self._pickle_files()
+        train_ok = not (False in [os.path.isfile(file) for file in train])
+        test_ok = os.path.isfile(test)
+
+        if train_ok and test_ok:
+            logging.info(
+                "All train and test pickle exist skipping untaring them")
+            return
+
+        logging.info("Extracting yale dataset from: {}".format(tarfile_path))
+
+        tar = tarfile.open(name=tarfile_path, mode="r|gz")
+        tar.extractall(path=self.workingdir)
+        tar.close()
+
     def prepare_all(self):
-        pass
+
+        self._extract_pickles()
+        self._process_pickle_files()
 
     def train_path(self):
         return "%s/yale_train.csv" % (self.workingdir)
 
     def test_path(self):
         return "%s/yale_test.csv"  % (self.workingdir)
-
-    def prepare_all(self):
-        pass
-
-    def download_all(self):
-        pass
 
     def load_all(self):
         """
@@ -89,12 +156,12 @@ class YaleBDataset(DatasetBase):
         name (indeed this must be true for the sensible and the class columns, but it would be indeed better
         to enforce the constraint on all columns).
         """
-        logging.info("Reading dataset: {}".format(self.dataset_path()))
+        logging.info("Reading datasets: {} and {}".format(train_path, test_path))
 
-        train_dataset = pandas.read_csv(train_path, sep=self.sep())
-        test_dataset = pandas.read_csv(test_path, sep=self.sep())
+        train_dataset = pd.read_csv(train_path, sep=self.sep())
+        test_dataset = pd.read_csv(test_path, sep=self.sep())
         num_train_examples = train_dataset.shape[0]
-        dataset = pandas.concat([train_dataset, test_dataset], axis=0)
+        dataset = pd.concat([train_dataset, test_dataset], axis=0)
 
         logging.debug("[LOAD BEGIN] y sums:\n {}".format(
             dataset.groupby(self.y_columns()).nunique()))
@@ -108,7 +175,7 @@ class YaleBDataset(DatasetBase):
         logging.info("Getting dummy variables for columns: {}".format(
             list(self.one_hot_columns())))
 
-        df = pandas.get_dummies(dataset, columns=self.one_hot_columns())
+        df = pd.get_dummies(dataset, columns=self.one_hot_columns())
         non_hot_cols = [col for col in self.all_columns() if col not in self.one_hot_columns()]
         non_hot_cols_indices = self.column_indices(df, non_hot_cols)
 

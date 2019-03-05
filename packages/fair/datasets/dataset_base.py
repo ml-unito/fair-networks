@@ -9,6 +9,7 @@ import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from termcolor import colored
+import logging
 
 from tqdm import tqdm
 
@@ -181,7 +182,9 @@ class DatasetBase:
             print(filename + " already exists. Skipping download.")
             return
 
-        print("Downloading %s" % (url))
+        logging.info("Downloading {}".format(url))
+        dataset = requests.get(url)
+    
         with open(filename, 'wb') as file:
             for data in tqdm(dataset):
                 file.write(data)

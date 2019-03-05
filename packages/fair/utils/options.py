@@ -294,7 +294,7 @@ class Options:
         parser.add_argument('-v', '--verbose', type=bool, default=False,
                             help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
         parser.add_argument(
-            '--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="WARNING")
+            '--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="INFO")
         parser.add_argument('--kernel-initializer', choices=list(self.INITIALIZERS.keys()),
                             help="Sets the initializer for the kernel term, defaults to glorot_uniform if not given or set to 'default'")
         parser.add_argument('--bias-initializer', choices=list(self.INITIALIZERS.keys()),
@@ -432,9 +432,11 @@ class Options:
 
     def _set_logging_level(self, result):
         self.verbose = result.verbose
+
         if self.verbose:
             self.log_level = logging.DEBUG
         else:
+            print("Set logging to: {}".format(result.log_level))
             self.log_level = logging.getLevelName(result.log_level)
 
         logging.root.level = self.log_level
