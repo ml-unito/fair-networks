@@ -220,7 +220,7 @@ class Model:
                             initializer=initializer[1]())
 
             beta = tf.multiply(self.noise, w_beta)
-            out = tf.multiply(in_layer, alpha) + beta
+            out = tf.nn.sigmoid(tf.multiply(in_layer, alpha) + beta)
             variables.extend([alpha, w_beta])
         return out, variables
 
