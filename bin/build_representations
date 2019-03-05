@@ -5,7 +5,7 @@ from termcolor import colored
 import subprocess
 import json
 import re
-
+import logging
 
 def extract_model_path(config_path):
     config_string = open(config_path, "r").read()
@@ -16,9 +16,9 @@ def extract_model_path(config_path):
 experiments_path = sys.argv[1]
 approaches = ['fair_networks', 'random_networks', 'copy_original_representation']
 
-print(colored("Entering directory %s" % experiments_path, "green"))
+logging.info(colored("Entering directory %s" % experiments_path, "green"))
 for approach in approaches:
-    print(colored("\tBuilding representations with approach %s" % approach, "yellow"))
+    logging.info(colored("\tBuilding representations with approach %s" % approach, "yellow"))
     try:
         script_path = approach
         output_path = os.path.join("representations", "%s_repr.csv" % approach)
@@ -31,10 +31,10 @@ for approach in approaches:
             cmd = [script_path, config_path, "-E", output_path]
             subprocess.check_output(cmd)
         else:
-            print(colored("Error: cannot find config file in path %s" % config_path, "red"))
+            logging.error(colored("Error: cannot find config file in path %s" % config_path, "red"))
 
     except subprocess.CalledProcessError as e:
-        print(colored("Error in building representation for command %s" % str(cmd), "red"))
-        print("Log of the command is:\n %s" % e.output)
+        logging.error(colored("Error in building representation for command %s" % str(cmd), "red"))
+        logging.error("Log of the command is:\n %s" % e.output)
 
-print(colored("Done", "green"))
+print(logging.info("Done", "green"))
