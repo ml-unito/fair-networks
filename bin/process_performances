@@ -12,7 +12,7 @@ cwd = os.path.dirname(config_file)
 preference_file = os.path.join(cwd, 'performances.json')
 num_epochs = subprocess.check_output(
     ['fair_networks', config_file, '--get-info=epoch', '--log-level=ERROR'])
-commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD'], encoding='utf8')
 
 with open(preference_file, "r") as file:
     results = json.load(file)
@@ -20,7 +20,7 @@ with open(preference_file, "r") as file:
 rnp = results["performances"][RANDOM_NETS_MODEL_NAME] # random networks all performances
 
 print("commit-id: {}\n".format(commit_id))
-print("epochs: {}\n".format(num_epochs))
+print("epochs: {}\n".format(int(num_epochs)))
 
 for experiment_name in results["performances"]:
     if experiment_name == RANDOM_NETS_MODEL_NAME:
