@@ -16,8 +16,8 @@ from fair.fn.fair_networks_training import FairNetworksTraining
 
 
 def print_stats(session, model, dataset):
-    print("Learning rate:")
-    print(session.run(model.optimizer._learning_rate_tensor))
+    logging.info("Learning rate:")
+    logging.info(session.run(model.optimizer._learning_rate_tensor))
 
     train_xs, train_ys, train_s = dataset.train_all_data()
     test_xs, test_ys, test_s = dataset.test_all_data()
@@ -26,13 +26,13 @@ def print_stats(session, model, dataset):
     test_feed = {model.x: test_xs, model.y: test_ys, model.s: test_s}
 
 
-    print("loss and accuracy:")
+    logging.info("loss and accuracy:")
     model.print_loss_and_accuracy(session, train_feed_dict = train_feed, test_feed_dict = test_feed)
 
-    print(colored("\nConfusion matrix -- Train:", attrs=['bold']))
+    logging.info(colored("\nConfusion matrix -- Train:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = train_feed)
 
-    print(colored("\nConfusion matrix -- Test:", attrs=['bold']))
+    logging.info(colored("\nConfusion matrix -- Test:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = test_feed)
 
 def print_processed_data(session, model, dataset):
@@ -40,14 +40,14 @@ def print_processed_data(session, model, dataset):
     result, header = process_data(session, model, train_xs, train_ys, train_s)
 
     to_path = opts.eval_data_path+'_train.csv'
-    print(colored("Saving data representations onto {}".format(to_path), "green"))
+    logging.info(colored("Saving data representations onto {}".format(to_path), "green"))
     pandas.DataFrame(result, columns=header).to_csv(to_path, index=False)
 
     test_xs, test_ys, test_s = dataset.test_all_data()
     result_test, header_test = process_data(session, model, test_xs, test_ys, test_s)
 
     to_path = opts.eval_data_path+'_test.csv'
-    print(colored("Saving data representations onto {}".format(to_path), "green"))
+    logging.info(colored("Saving data representations onto {}".format(to_path), "green"))
     pandas.DataFrame(result_test, columns=header_test).to_csv(to_path, index=False)
 
 
@@ -126,14 +126,11 @@ opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
 np.random.seed(opts.random_seed)
 
-if opts.log_level <= logging.INFO:
-    print(colored("Initialized system based on config:", "green"))
-    opts.print_config()
+logging.info(colored("Initialized system based on config:", "green"))
+opts.print_config()
 
-    print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
-    opts.dataset.print_stats()
-else:    
-    logging.info(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
+logging.info(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
+opts.dataset.print_stats()
 
 optimizer = tf.train.AdamOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)

@@ -220,7 +220,7 @@ class Options:
         return result
 
     def print_config(self):
-        print(json.dumps(vars(self.used_options), indent=4))
+        logging.info(json.dumps(vars(self.used_options), indent=4))
 
 
     def path_for(self, path):

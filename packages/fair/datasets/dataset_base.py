@@ -190,8 +190,8 @@ class DatasetBase:
                 file.write(data)
 
     def print_columns_stats(self):
-        print("|Dataset|    count|  count +|  count -|     min |     max |")
-        print("|:-----:|--------:|--------:|--------:|--------:|--------:|")
+        logging.info("|Dataset|    count|  count +|  count -|     min |     max |")
+        logging.info("|:-----:|--------:|--------:|--------:|--------:|--------:|")
 
     def print_datasets_stats(self, datasets):
         self.print_columns_stats()
@@ -201,9 +201,9 @@ class DatasetBase:
             neg_set_len = len(np.where(dataset[1][:,0] == 1.0)[0])
             min_col_val = dataset[0].min()
             max_col_val = dataset[0].max()
-            print("|%7s|%9d|%9d|%9d|%9.5f|%9.4f|" % (name, len(dataset[1]), pos_set_len, neg_set_len, min_col_val, max_col_val))
+            logging.info("|%7s|%9d|%9d|%9d|%9.5f|%9.4f|" % (name, len(dataset[1]), pos_set_len, neg_set_len, min_col_val, max_col_val))
 
-        print("")
+        logging.info("")
 
     def print_stats(self):
         self.print_datasets_stats([("Train", self._traindata), ("Test", self._testdata)])
