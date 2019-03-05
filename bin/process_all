@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+import sys
+import glob
+import subprocess
+import os
+from termcolor import colored
+from joblib import Parallel, delayed
+import multiprocessing
+
+def parse_num_epochs(num_epochs, granularity=100):
+    try:
+        num_epochs = int(num_epochs)
+        return num_epochs, (num_epochs % granularity) == 0
+    except ValueError:
+        return num_epochs, True
+
+def process_dir(exp_dir):
+    model_dir = exp_dir + '/models'
+    glob_str = model_dir  + '/*ckpt*'
+    ckpt_list = glob.glob(glob_str)
+    ckpt_list = ['.'.join(ckpt.split('.')[:-1]) for ckpt in ckpt_list]
+    print(colored('Processing {} performances in {}'.format(len(ckpt_list), exp_dir), "yellow"))
+    all_performances_path = exp_dir + '/all_performances.tsv'
+    performances_path = exp_dir + '/performances.tsv'
+    subprocess.check_output(['touch', all_performances_path])
+    config_path = exp_dir + '/config.json'
+    subprocess.call('bin/random_networks {} -E representations/random_networks_repr'.format(config_path), shell=True)
+    subprocess.call('copy_original_representation {} -E representations/original_repr'.format(config_path), shell=True)
+
+    for ckpt in ckpt_list:
+        num_epochs = ckpt.split('-')[-1].split('.')[0]
+        num_epochs, check = parse_num_epochs(num_epochs)
+        if not check:
+            continue
+        print(colored('Processing model trained for {} epochs'.format(num_epochs), "green"))
+        subprocess.call('fair_networks {} -E representations/fair_networks_repr -i {}'.format(config_path, ckpt),
+                        shell=True)
+        subprocess.call('test_representations {}'.format(exp_dir), shell=True)
+        subprocess.call('process_performances {} > {}/performances.tsv'.format(config_path, exp_dir), shell=True)
+        subprocess.call('printf "Epochs {}" >> {}'.format(num_epochs, all_performances_path), shell=True)
+        subprocess.call('cat {} >> {}'.format(performances_path, all_performances_path), shell=True)
+        subprocess.call('printf "====\n\n" >> {}'.format(all_performances_path), shell=True)
+        subprocess.check_output(['mv', exp_dir + '/performances.tsv', 
+                                exp_dir + '/performances{}.tsv'.format(num_epochs)])
+        subprocess.check_output(['rm', exp_dir + '/performances.json'])
+
+exp_main_dir = sys.argv[1]
+all_exp_dirs = glob.glob(exp_main_dir + '*')
+num_cores = 10
+executor = Parallel(n_jobs=num_cores)
+executor(delayed(process_dir)(exp_dir) for exp_dir in all_exp_dirs)
+#subprocess.call('make')

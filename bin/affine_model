@@ -1,0 +1,172 @@
+#!/usr/bin/env python
+
+import sys
+
+from fair.datasets.adult_dataset import AdultDataset
+from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
+from fair.datasets.synth_easy3_dataset import SynthEasy3Dataset
+from sklearn.svm import SVC
+
+import numpy as np
+import tensorflow as tf
+import time
+import pandas
+import sklearn.svm as svm
+import argparse
+import math
+
+
+def create_layer(x, num_out, activation, prefix='h', num=0, 
+                 initializer=tf.truncated_normal_initializer,
+                 random_units=0):
+    variables = []
+    num_in = x.shape[1]
+    w = tf.get_variable("{}-{}-w".format(prefix, num), dtype=tf.float32, shape=[num_in+random_units, num_out], initializer=initializer())
+    b = tf.get_variable("{}-{}-b".format(prefix, num), dtype=tf.float32, shape=[num_out], initializer=initializer())
+    if random_units != 0:
+        x_rand = tf.random_normal(name="{}-{}-b".format(prefix, num), shape=[tf.shape(x)[0], random_units])
+        x = tf.concat([x, x_rand], axis=1)
+    variables.extend([w, b])
+    out = activation(tf.matmul(x, w) + b)
+    return out, variables
+
+def create_affine_layer(x, mu=0, sigma=1,
+                        initializer=tf.truncated_normal_initializer):
+    variables = []
+    num_in = x.shape[1]
+    beta_in = np.random.rand(x.shape[1])
+    beta_in = tf.constant(beta_in, dtype=tf.float32)
+    alpha = tf.get_variable("alpha", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=tf.constant_initializer(1))
+    w_beta = tf.get_variable("w-beta", dtype=tf.float32, shape=[x.get_shape()[1]], initializer=initializer())
+    beta = tf.multiply(beta_in, w_beta)
+    out = tf.multiply(x, alpha) + beta
+    variables.extend([alpha, w_beta])
+    return out, variables
+
+def estimate_mean_and_variance(x, num_examples=1000):
+    num_features = len(x[0])
+    svc = SVC()
+    data = np.random.rand(num_examples, num_features)
+    labels = [int(i > num_examples/2) for i in range(num_examples)]
+    svc.fit(data, labels)
+    preds = svc.predict(data)
+    err = np.equal(labels, preds)
+    mean = np.average(err)
+    var = np.var(err)
+    return mean, var
+
+
+if __name__ == '__main__':
+    ## argument handling
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dataset', choices=['adult', 'synth-easy2', 'synth-easy3'], help="dataset to be loaded")
+    parser.add_argument('-l', '--learning-rate', type=float, default=1e-4, help="Specifies the (initial) learning rate")
+    parser.add_argument('-f', '--fairness-importance', type=float, default=5.0, help="Specify how important is fairness w.r.t. the error")
+    parser.add_argument('-b', '--batch-size', type=int, default=100, help="Specifies the batch size to be used")
+    parser.add_argument('-e', '--num-epochs', type=int, default=2000, help="Specifies the number of epochs the model will be trained for")
+    result = parser.parse_args(sys.argv[1:])
+
+    ## dataset loading
+    datasets = {'adult': AdultDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset}
+    dataset_base_path = 'data/'
+    dataset = datasets[result.dataset](dataset_base_path)
+    x_train, y_train, s_train = dataset.train_all_data()
+    x_test, y_test, s_test = dataset.test_all_data()
+
+    num_features = dataset.num_features()
+    num_s_labels = dataset.num_s_columns()
+    num_y_labels = dataset.num_y_columns()
+    s_err_mean, s_err_var = estimate_mean_and_variance(x_train)
+    print('Estimated mean and variance: {} {}'.format(s_err_mean, s_err_var))
+
+    ## hyperparameters
+    learning_rate = result.learning_rate
+    s_sizes = [5, 5]
+    y_sizes = [5, 5]
+    batch_size = result.batch_size
+    num_epochs = result.num_epochs
+    fairness = result.fairness_importance
+
+    ## model def
+    s_variables = []
+    h_variables = []
+    y_variables = []
+    x_ph = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
+    s_ph = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
+    y_ph = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
+
+    x_affine, affine_variables = create_affine_layer(x_ph)
+
+    input_operation = x_affine
+    for i, s_size in enumerate(s_sizes):
+        out, temp_variables = create_layer(input_operation, s_size, tf.nn.sigmoid, prefix="s", num=i)
+        input_operation = out
+        s_variables.extend(temp_variables)
+    s_out, temp_variables = create_layer(input_operation, num_s_labels, tf.identity, prefix='s', num=i+1)
+    s_variables.extend(temp_variables)
+
+    input_operation = x_affine
+    for i, y_size in enumerate(y_sizes):
+        out, temp_variables = create_layer(input_operation, y_size, tf.nn.sigmoid, prefix="y", num=i)
+        input_operation = out
+        y_variables.extend(temp_variables)
+    y_out, temp_variables = create_layer(input_operation, num_y_labels, tf.identity, prefix='y', num=i+1)
+    s_variables.extend(y_variables)
+
+    mean_s_loss, var_s_loss = tf.nn.moments(tf.nn.softmax_cross_entropy_with_logits_v2(labels=s_ph, logits=s_out), 0)
+    y_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y_ph, logits=y_out))
+    s_loss = mean_s_loss
+    h_loss = fairness * (tf.math.pow(mean_s_loss - s_err_mean, 2) + tf.math.pow(var_s_loss - s_err_var, 2)) + y_loss
+
+    optimizer = tf.train.AdagradOptimizer(learning_rate)
+
+    s_step = optimizer.minimize(s_loss, var_list=s_variables)
+    y_step = optimizer.minimize(y_loss, var_list=y_variables)
+    h_step = optimizer.minimize(h_loss, var_list=affine_variables)
+
+    ## tf housekeeping
+    init = tf.initializers.global_variables()
+    sess = tf.Session()
+    sess.run(init)
+
+    ## training loop
+    num_batches_per_epoch = math.ceil(len(x_train)/batch_size)
+    for i in range(num_epochs):
+        for j in range(num_batches_per_epoch):
+            start = batch_size * j 
+            end = batch_size * (j+1)
+
+            sess.run([h_step], feed_dict={x_ph: x_train[start:end], s_ph: s_train[start:end], y_ph: y_train[start:end]})
+            sess.run([y_step], feed_dict={x_ph: x_train[start:end], y_ph: y_train[start:end]})
+            sess.run([s_step], feed_dict={x_ph: x_train[start:end], s_ph: s_train[start:end]})
+
+        if i % 10 == 0:
+            sl, yl, hl = sess.run([s_loss, y_loss, h_loss], feed_dict={x_ph: x_test, s_ph: s_test, y_ph: y_test})
+            print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(i, yl, sl, hl))
+
+    ## print weight info
+    aw = sess.run(affine_variables)
+    print('alpha {} \n beta {}'.format(aw[0], aw[1]))
+
+    ## saving representations to disk
+    repr_h_train = sess.run(x_affine, feed_dict={x_ph: x_train})
+    repr_h_test = sess.run(x_affine, feed_dict={x_ph: x_test})
+
+    result = np.hstack((repr_h_train, s_train, y_train))
+    h_header = ["h_"+str(index)
+                for index in range(len(repr_h_train[0]))]
+    s_header = ["s_"+str(index) for index in range(len(s_train[0]))]
+    y_header = ["y_"+str(index) for index in range(len(y_train[0]))]
+    header = h_header + s_header + y_header
+
+    pandas.DataFrame(result, columns=header).to_csv("affine_repr_train.csv", index=False)
+
+    result = np.hstack((repr_h_test, s_test, y_test))
+    h_header = ["h_"+str(index)
+                for index in range(len(repr_h_test[0]))]
+    s_header = ["s_"+str(index) for index in range(len(s_test[0]))]
+    y_header = ["y_"+str(index) for index in range(len(y_test[0]))]
+    header = h_header + s_header + y_header
+
+    pandas.DataFrame(result, columns=header).to_csv(
+        "affine_repr_test.csv", index=False)

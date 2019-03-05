@@ -1,6 +1,6 @@
 venv/
 data/
-__pycache__
+__*
 .vscode/*
 logdir/
 models/
@@ -14,3 +14,5 @@ pip-selfcheck.json
 representations/
 ICML2019
 .commit-id
+bin/
+*.log

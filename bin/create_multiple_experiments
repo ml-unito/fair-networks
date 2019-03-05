@@ -21,7 +21,11 @@ def parse_spec_file(spec_file_path):
         datasets = specs['datasets']
         fairnesses = specs['fairnesses']
         batch_sizes = specs['batch_sizes']
+        print(architectures)
         specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes)
+        for spec in specs:
+            print(spec)
+            break
     return specs
     
 def create_experiments(specs):
@@ -43,6 +47,7 @@ def fill_dictionary(d):
     d['random_seed'] = 42
     d['output'] = None
     d['resume_ckpt'] = None
+    d['checkpoint'] = 'models/model.ckpt'
     return d
 
 def create_experiment_json(experiment_spec):
@@ -52,7 +57,7 @@ def create_experiment_json(experiment_spec):
     d['schedule'] = schedule
     d['hidden_layers'] = architecture['hidden_layers']
     d['class_layers'] = architecture['class_layers']
-    d['random_units'] = architecture['random_units']
+    #d['random_units'] = architecture['random_units']
     d['sensible_layers'] = architecture['sensible_layers']
     d['fairness_importance'] = float(fairness)
     d['dataset'] = dataset

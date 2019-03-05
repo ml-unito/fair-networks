@@ -52,7 +52,10 @@ def print_processed_data(session, model, dataset):
 
 
 def process_data(session, model, xs, ys, s):
-    model_data_representation = session.run(model.model_last_hidden_layer, feed_dict={model.x:xs, model.y:ys, model.s:s})
+    noise = np.random.uniform(size=xs.shape)
+    model_data_representation = session.run(model.model_last_hidden_layer, feed_dict={
+        model.x:xs, model.y:ys, model.s:s, model.noise:noise
+        })
 
     result = np.hstack((model_data_representation, s, ys))
     h_header = ["h_"+str(index) for index in range(len(model_data_representation[0]))]
@@ -121,8 +124,7 @@ def print_model_information(options, session, model, requested_info):
 
 opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
-
-
+np.random.seed(opts.random_seed)
 
 if opts.log_level <= logging.INFO:
     print(colored("Initialized system based on config:", "green"))
@@ -131,7 +133,9 @@ if opts.log_level <= logging.INFO:
     print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
     opts.dataset.print_stats()
 
-optimizer = tf.train.AdagradOptimizer(opts.learning_rate)
+print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
+
+optimizer = tf.train.AdamOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)
 
 session = tf.Session()
@@ -140,6 +144,7 @@ writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
 print("Initializing model")
 init_model(opts, session, saver, writer)
+print("Model checkpoint: {}".format(opts.resume_ckpt))
 print("Model initialized")
 
 

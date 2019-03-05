@@ -49,7 +49,7 @@ clean_dir:
 	:$(call check_defined, DIR)
 	rm -f $(DIR)/performances.json
 	rm -f $(DIR)/representations/*_repr_*.csv
-	rm -f $(DIR)/performances.tsv
+	rm -f $(DIR)/performances*.tsv
 
 deep_clean_dir:
 	:$(call check_defined, DIR)
@@ -57,7 +57,7 @@ deep_clean_dir:
 	rm -rf $(DIR)/logdir/*
 	rm -f $(DIR)/performances.json
 	rm -f $(DIR)/representations/*_repr_*.csv
-	rm -f $(DIR)/performances.tsv
+	rm -f $(DIR)/performances*.tsv
 
 # clean_performances:
 # 	rm -f $(performance_output_files)
@@ -70,7 +70,7 @@ deep_clean_dir:
 
 %models/model-final.ckpt.index: %config.json 
 	git rev-parse HEAD > $(dir $<)/commit-id
-	fair_networks $<
+	fair_networks $< -B
 
 %representations/fair_networks_repr_train.csv: %config.json
 	fair_networks $< -E representations/fair_networks_repr $(CKPT)
