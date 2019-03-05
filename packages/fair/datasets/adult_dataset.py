@@ -3,6 +3,7 @@ import requests
 import os.path
 import tensorflow as tf
 import numpy as np
+import logging
 
 from tqdm import tqdm
 
@@ -43,7 +44,7 @@ class AdultDataset(DatasetBase):
 
     def prepare_all(self):
         if os.path.isfile(self.dataset_path()):
-            print("Adult dataset already exist. Using existing version.")
+            logging.info("Adult dataset already exist. Using existing version.")
             return
 
         with open(self.dataset_path(), "w") as file:

@@ -179,7 +179,7 @@ class DatasetBase:
         the given filename
         """
         if os.path.isfile(filename):
-            print(filename + " already exists. Skipping download.")
+            logging.info(filename + " already exists. Skipping download.")
             return
 
         logging.info("Downloading {}".format(url))

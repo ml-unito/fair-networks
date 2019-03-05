@@ -436,8 +436,8 @@ class Options:
         if self.verbose:
             self.log_level = logging.DEBUG
         else:
-            print("Set logging to: {}".format(result.log_level))
             self.log_level = logging.getLevelName(result.log_level)
+            logging.info("Set logging to: {}".format(result.log_level))
 
         logging.root.level = self.log_level
 

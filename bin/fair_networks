@@ -132,8 +132,8 @@ if opts.log_level <= logging.INFO:
 
     print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
     opts.dataset.print_stats()
-
-print(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
+else:    
+    logging.info(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
 
 optimizer = tf.train.AdamOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)
@@ -142,16 +142,16 @@ session = tf.Session()
 saver = tf.train.Saver()
 writer = tf.summary.FileWriter(logdir=opts.log_fname())
 
-print("Initializing model")
+logging.info("Initializing model")
 init_model(opts, session, saver, writer)
-print("Model checkpoint: {}".format(opts.resume_ckpt))
-print("Model initialized")
+logging.info("Model checkpoint: {}".format(opts.resume_ckpt))
+logging.info("Model initialized")
 
 
 if opts.eval_stats:
     print_stats(session, model, opts.dataset)
 elif opts.eval_data_path != None:
-    print("Evaluating representations")
+    logging.info("Evaluating representations")
     print_processed_data(session, model, opts.dataset)
 elif opts.get_info != None:
     print_model_information(opts, session, model, opts.get_info)

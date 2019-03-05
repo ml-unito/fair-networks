@@ -1,6 +1,7 @@
 from .dataset_base import DatasetBase
 import pandas
 import os.path
+import logging
 
 class GermanDataset(DatasetBase):
     DOWNLOAD_PATH = 'data/german-original.data'
@@ -38,7 +39,7 @@ class GermanDataset(DatasetBase):
 
     def prepare_all(self):
         if os.path.isfile(self.dataset_path()):
-            print("German dataset already exist. Using existing version.")
+            logging.info("German dataset already exist. Using existing version.")
             return
 
         ds = pandas.read_csv(GermanDataset.DOWNLOAD_PATH, sep=' ', header=None)

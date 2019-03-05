@@ -4,6 +4,7 @@ import numpy as np
 from termcolor import colored
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
+import logging
 
 
 class FairNetworksTraining:
@@ -57,7 +58,7 @@ class FairNetworksTraining:
     def train_aux_classifiers(self, xs, s, ys):
         self.session.run(self.init_s_vars_aux)
         self.session.run(self.init_y_vars_aux)
-        print(self.options.schedule.sub_nets_num_it)
+        logging.debug(self.options.schedule.sub_nets_num_it)
 
         for _ in range(self.options.schedule.sub_nets_num_it):
 
@@ -101,13 +102,12 @@ class FairNetworksTraining:
 
                 batch += 1
                 perc_complete = (float(batch) / tot_batches) * 100
-                print("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
-                      (epoch, batch, tot_batches, perc_complete), end="")
+                logging.info("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
+                      (epoch, batch, tot_batches, perc_complete))
 
                 if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
-                    print("\n")
                     self.run_train_s(self.train_xs, self.train_s)
-                    self.log_stats(epoch)
+                    self._log_stats(epoch)
 
             except tf.errors.OutOfRangeError:
                 break
@@ -193,8 +193,9 @@ class FairNetworksTraining:
             self.model.noise: self.test_noise
             })
 
-        print('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f}'.format(int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss), end='')
-        print(" y accuracy: {:07.6f}".format(nn_y_accuracy))
+        logging.info(" y accuracy: {:07.6f}".format())
+        logging.info('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f} y accuracy: {:07.6f}'.format(
+                        int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss, nn_y_accuracy))
 
     def log_stats_classifier(self, epoch, classifier=LogisticRegression):
         train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
@@ -214,7 +215,7 @@ class FairNetworksTraining:
         s_test_acc  = sum( np.equal(s_test_pred, np.argmax(self.test_s, axis=1) )) / float(len(s_test_pred))
         y_test_acc  = sum( np.equal(y_test_pred, np.argmax(self.test_ys, axis=1) )) / float(len(y_test_pred))
 
-        print('Epoch {:4} y acc {:2.3f} s acc: {:2.3f}'.format(int(epoch[0]), y_test_acc, s_test_acc))
+        logging.info('Epoch {:4} y acc {:2.3f} s acc: {:2.3f}'.format(int(epoch[0]), y_test_acc, s_test_acc))
 
         return y_test_acc, s_test_acc
 
