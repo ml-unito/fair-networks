@@ -250,7 +250,7 @@ class Options:
         return self.path_for('logdir/logs')
 
     def save_at_epoch(self, epoch):
-        early_saves = epoch < 1000 and epoch % 10 == 0
+        early_saves = epoch < 5000 and epoch % 10 == 0
         normal_saves = epoch % self.epochs_per_save == 0
 
         return early_saves or normal_saves
