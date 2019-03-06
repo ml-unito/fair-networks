@@ -35,13 +35,22 @@ def print_stats(session, model, dataset):
     logging.info(colored("\nConfusion matrix -- Test:", attrs=['bold']))
     model.print_confusion_matrix(session, feed_dict = test_feed)
 
-def print_processed_data(session, model, dataset):
+def print_processed_data(opts, session, model, dataset):
     train_xs, train_ys, train_s = dataset.train_all_data()
     result, header = process_data(session, model, train_xs, train_ys, train_s)
 
     to_path = opts.eval_data_path+'_train.csv'
     logging.info(colored("Saving data representations onto {}".format(to_path), "green"))
     pandas.DataFrame(result, columns=header).to_csv(to_path, index=False)
+
+    val_xs, val_ys, val_s = dataset.val_all_data()
+    result, header = process_data(session, model, val_xs, val_ys, val_s)
+
+    to_path = opts.eval_data_path+'_val.csv'
+    logging.info(
+        colored("Saving data representations onto {}".format(to_path), "green"))
+    pandas.DataFrame(result, columns=header).to_csv(to_path, index=False)
+
 
     test_xs, test_ys, test_s = dataset.test_all_data()
     result_test, header_test = process_data(session, model, test_xs, test_ys, test_s)
@@ -149,7 +158,7 @@ if opts.eval_stats:
     print_stats(session, model, opts.dataset)
 elif opts.eval_data_path != None:
     logging.info("Evaluating representations")
-    print_processed_data(session, model, opts.dataset)
+    print_processed_data(opts, session, model, opts.dataset)
 elif opts.get_info != None:
     print_model_information(opts, session, model, opts.get_info)
 else:

@@ -34,11 +34,16 @@ def read_commit_id(file_path):
 def accuracy(pred, y):
     return np.average(y == pred)
 
-def eval_accuracies_on_representation(train_path, test_path):
+def eval_accuracies_on_representation(train_path, val_path, test_path):
     df_train = pandas.read_csv(train_path)
     y_train = df_train.filter(regex="y.*").values
     s_train = df_train.filter(regex="s.*").values
     h_train = df_train.filter(regex="h.*").values
+
+    df_val = pandas.read_csv(val_path)
+    y_val = df_val.filter(regex="y.*").values
+    s_val = df_val.filter(regex="s.*").values
+    h_val = df_val.filter(regex="h.*").values
 
     df_test = pandas.read_csv(test_path)
     y_test = df_test.filter(regex="y.*").values
@@ -49,15 +54,16 @@ def eval_accuracies_on_representation(train_path, test_path):
     
 
     y_train = np.argmax(y_train, axis=1)
+    y_val = np.argmax(y_val, axis=1)
     y_test = np.argmax(y_test, axis=1)
     s_train = np.argmax(s_train, axis=1)
+    s_val = np.argmax(s_val, axis=1)
     s_test = np.argmax(s_test, axis=1)
     
-    # return majority class rate for random_networks_repr
-    if 'random' in train_path:
-        return get_majority_predictions(y_train, y_test, s_train, s_test)
+    datasets = (h_train, h_val, h_test, y_train, y_val, y_test, s_train, s_val, s_test)
 
-    datasets = (h_train, h_test, y_train, y_test, s_train, s_test)
+    if 'random' in train_path:
+        return get_majority_predictions(datasets)
 
     results = {}
     results["svc"] = test_performances(klass=svm.SVC, kargs={"random_state": RANDOM_SEED, "gamma":"auto"}, datasets=datasets,)
@@ -66,18 +72,23 @@ def eval_accuracies_on_representation(train_path, test_path):
     results["forest"] = test_performances(klass=ens.RandomForestClassifier, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
     return results
 
-def get_majority_predictions(y_train, y_test, s_train, s_test):
+def get_majority_predictions(datasets):
+    h_train, h_val, h_test, y_train, y_val, y_test, s_train, s_val, s_test = datasets
+
     results = {}
     acc_s_train = max(np.bincount(s_train)) / sum(np.bincount(s_train))
     acc_y_train = max(np.bincount(y_train)) / sum(np.bincount(y_train))
+
+    acc_s_val = max(np.bincount(s_val)) / sum(np.bincount(s_val))
+    acc_y_val = max(np.bincount(y_val)) / sum(np.bincount(y_val))
 
     acc_s_test = max(np.bincount(s_test)) / sum(np.bincount(s_test))
     acc_y_test = max(np.bincount(y_test)) / sum(np.bincount(y_test))
 
 
     result = {
-        "s": {"train": acc_s_train, "test": acc_s_test},
-        "y": {"train": acc_y_train, "test": acc_y_test}
+        "s": {"train": acc_s_train, "val": acc_s_val, "test": acc_s_test},
+        "y": {"train": acc_y_train, "val": acc_y_val, "test": acc_y_test}
         }
 
     results["svc"]    = result
@@ -89,14 +100,16 @@ def get_majority_predictions(y_train, y_test, s_train, s_test):
 
 
 def test_performances(klass, kargs, datasets):
-    h_train, h_test, y_train, y_test, s_train, s_test = datasets
+    h_train, h_val, h_test, y_train, y_val, y_test, s_train, s_val, s_test = datasets
     classifier_y = klass(**kargs)
 
     classifier_y.fit(h_train, y_train)
     pred_y_train = classifier_y.predict(h_train)
+    pred_y_val = classifier_y.predict(h_val)
     pred_y_test = classifier_y.predict(h_test)
 
     acc_y_train = accuracy(pred_y_train, y_train)
+    acc_y_val = accuracy(pred_y_val, y_val)
     acc_y_test = accuracy(pred_y_test, y_test)
 
     classifier_s = klass(**kargs)
@@ -104,18 +117,20 @@ def test_performances(klass, kargs, datasets):
     classifier_s.fit(h_train, s_train)
 
     pred_s_train = classifier_s.predict(h_train)
+    pred_s_val = classifier_s.predict(h_val)
     pred_s_test = classifier_s.predict(h_test)
 
     acc_s_train = accuracy(pred_s_train, s_train)
+    acc_s_val = accuracy(pred_s_val, s_val)
     acc_s_test = accuracy(pred_s_test, s_test)
 
     return  {
-        "s": {"train": acc_s_train, "test": acc_s_test},
-        "y": {"train": acc_y_train, "test": acc_y_test}
+        "s": {"train": acc_s_train, "val": acc_s_val, "test": acc_s_test},
+        "y": {"train": acc_y_train, "val": acc_y_val, "test": acc_y_test}
         }
 
 def experiment_stem(file):
-    return re.sub(r"_train\.csv|_test\.csv", "", file)
+    return re.sub(r"_train\.csv|_val\.csv|_test\.csv", "", file)
 
 def list_experiments(dir):
     files = os.listdir(dir)
@@ -141,8 +156,9 @@ def process_dir(path):
     experiments_results = {}
     for experiment in list_experiments(representations_dir):
         train_path = os.path.join(representations_dir, experiment+"_train.csv")
+        val_path = os.path.join(representations_dir, experiment+"_val.csv")
         test_path = os.path.join(representations_dir, experiment+"_test.csv")
-        results = eval_accuracies_on_representation(train_path, test_path)
+        results = eval_accuracies_on_representation(train_path, val_path, test_path)
         experiments_results[experiment] = results
 
     if len(experiments_results) == 0:

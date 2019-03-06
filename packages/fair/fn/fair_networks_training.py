@@ -15,13 +15,13 @@ class FairNetworksTraining:
         self.model = model
 
         self.train_xs, self.train_ys, self.train_s = self.dataset.train_all_data()
-        self.test_xs, self.test_ys, self.test_s = self.dataset.test_all_data()
+        self.val_xs, self.val_ys, self.val_s = self.dataset.val_all_data()
 
         self.train_feed = {model.x: self.train_xs, model.y: self.train_ys, model.s: self.train_s}
-        self.test_feed = {model.x: self.test_xs, model.y: self.test_ys, model.s: self.test_s}
+        self.val_feed = {model.x: self.val_xs, model.y: self.val_ys, model.s: self.val_s}
 
         self.train_noise = np.random.uniform(size=self.train_xs.shape)
-        self.test_noise = np.random.uniform(size=self.test_xs.shape)
+        self.val_noise = np.random.uniform(size=self.val_xs.shape)
 
         self.trainset = self.dataset.train_dataset().batch(self.options.batch_size).shuffle(1000)
         self.trainset_it = self.trainset.make_initializable_iterator()
@@ -33,84 +33,6 @@ class FairNetworksTraining:
 
         self.s_variables = [var for varlist in self.model.s_variables for var in varlist]
         self.init_s_vars = tf.variables_initializer(self.s_variables, name="init_s_vars")
-
-
-    def run_train_s(self, xs, s):
-        if self.options.fairness_importance == 0:
-            return
-            
-        self.session.run(self.init_s_vars)
-
-        for _ in range(self.options.schedule.sub_nets_num_it):
-
-            batch_pos = 0
-            while batch_pos < len(xs):
-                batch_x = xs[batch_pos:(batch_pos+self.options.batch_size)]
-                batch_s =  s[batch_pos:(batch_pos+self.options.batch_size)]
-                noise = self.train_noise[batch_pos:(batch_pos + len(batch_x))]
-                batch_pos += self.options.batch_size
-
-                self.session.run(self.model.s_train_step, feed_dict={
-                    self.model.x: batch_x, 
-                    self.model.s: batch_s,
-                    self.model.noise: noise })
-
-    def train_aux_classifiers(self, xs, s, ys):
-        self.session.run(self.init_s_vars_aux)
-        self.session.run(self.init_y_vars_aux)
-        logging.debug(self.options.schedule.sub_nets_num_it)
-
-        for _ in range(self.options.schedule.sub_nets_num_it):
-
-            batch_pos = 0
-            while batch_pos < len(xs):
-                batch_x = xs[batch_pos:(batch_pos+self.options.batch_size)]
-                batch_s =  s[batch_pos:(batch_pos+self.options.batch_size)]
-                batch_y = ys[batch_pos:(batch_pos+self.options.batch_size)]
-
-                noise = self.train_noise[batch_pos:(batch_pos + len(batch_x))]
-                batch_pos += self.options.batch_size
-
-                self.session.run(self.model.y_train_step_aux, feed_dict={
-                    self.model.x: batch_x, 
-                    self.model.y: batch_y,
-                    self.model.noise: noise })
-
-                self.session.run(self.model.s_train_step_aux, feed_dict={
-                    self.model.x: batch_x, 
-                    self.model.s: batch_s,
-                    self.model.noise: noise })
-
-    def run_epoch_new_approach(self):
-        dataset_size = len(self.train_xs)
-        batch = 0
-        noise_batch_start = 0
-        tot_batches = dataset_size / self.options.batch_size
-        self.session.run(self.trainset_it.initializer)
-
-        epoch = self.session.run(self.model.epoch)
-
-        while True:
-            try:
-                xs, ys, s = self.session.run(self.trainset_next)
-                noise = self.train_noise[noise_batch_start:(noise_batch_start+len(xs))]
-                noise_batch_start += len(xs)
-
-                self.run_train_s(self.train_xs, self.train_s)
-                self.session.run(self.model.y_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.noise:noise })
-                self.session.run(self.model.h_train_step, feed_dict = { self.model.x:xs, self.model.y:ys, self.model.s:s, self.model.noise:noise })
-
-                batch += 1
-                perc_complete = (float(batch) / tot_batches) * 100
-                logging.info("\rProcessing epoch %d batch:%d/%d (%2.2f%%)" %
-                      (epoch, batch, tot_batches, perc_complete))
-
-                if tot_batches > 20 and batch % int(tot_batches / 20)  == 0:
-                    self.run_train_s(self.train_xs, self.train_s)
-                    self._log_stats(epoch)
-
-            except tf.errors.OutOfRangeError:
-                break
 
     def run_epoch_batched(self):
         dataset_size = len(self.train_xs)
@@ -150,10 +72,10 @@ class FairNetworksTraining:
         for _ in range(self.options.schedule.num_epochs):
             epoch = self.session.run(self.model.epoch)
 
-            if self.options.batched:
-                self.run_epoch_batched()
-            else:
-                self.run_epoch_new_approach()
+            # if self.options.batched:
+            self.run_epoch_batched()
+            # else:
+            #     self.run_epoch_new_approach()
 
             self.save_model(int(epoch[0]))
 
@@ -172,52 +94,51 @@ class FairNetworksTraining:
 
     def log_losses(self, epoch):
         nn_y_loss = self.session.run(self.model.y_loss, feed_dict = {
-            self.model.x: self.test_xs, 
-            self.model.y: self.test_ys,
-            self.model.noise: self.test_noise
+            self.model.x: self.val_xs, 
+            self.model.y: self.val_ys,
+            self.model.noise: self.val_noise
             })
         nn_s_loss = self.session.run(self.model.s_mean_loss, feed_dict = {
-            self.model.x: self.test_xs, 
-            self.model.s: self.test_s,
-            self.model.noise: self.test_noise
+            self.model.x: self.val_xs, 
+            self.model.s: self.val_s,
+            self.model.noise: self.val_noise
             })
         nn_h_loss = self.session.run(self.model.h_loss, feed_dict = {
-            self.model.x: self.test_xs, 
-            self.model.s: self.test_s, 
-            self.model.y: self.test_ys,
-            self.model.noise: self.test_noise})
+            self.model.x: self.val_xs, 
+            self.model.s: self.val_s, 
+            self.model.y: self.val_ys,
+            self.model.noise: self.val_noise})
 
         nn_y_accuracy = self.session.run(self.model.y_accuracy, feed_dict = {
-            self.model.x: self.test_xs,
-            self.model.y: self.test_ys,
-            self.model.noise: self.test_noise
+            self.model.x: self.val_xs,
+            self.model.y: self.val_ys,
+            self.model.noise: self.val_noise
             })
 
-        logging.info(" y accuracy: {:07.6f}".format())
-        logging.info('Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f} y accuracy: {:07.6f}'.format(
+        logging.info('Stats on the validation set -- Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f} y accuracy: {:07.6f}'.format(
                         int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss, nn_y_accuracy))
 
     def log_stats_classifier(self, epoch, classifier=LogisticRegression):
         train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
             self.model.x: self.train_xs, 
             self.model.noise: self.train_noise})
-        test_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
-            self.model.x: self.test_xs, 
-            self.model.noise: self.test_noise})
+        val_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
+            self.model.x: self.val_xs, 
+            self.model.noise: self.val_noise})
         
         cl = classifier(solver="sag", max_iter=1000)
         cl.fit(train_repr, np.argmax(self.train_ys, axis=1))
-        y_test_pred = cl.predict(test_repr)
+        y_val_pred = cl.predict(val_repr)
         cl = classifier(solver="sag", max_iter=1000)
         cl.fit(train_repr, np.argmax(self.train_s, axis=1))
-        s_test_pred = cl.predict(test_repr)
+        s_val_pred = cl.predict(val_repr)
         
-        s_test_acc  = sum( np.equal(s_test_pred, np.argmax(self.test_s, axis=1) )) / float(len(s_test_pred))
-        y_test_acc  = sum( np.equal(y_test_pred, np.argmax(self.test_ys, axis=1) )) / float(len(y_test_pred))
+        s_val_acc  = sum( np.equal(s_val_pred, np.argmax(self.val_s, axis=1) )) / float(len(s_val_pred))
+        y_val_acc  = sum( np.equal(y_val_pred, np.argmax(self.val_ys, axis=1) )) / float(len(y_val_pred))
 
-        logging.info('Epoch {:4} y acc {:2.3f} s acc: {:2.3f}'.format(int(epoch[0]), y_test_acc, s_test_acc))
+        logging.info('Epoch {:4} y acc {:2.3f} s acc: {:2.3f}'.format(int(epoch[0]), y_val_acc, s_val_acc))
 
-        return y_test_acc, s_test_acc
+        return y_val_acc, s_val_acc
 
     def updateTensorboardStats(self, epoch):
         stat_des = self.session.run(self.model.train_stats, feed_dict = { 
@@ -228,11 +149,11 @@ class FairNetworksTraining:
 
         self.writer.add_summary(stat_des, global_step = epoch)
 
-        stat_des = self.session.run(self.model.test_stats, feed_dict = { 
-            self.model.x:self.test_xs, 
-            self.model.y:self.test_ys, 
-            self.model.s: self.test_s,
-            self.model.noise: self.test_noise })
+        stat_des = self.session.run(self.model.val_stats, feed_dict = { 
+            self.model.x:self.val_xs, 
+            self.model.y:self.val_ys, 
+            self.model.s: self.val_s,
+            self.model.noise: self.val_noise })
         self.writer.add_summary(stat_des, global_step = epoch)
 
 

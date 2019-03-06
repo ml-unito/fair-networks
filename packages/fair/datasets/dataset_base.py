@@ -140,18 +140,21 @@ class DatasetBase:
 
     def load_all(self):
         """
-        loads into memory the training and the test sets (it needs to
+        loads into memory the training, validation and test sets (it needs to
         be called before accessing to them using other methods that
         access to the train and the test set)
         """
         xs,ys,s = self.load_data(self.dataset_path())
 
         train_xs, test_xs, train_ys, test_ys, train_s, test_s = train_test_split(xs,ys,s,test_size=0.1, random_state=42)
+        train_xs, val_xs, train_ys, val_ys, train_s, val_s = train_test_split(train_xs, train_ys, train_s, test_size=1.0/9.0, random_state=42)
 
         self._traindata = (train_xs, train_ys, train_s)
+        self._valdata = (val_xs, val_ys, val_s)
         self._testdata = (test_xs, test_ys, test_s)
 
         self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
+        self._val_dataset = tf.data.Dataset.from_tensor_slices(self._valdata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 
 
@@ -225,6 +228,12 @@ class DatasetBase:
         """
         return self._train_dataset
 
+    def val_dataset(self):
+        """
+        returns a tf.data.Dataset built from the validation set
+        """
+        return self._val_dataset
+
     def test_dataset(self):
         """
         returns a tf.data.Dataset built from the test set
@@ -236,6 +245,13 @@ class DatasetBase:
         returns the whole training set as a tuple of numpy arrays (xs,ys,s)
         """
         xs,ys,s = self._traindata
+        return (np.array(xs), np.array(ys), np.array(s))
+
+    def val_all_data(self):
+        """
+        returns the whole training set as a tuple of numpy arrays (xs,ys,s)
+        """
+        xs, ys, s = self._valdata
         return (np.array(xs), np.array(ys), np.array(s))
 
     def test_all_data(self):

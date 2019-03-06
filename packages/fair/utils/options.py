@@ -213,7 +213,6 @@ class Options:
         self.eval_data_path = self.path_for(result.eval_data)
         self.random_seed = result.random_seed
 
-        self.batched = result.batched
         self.var_loss = result.var_loss
         self.get_info = None if result.get_info == 'none' else result.get_info
 
@@ -273,7 +272,7 @@ class Options:
                             help='sets the random seed used in the experiment')
         parser.add_argument('-e', '--eval-stats', default=False, action='store_const', const=True,
                             help='Evaluate all stats and print the result on the console (if set training options will be ignored)')
-        parser.add_argument('-E', '--eval-data', metavar="PATH", type=str,
+        parser.add_argument('-E', '--eval-data', metavar="PATH", type=str, 
                             help='Evaluate the current model on the whole dataset and save it to disk. Specifically a line (N(x),s,y) is saved for each example (x,s,y), where N(x) is the value computed on the last layer of "model" network.')
         parser.add_argument('-s', '--schedule', type=str,
                             help="Specifies how to schedule training epochs (see the main description for more information.)")
@@ -287,8 +286,6 @@ class Options:
                             help="Specifies the (initial) learning rate")
         parser.add_argument('-g', '--get-info', choices=['epoch', 'variables', 'data-sample', 'out-sample',
                                                          'none'], default='none', help="Returns a textual representation of model parameters")
-        parser.add_argument('-B', '--batched', action='store_const', const=True,
-                            default=False, help="Train the subclassifiers with a batch-by-batch strategy")
         parser.add_argument('-V', '--var-loss', action='store_const', const=True, default=False,
                             help="Use the s_loss variance (instead of the mean) to train the common layers.")
         parser.add_argument('-v', '--verbose', type=bool, default=False,

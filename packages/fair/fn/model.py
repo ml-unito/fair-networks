@@ -101,7 +101,7 @@ class Model:
             self.y_loss = tf.reduce_mean(
                 tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
             self.y_train_loss_stat = tf.summary.scalar("y_train_softmax_loss", self.y_loss)
-            self.y_test_loss_stat = tf.summary.scalar("y_test_softmax_loss", self.y_loss)
+            self.y_val_loss_stat = tf.summary.scalar("y_val_softmax_loss", self.y_loss)
 
         with tf.name_scope("s_loss"):
             mean_kld, var_kld = tf.nn.moments(
@@ -109,7 +109,7 @@ class Model:
             self.s_var_loss = var_kld
             self.s_mean_loss = mean_kld
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_mean_loss)
-            self.s_test_loss_stat = tf.summary.scalar("s_test_softmax_loss", self.s_mean_loss)
+            self.s_val_loss_stat = tf.summary.scalar("s_val_softmax_loss", self.s_mean_loss)
 
         with tf.name_scope("h_loss"):
             #self.h_loss = self.y_loss + self.fairness_importance * (tf.math.pow(self.s_mean_loss - self.h_random_mean, 2)
@@ -117,7 +117,7 @@ class Model:
             self.h_loss = self.y_loss - \
                 (self.fairness_importance * self.s_mean_loss)
             self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
-            self.h_test_loss_stat = tf.summary.scalar("h_test_loss", self.h_loss)
+            self.h_val_loss_stat = tf.summary.scalar("h_val_loss", self.h_loss)
 
         with tf.name_scope("y_accuracy"):
             y_correct_predictions = tf.cast(
@@ -125,14 +125,14 @@ class Model:
             self.y_accuracy = tf.cast(
                 tf.reduce_mean(y_correct_predictions), "float")
             self.y_train_accuracy_stat = tf.summary.scalar("y_train_accuracy", self.y_accuracy)
-            self.y_test_accuracy_stat = tf.summary.scalar("y_test_accuracy", self.y_accuracy)
+            self.y_val_accuracy_stat = tf.summary.scalar("y_val_accuracy", self.y_accuracy)
 
         with tf.name_scope("s_accuracy"):
             s_correct_predictions = tf.cast(
                 tf.equal(tf.argmax(self.s_out, 1), tf.argmax(self.s, 1)), "float")
             self.s_accuracy = tf.cast(tf.reduce_mean(s_correct_predictions), "float")
             self.s_train_accuracy_stat = tf.summary.scalar("s_train_accuracy", self.s_accuracy)
-            self.s_test_accuracy_stat = tf.summary.scalar("s_test_accuracy", self.s_accuracy)
+            self.s_val_accuracy_stat = tf.summary.scalar("s_val_accuracy", self.s_accuracy)
 
         with tf.name_scope("svc_accuracies"):
             self.s_svc_accuracy = tf.placeholder(tf.float32)
@@ -158,8 +158,8 @@ class Model:
 
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat,
                                              self.s_train_accuracy_stat, self.h_train_loss_stat])
-        self.test_stats = tf.summary.merge([self.y_test_loss_stat, self.y_test_accuracy_stat, self.s_test_loss_stat,
-                                            self.s_test_accuracy_stat, self.h_test_loss_stat])
+        self.val_stats = tf.summary.merge([self.y_val_loss_stat, self.y_val_accuracy_stat, self.s_val_loss_stat,
+                                            self.s_val_accuracy_stat, self.h_val_loss_stat])
 
         return self
 

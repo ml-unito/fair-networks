@@ -49,6 +49,13 @@ to_path = opts.eval_data_path + '_train.csv'
 logging.info(colored("Saving train representations onto {}".format(to_path), "green"))
 pandas.DataFrame(data, columns=header).to_csv(to_path, index=False)
 
+x_val, y_val, s_val = opts.dataset.val_all_data()
+data, header = process_data(x_val, y_val, s_val)
+
+to_path = opts.eval_data_path + '_val.csv'
+logging.info(colored("Saving val representations onto {}".format(to_path), "green"))
+pandas.DataFrame(data, columns=header).to_csv(to_path, index=False)
+
 
 x_test, y_test, s_test = opts.dataset.test_all_data()
 data, header = process_data(x_test, y_test, s_test)

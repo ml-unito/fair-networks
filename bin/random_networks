@@ -54,6 +54,12 @@ result, header = process_data(train_xs, train_ys, train_s)
 print(colored("Saving data representations onto {}".format(to_path) , "green"))
 pandas.DataFrame(result, columns=header).to_csv(to_path, index=False)
 
+to_path = opts.eval_data_path + "_val.csv"
+val_xs, val_ys, val_s = dataset.val_all_data()
+result, header = process_data(val_xs, val_ys, val_s)
+print(colored("Saving data representations onto {}".format(to_path), "green"))
+pandas.DataFrame(result, columns=header).to_csv(to_path, index=False)
+
 to_path = opts.eval_data_path + '_test.csv'
 test_xs, test_ys, test_s = dataset.test_all_data()
 result_test, header_test = process_data(test_xs, test_ys, test_s)
