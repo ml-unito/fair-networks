@@ -28,14 +28,14 @@ def parse_spec_file(spec_file_path):
             break
     return specs
     
-def create_experiments(specs):
+def create_experiments(specs, experiment_prefix):
     timestamp = get_timestamp()
     for i, spec in enumerate(specs):
         json_dict = create_experiment_json(spec)
         json_path = '/tmp/config.json'
         with open(json_path, 'w') as json_file:
             json.dump(json_dict, json_file, indent=4)
-        experiment_name = 'generated_{}_{}'.format(i, timestamp)
+        experiment_name = '{}_{}_{}'.format(experiment_prefix, i, timestamp)
         check_and_create(json_path, experiment_name)
     os.remove('/tmp/config.json')
 
@@ -66,6 +66,12 @@ def create_experiment_json(experiment_spec):
     return d
 
 if __name__ == '__main__':
+    if len(sys.argv) < 3:
+        print("Argument error. Usage:")
+        print("\t{} <JSON config file> <experiments prefix>".format(sys.argv[0]))
+        sys.exit(1)
+
+
     spec_file_path = sys.argv[1]
     specs = parse_spec_file(spec_file_path)
-    create_experiments(specs)
+    create_experiments(specs, sys.argv[2])
