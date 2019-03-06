@@ -136,6 +136,8 @@ class Options:
         self.class_layers: array of tuples specifying how to build the class layer
         self.random_units: array of tuples specifying how many random neurons should be 
             contained in each hidden layer
+        self.noise_type: string specifying which kind of activation to be used after the 
+            noise layer. Defaults to 'default', which uses no activation.
 
         if result.schedule: array containing the schedule for the training of the network
 
@@ -197,6 +199,7 @@ class Options:
         self._set_initializers(result)
         self._set_datasets(result)
         self._set_layers(result)
+        self._set_noise_type(result)
         self.fairness_importance = result.fairness_importance
 
         self.model_dir = result.model_dir
@@ -216,6 +219,8 @@ class Options:
         self.batched = result.batched
         self.var_loss = result.var_loss
         self.get_info = None if result.get_info == 'none' else result.get_info
+
+        print(self.noise_type)
 
         return result
 
@@ -299,6 +304,8 @@ class Options:
                             help="Sets the initializer for the kernel term, defaults to glorot_uniform if not given or set to 'default'")
         parser.add_argument('--bias-initializer', choices=list(self.INITIALIZERS.keys()),
                             help="Sets the initializer function for the bias term, defaults to glorot_uniform if not given or set to 'default'")
+        parser.add_argument('--noise-type', choices=["default", "sigmoid_full", "sigmoid_sep", "sigmoid_sep_2"], 
+                            help="Choose the type of activation used after the noise layer.")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=[
@@ -453,6 +460,12 @@ class Options:
 
         logging.debug('Using kernel initializer: {}'.format(self.kernel_intializer))
         logging.debug('Using bias initializer: {}'.format(self.bias_initializer))
+
+    def _set_noise_type(self, result):
+        self.noise_type = getattr(result, 'noise_type', 'default')
+
+        logging.debug('Using noise type: {}'.format(self.noise_type))
+
 
     def _set_datasets(self, result):
         self.dataset_name = result.dataset

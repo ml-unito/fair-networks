@@ -67,6 +67,8 @@ class Model:
 
         num_y_labels = options.dataset.num_y_columns()
 
+        self.noise_type = options.noise_type
+
         self.fairness_importance = tf.Variable(
             options.fairness_importance, name="fairness_importance")
 
@@ -219,9 +221,17 @@ class Model:
                             shape=[in_layer.get_shape()[1]], 
                             initializer=initializer[1]())
 
-            beta = tf.nn.sigmoid(tf.multiply(self.noise, w_beta))
+            beta = tf.multiply(self.noise, w_beta)
+            
+            if self.noise_type == 'default':
+                out = tf.multiply(in_layer, alpha) + beta
+            elif self.noise_type == 'sigmoid_full':
+                out = tf.nn.sigmoid(tf.multiply(in_layer, alpha) + beta)
+            elif self.noise_type == 'sigmoid_sep':
+                out = tf.nn.sigmoid(tf.multiply(in_layer, alpha)) + tf.nn.sigmoid(beta)
+            elif self.noise_type == 'sigmoid_sep_2':
+                out = (tf.nn.sigmoid(tf.multiply(in_layer, alpha)) + tf.nn.sigmoid(beta)) / 2
 
-            out = (tf.nn.sigmoid(tf.multiply(in_layer, alpha)) + beta) / 2
             variables.extend([alpha, w_beta])
         return out, variables
 
