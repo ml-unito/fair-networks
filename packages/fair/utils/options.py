@@ -219,8 +219,6 @@ class Options:
         self.var_loss = result.var_loss
         self.get_info = None if result.get_info == 'none' else result.get_info
 
-        print(self.noise_type)
-
         return result
 
     def print_config(self):

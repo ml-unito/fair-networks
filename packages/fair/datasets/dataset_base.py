@@ -51,6 +51,12 @@ class DatasetBase:
     def files_to_retrieve(self):
         return
 
+    def split_test_size(self):
+        return 0.1
+
+    def split_val_size(self):
+        return 0.1
+
     def load_data(self, path):
         """
         Loads the file specified by the path parameter, parses it
@@ -146,8 +152,11 @@ class DatasetBase:
         """
         xs,ys,s = self.load_data(self.dataset_path())
 
-        train_xs, test_xs, train_ys, test_ys, train_s, test_s = train_test_split(xs,ys,s,test_size=0.1, random_state=42)
-        train_xs, val_xs, train_ys, val_ys, train_s, val_s = train_test_split(train_xs, train_ys, train_s, test_size=1.0/9.0, random_state=42)
+        test_size = self.split_test_size()
+        val_size = self.split_val_size()/(1.0-test_size)
+
+        train_xs, test_xs, train_ys, test_ys, train_s, test_s = train_test_split(xs,ys,s,test_size=test_size, random_state=42)
+        train_xs, val_xs, train_ys, val_ys, train_s, val_s = train_test_split(train_xs, train_ys, train_s, test_size=val_size, random_state=42)
 
         self._traindata = (train_xs, train_ys, train_s)
         self._valdata = (val_xs, val_ys, val_s)

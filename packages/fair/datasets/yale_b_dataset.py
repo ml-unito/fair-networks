@@ -139,10 +139,15 @@ class YaleBDataset(DatasetBase):
                                         test_s) = self.load_data_separate_paths(self.train_path(), self.test_path())
 
         self._traindata = (train_xs, train_ys, train_s)
+        self._valdata = (np.zeros([1, train_xs.shape[1]]),
+                         np.zeros([1, train_ys.shape[1]]),
+                         np.zeros([1, train_s.shape[1]]))
+
         self._testdata = (test_xs, test_ys, test_s)
 
         self._train_dataset = tf.data.Dataset.from_tensor_slices(
             self._traindata)
+        self._val_dataset = tf.data.Dataset.from_tensor_slices(self._valdata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 
     def column_indices(self, df, cols):
