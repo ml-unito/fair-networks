@@ -197,6 +197,7 @@ class Options:
 
         self._set_logging(result)
         self._set_initializers(result)
+        self._set_epoch_save_ranges(result)
         self._set_datasets(result)
         self._set_layers(result)
         self._set_noise_type(result)
@@ -234,6 +235,22 @@ class Options:
 
         return os.path.join(self.config_base_path, path)
 
+    def _set_epoch_save_ranges(self, result):
+        range_specs = getattr(result, "save_model_schedule", "2000:100-10000:500")
+        logging.debug("_set_epoch_save - range_spec: {}".format(range_specs))
+        start = 1
+        step = None
+        self._epoch_save_ranges = []
+        for range_str in range_specs.split("-"):
+            logging.debug("Splitting range spec: {}".format(range_str))
+            end, step = [int(elem) for elem in range_str.split(":")]
+            self._epoch_save_ranges.append((range(start, end), step))
+            start = end
+        self._epoch_save_ranges.append((range(start, sys.maxsize), step))
+
+        logging.info("Saving at epochs: {}".format(self._epoch_save_ranges))
+
+
     def model_fname(self, epoch):
         return self.path_for("{}/model-{}.ckpt".format(self.model_dir, epoch))
 
@@ -250,10 +267,14 @@ class Options:
         return self.path_for('logdir/logs')
 
     def save_at_epoch(self, epoch):
-        early_saves = epoch < 5000 and epoch % 10 == 0
-        normal_saves = epoch % self.epochs_per_save == 0
+        spec = [s for s in self._epoch_save_ranges if epoch in s[0]]
 
-        return early_saves or normal_saves
+        if(len(spec) != 1):
+            logging.error( "Epoch not in any of the allowed ranges (or in more than one). Exiting.")
+            sys.exit(1)
+
+        _, step = spec[0]
+        return epoch % step == 0
 
     def config_struct(self):
         return vars(self.used_options)
@@ -263,6 +284,10 @@ class Options:
     def _configure_parser(self, parser, checkpoint_already_given=None, dataset_already_given=None):
         parser.add_argument('-c', '--model-dir', type=str,
                             help="Name of the directory where to save the model.")
+        parser.add_argument('--save-model-schedule', type=str, help="Schedule for saving models. Use format: E1:N1-E2:N2...:En:Nn"
+                            ", where Ei is the i-th end-point and Ni is the frequency in the given range. "
+                            "For instance: 100:10-1000:100-5000:200 says to save models every 10 epochs from epochs in range"
+                            " 1:100 every 100 epochs for epochs in range 101:1000, and every 200 epochs for epochs in 1000:5000")                            
         parser.add_argument('-i', '--resume-ckpt', type=str,
                             help="Resume operations from the given ckpt, resume latest ckpt if not provided.")
         parser.add_argument('-H', '--hidden-layers',

@@ -160,4 +160,5 @@ class FairNetworksTraining:
 
     def save_model(self, epoch):
         if epoch == "final" or self.options.save_at_epoch(epoch):
+            logging.info("Saving model (epoch:{})".format(epoch))
             self.saver.save(self.session, self.options.output_fname(epoch))
