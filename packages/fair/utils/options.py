@@ -270,7 +270,7 @@ class Options:
         spec = [s for s in self._epoch_save_ranges if epoch in s[0]]
 
         if(len(spec) != 1):
-            logging.error( "Epoch not in any of the allowed ranges (or in more than one). Exiting.")
+            logging.error( "Epoch {} not in any of the allowed ranges (or in more than one). Exiting.".format(epoch))
             sys.exit(1)
 
         _, step = spec[0]

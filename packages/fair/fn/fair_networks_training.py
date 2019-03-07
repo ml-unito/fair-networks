@@ -69,26 +69,25 @@ class FairNetworksTraining:
 
 
     def training_loop(self):
-        epoch = self.session.run(self.model.epoch)
+        epoch = int(self.session.run(self.model.epoch)[0])
         logging.info("Starting training loop from epoch: {}".format(epoch))
 
         while epoch < self.options.schedule.num_epochs:
-            epoch = self.session.run(self.model.epoch)
-
             self.run_epoch_batched()
-            self.save_model(int(epoch[0]))
-
             self.updateTensorboardStats(epoch)
 
-            if int(epoch[0]) % 10 == 0:
+            if epoch % 10 == 0:
                 self.log_losses(epoch)
                 # self.log_stats_classifier(epoch)
+                
                 if self.options.verbose:
                     self.model.print_weight(self.session, 2)
                     self.model.print_weight(self.session, 3)
 
             self.session.run(self.model.inc_epoch)
-            epoch = self.session.run(self.model.epoch)
+            epoch = int(self.session.run(self.model.epoch)[0])
+            self.save_model(epoch)
+
 
         logging.info("Training ended at epoch: {}".format(epoch))
         self.save_model("final")
@@ -117,7 +116,7 @@ class FairNetworksTraining:
             })
 
         logging.info('Stats on the validation set -- Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f} y accuracy: {:07.6f}'.format(
-                        int(epoch[0]), nn_y_loss, nn_s_loss, nn_h_loss, nn_y_accuracy))
+                        epoch, nn_y_loss, nn_s_loss, nn_h_loss, nn_y_accuracy))
 
     def log_stats_classifier(self, epoch, classifier=LogisticRegression):
         train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {
