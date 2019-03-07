@@ -69,14 +69,13 @@ class FairNetworksTraining:
 
 
     def training_loop(self):
-        for _ in range(self.options.schedule.num_epochs):
+        epoch = self.session.run(self.model.epoch)
+        logging.info("Starting training loop from epoch: {}".format(epoch))
+
+        while epoch < self.options.schedule.num_epochs:
             epoch = self.session.run(self.model.epoch)
 
-            # if self.options.batched:
             self.run_epoch_batched()
-            # else:
-            #     self.run_epoch_new_approach()
-
             self.save_model(int(epoch[0]))
 
             self.updateTensorboardStats(epoch)
@@ -89,7 +88,9 @@ class FairNetworksTraining:
                     self.model.print_weight(self.session, 3)
 
             self.session.run(self.model.inc_epoch)
+            epoch = self.session.run(self.model.epoch)
 
+        logging.info("Training ended at epoch: {}".format(epoch))
         self.save_model("final")
 
     def log_losses(self, epoch):
