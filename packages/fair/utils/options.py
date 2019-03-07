@@ -195,7 +195,7 @@ class Options:
         result = self._try_update_opts(
             config_opts, parser.parse_args(argv[1:]))
 
-        self._set_logging_level(result)
+        self._set_logging(result)
         self._set_initializers(result)
         self._set_datasets(result)
         self._set_layers(result)
@@ -293,14 +293,14 @@ class Options:
                             help="Use the s_loss variance (instead of the mean) to train the common layers.")
         parser.add_argument('-v', '--verbose', type=bool, default=False,
                             help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
-        parser.add_argument(
-            '--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="INFO")
         parser.add_argument('--kernel-initializer', choices=list(self.INITIALIZERS.keys()),
                             help="Sets the initializer for the kernel term, defaults to glorot_uniform if not given or set to 'default'")
         parser.add_argument('--bias-initializer', choices=list(self.INITIALIZERS.keys()),
                             help="Sets the initializer function for the bias term, defaults to glorot_uniform if not given or set to 'default'")
         parser.add_argument('--noise-type', choices=["default", "sigmoid_full", "sigmoid_sep", "sigmoid_sep_2"], 
                             help="Choose the type of activation used after the noise layer.")
+        parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="INFO")
+        parser.add_argument('--log-file', type=str, help="Specifies the file to save logs, defaults to stdout")
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=[
@@ -432,16 +432,22 @@ class Options:
         return parsed_args
 
 
-    def _set_logging_level(self, result):
+    def _set_logging(self, result):
+
+
         self.verbose = result.verbose
 
         if self.verbose:
             self.log_level = logging.DEBUG
         else:
             self.log_level = logging.getLevelName(result.log_level)
-            logging.info("Set logging to: {}".format(result.log_level))
 
-        logging.root.level = self.log_level
+        log_file = getattr(result, "log_file", None)
+        
+        if log_file!=None:
+            logging.basicConfig(filename=log_file, level=self.log_level)
+        else:
+            logging.basicConfig(level=self.log_level)
 
     def _set_initializers(self, result):
         self.kernel_intializer = getattr(result, 'kernel_initializer', 'glorot_uniform')
