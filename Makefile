@@ -7,6 +7,8 @@
 .SILENT:
 .SECONDARY:
 
+GREEN='\033[1;32m'
+NC='\033[0m' # No Color
 
 # Check that given variables are set and all have non-empty values,
 # die with an error otherwise.
@@ -70,6 +72,7 @@ deep_clean_dir:
 
 %models/model-final.ckpt.index: %config.json 
 	git rev-parse HEAD > $(dir $<)/commit-id
+	echo -e $(GREEN)Launching:$(NC) fair_networks $< --log-file="$(dir $<)/training.log"
 	fair_networks $< --log-file="$(dir $<)/training.log"
 
 %representations/fair_networks_repr_train.csv: %config.json

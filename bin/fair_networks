@@ -130,7 +130,7 @@ def print_model_information(options, session, model, requested_info):
 # main
 # --------------------------------------------------------------------------------
 
-print(colored("{} [params: {}]".format(
+logging.info(colored("{} [params: {}]".format(
     colored("Starting fair-networks", "green"),
     colored(" ".join(sys.argv[1:]), "white"), "green"))
 )
