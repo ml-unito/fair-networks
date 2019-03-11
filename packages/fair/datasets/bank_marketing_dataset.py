@@ -6,6 +6,7 @@ import numpy as np
 import zipfile
 import pandas
 import sklearn
+import logging
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
