@@ -36,13 +36,14 @@ def process_dir(exp_dir):
         subprocess.call('fair_networks {} -E representations/fair_networks_repr -i {}'.format(config_path, ckpt),
                         shell=True)
         subprocess.call('test_representations {}'.format(exp_dir), shell=True)
-        subprocess.call('process_performances {} > {}/performances.tsv'.format(config_path, exp_dir), shell=True)
+        subprocess.call('process_performances {} > {}'.format(config_path, performances_path), shell=True)
         subprocess.call('printf "Epochs {}" >> {}'.format(num_epochs, all_performances_path), shell=True)
         subprocess.call('cat {} >> {}'.format(performances_path, all_performances_path), shell=True)
         subprocess.call('printf "====\n\n" >> {}'.format(all_performances_path), shell=True)
-        subprocess.check_output(['mv', exp_dir + '/performances.tsv', 
+        subprocess.check_output(['mv', performances_path, 
                                 exp_dir + '/performances{}.tsv'.format(num_epochs)])
-        subprocess.check_output(['rm', exp_dir + '/performances.json'])
+        subprocess.check_output(['mv', exp_dir + '/performances.json', 
+                                exp_dir + 'performances{}.json'.format(num_epochs)])
 
 exp_main_dir = sys.argv[1]
 all_exp_dirs = glob.glob(exp_main_dir + '/*')
