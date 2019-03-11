@@ -48,6 +48,7 @@ def fill_dictionary(d):
     d['output'] = None
     d['resume_ckpt'] = None
     d['checkpoint'] = 'models/model.ckpt'
+    d['save_model_schedule'] = '3000:100'
     return d
 
 def create_experiment_json(experiment_spec):
