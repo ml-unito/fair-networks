@@ -3,6 +3,7 @@ from fair.datasets.bank_marketing_dataset import BankMarketingDataset
 from fair.datasets.adult_dataset import AdultDataset
 from fair.datasets.synth_dataset import SynthDataset
 from fair.datasets.german_dataset import GermanDataset
+from fair.datasets.german_louizos_dataset import GermanLouizosDataset
 from fair.datasets.synth_easy_dataset import SynthEasyDataset
 from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
 from fair.datasets.synth_easy3_dataset import SynthEasy3Dataset
@@ -168,7 +169,7 @@ class Options:
     }
 
     DATASETS = {'adult': AdultDataset, 'bank': BankMarketingDataset,
-                'german': GermanDataset, 'synth': SynthDataset,
+                'german': GermanDataset, 'german-louizos': GermanLouizosDataset, 'synth': SynthDataset,
                 'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset,
                 'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset}
 
@@ -329,7 +330,8 @@ class Options:
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=[
-                                'adult', 'bank', 'german', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3'], help="dataset to be loaded")
+                                'adult', 'bank', 'german', 'german-louizos', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3'], 
+                                help="dataset to be loaded")
 
     def _parse_hidden_units(self, spec):
         match = re.search(self.HIDDEN_LAYER_SPEC_REGEXP, spec)
