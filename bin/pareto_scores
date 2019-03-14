@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+
+import glob
+import matplotlib
+import json
+import re
+import os
+import sys
+import itertools
+
+
+def results_summary(results):
+    """ Returns a dictionary containing the results on the validation set of the
+        logistic regression classifier. 
+        
+    The dictionary has the following keys:
+    fny: fair networks performances (accuracy of lr in predicting y on the 
+        representations learnt by fair networks)
+    ppy: (++y) best possible performances on y (results on the original representations)
+    mmy: (--y) worst possible performances on y (results on random representations)
+
+    fns: fair networks performances on s
+    pps: (++s) best possible performances (results on the random representations)
+    mms: (--s) worst possible performances (results on the original representations)
+    """
+    fny = results['performances']['fair_networks_repr']['lr']['y']['val']
+    ppy = results['performances']['original_repr']['lr']['y']['val']
+    mmy = results['performances']['random_networks_repr']['lr']['y']['val']
+
+    fns = results['performances']['fair_networks_repr']['lr']['s']['val']
+    pps = results['performances']['random_networks_repr']['lr']['s']['val']
+    mms = results['performances']['original_repr']['lr']['s']['val']
+
+    return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms }
+
+def results_score(summary):
+    """ Returns an evaluation of the performances summarized by the summary parameter.
+        The evaluation is given as a scalar computed as the sum of performances on y 
+        and on s. 
+    
+     Performances are computed as percentage of possible gain. Possible gain is evaluated
+     as the best possible performance (e.g., ppy) minus the worst possible performance
+     (e.g., mmy). The gain is computed as the actual performance (e.g., fny) minus the
+     worst possible performance.
+    
+     Performances on s are computed in the opposite direction since the best possible
+     performance are a lower number w.r.t. the best possible performances.
+     """
+    perf_y =  (summary['fny']-summary['mmy'])/(summary['ppy'] - summary['mmy'])
+    perf_s = (summary['mms']-summary['fns'])/(summary['mms'] - summary['pps'])
+
+    return perf_y + perf_s
+
+def parse_epoch(s):
+    pattern = re.compile(r'.*performances(\d+)\.json')
+    match = pattern.match(s)
+
+    if re.match(r'.*performancesfinal\.json', s):
+        return 3000
+
+    return int(match[1])
+
+    if re.match(r'', s):
+        return 3000
+
+
+def pareto_set(dirname):
+    files = glob.glob(os.path.join(dirname, '*.json'))
+    files.sort(key=parse_epoch)
+
+    performances = []
+    for fname in files:
+        epoch = parse_epoch(fname)
+
+        with open(fname, 'r') as f:
+            results = json.load(f)
+
+        summary = results_summary(results)
+        performances.append({
+            'score': results_score(summary), 
+            'summary': summary, 
+            'file': fname, 
+            'epoch': epoch
+            })
+
+    def get_score(el): return el['score']
+
+    performances.sort(key=get_score)
+    perf_grouped = itertools.groupby(performances, key=get_score)
+    return list(perf_grouped)[0]
+
+
+for dirname in sys.argv[1:]:
+    print(pareto_set(dirname))
+
+# print(list(map(lambda el: el['score'], performances)))
+
+
+
