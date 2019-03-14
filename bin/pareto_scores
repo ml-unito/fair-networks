@@ -7,6 +7,8 @@ import re
 import os
 import sys
 import itertools
+from termcolor import colored
+
 
 
 def results_summary(results):
@@ -83,15 +85,37 @@ def pareto_set(dirname):
             'epoch': epoch
             })
 
+    if len(performances) == 0:
+        raise Exception("No performances found for dir: {}".format(dirname))
+
     def get_score(el): return el['score']
 
     performances.sort(key=get_score)
     perf_grouped = itertools.groupby(performances, key=get_score)
-    return list(perf_grouped)[0]
+    return next(perf_grouped)
 
 
 for dirname in sys.argv[1:]:
-    print(pareto_set(dirname))
+    _, elem = pareto_set(dirname)
+    fst, *rest = list(elem)
+
+    summary = "{score} file: {fname} size: {size}".format(
+        score = colored(fst['score'], 'yellow'),
+        fname = colored(fst['file'], 'green'),
+        size = len(rest) + 1)
+
+    perfs = "\tfny: {} ++y: {:6.4} --y: {:6.4} fns: {} ++s: {:6.4} --s: {:6.4}".format(
+            colored("{:6.4}".format(fst['summary']['fny']), 'white') ,
+            fst['summary']['ppy' ],
+            fst['summary']['mmy'],
+            colored("{:6.4}".format(fst['summary']['fns']), 'white'),
+            fst['summary']['pps'],
+            fst['summary']['mms'])
+
+    print(summary)
+    print(colored(perfs, 'grey'))
+    print()
+    
 
 # print(list(map(lambda el: el['score'], performances)))
 
