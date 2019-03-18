@@ -95,8 +95,8 @@ def pareto_set(dirname):
     return next(perf_grouped)
 
 
-for dirname in sys.argv[1:]:
-    _, elem = pareto_set(dirname)
+def print_summary(result):
+    _, elem = result
     fst, *rest = list(elem)
 
     summary = "{score} file: {fname} size: {size}".format(
@@ -115,6 +115,17 @@ for dirname in sys.argv[1:]:
     print(summary)
     print(colored(perfs, 'grey'))
     print()
+
+results = []
+for dirname in sys.argv[1:]:
+    results.append(pareto_set(dirname))
+
+def get_score(result): return result[0]
+
+results.sort(key=get_score, reverse=True)
+
+for result in results:
+    print_summary(result)
     
 
 # print(list(map(lambda el: el['score'], performances)))
