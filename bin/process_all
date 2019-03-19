@@ -48,7 +48,7 @@ def process_dir(exp_dir):
         subprocess.check_output(['mv', performances_path, 
                                 exp_dir + '/performances{}.tsv'.format(num_epochs)])
         subprocess.check_output(['mv', exp_dir + '/performances.json', 
-                                exp_dir + 'performances{}.json'.format(num_epochs)])
+                                exp_dir + '/performances{}.json'.format(num_epochs)])
 
 exp_main_dir = sys.argv[1]
 all_exp_dirs = glob.glob(exp_main_dir + '/*')
