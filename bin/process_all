@@ -3,7 +3,6 @@ import sys
 import glob
 import subprocess
 import os
-import path
 from termcolor import colored
 from joblib import Parallel, delayed
 import multiprocessing
@@ -16,7 +15,9 @@ def parse_num_epochs(num_epochs, granularity=100):
         return num_epochs, True
 
 def process_dir(exp_dir):
-    if not os.path.exists(os.path.join(exp_dir, "performancesfinal.json")):
+    finaljson_exist = os.path.exists(os.path.join(exp_dir, "performancesfinal.json"))
+    
+    if not os.path.isdir(exp_dir) or finaljson_exist:
         print("Directory {} already contains results. Skipping...".format(exp_dir))
         return
 
