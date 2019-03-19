@@ -42,7 +42,7 @@ class YaleBDataset(DatasetBase):
 
     def files_to_retrieve(self):
         return [ 
-            ("https://datacloud.di.unito.it/index.php/s/DNT284LEqNiFR3c/download",
+            ("https://datacloud.di.unito.it/index.php/s/ZNE76RWzNw2YQtp/download",
              "{}/yale_dataset.tar.gz".format(self.workingdir))
             ]
 
