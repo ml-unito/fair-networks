@@ -52,17 +52,27 @@ def results_score(summary):
 
     return perf_y + perf_s
 
-def parse_epoch(s):
+def match_performance(s):
     pattern = re.compile(r'.*performances(\d+)\.json')
     match = pattern.match(s)
+    
+    if match:
+        return (True, int(match[1]))
 
-    if re.match(r'.*performancesfinal\.json', s):
-        return 3000
+    if match == None:
+        match = re.match(r'.*performancesfinal\.json', s)
+        return (True, 3000)
 
-    return int(match[1])
+    return (False, None)
+
+
+def parse_epoch(s):
+    return match_performance(s)[1]
 
 def pareto_set(dirname):
-    files = glob.glob(os.path.join(dirname, '*.json'))
+    files = glob.glob(os.path.join(dirname, 'performances*.json'))
+    filter( lambda x: match_performance(x)[0], files )
+
     files.sort(key=parse_epoch)
 
     performances = []
