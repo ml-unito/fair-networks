@@ -188,13 +188,11 @@ class Options:
     def parse(self, argv):
         config_opts = self._try_load_opts(argv)
 
-        parser = argparse.ArgumentParser(
-            description=PARAMS_DESCRIPTION, formatter_class=argparse.RawDescriptionHelpFormatter)
+        parser = argparse.ArgumentParser(description=PARAMS_DESCRIPTION, formatter_class=argparse.RawDescriptionHelpFormatter)
         self._configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts,
                                dataset_already_given='dataset' in config_opts)
 
-        result = self._try_update_opts(
-            config_opts, parser.parse_args(argv[1:]))
+        result = self._try_update_opts(config_opts, parser.parse_args(argv[1:]))
 
         self._set_logging(result)
         self._set_initializers(result)
@@ -460,8 +458,6 @@ class Options:
 
 
     def _set_logging(self, result):
-
-
         self.verbose = result.verbose
 
         if self.verbose:

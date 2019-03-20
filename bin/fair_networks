@@ -130,12 +130,14 @@ def print_model_information(options, session, model, requested_info):
 # main
 # --------------------------------------------------------------------------------
 
+
+opts = Options(sys.argv)
+
 logging.info(colored("{} [params: {}]".format(
     colored("Starting fair-networks", "green"),
     colored(" ".join(sys.argv[1:]), "white"), "green"))
 )
 
-opts = Options(sys.argv)
 tf.set_random_seed(opts.random_seed)
 np.random.seed(opts.random_seed)
 
