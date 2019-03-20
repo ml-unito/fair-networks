@@ -25,12 +25,16 @@ __check_defined = \
 
 
 main_dir=experiments
-experiment_dirs=$(wildcard $(main_dir)/*/)
-excluded_experiment_dirs=$(wildcard $(main_dir)/_*/)
+experiment_dirs=$(sort $(dir $(wildcard $(main_dir)/*/)))
+excluded_experiment_dirs=$(sort $(dir $(wildcard $(main_dir)/_*/)))
+
 non_excluded_experiments=$(filter-out $(excluded_experiment_dirs), $(experiment_dirs))
+non_excluded_experiments:=$(filter-out experiments/, $(non_excluded_experiments))
+
 performance_output_files=$(foreach dir, $(non_excluded_experiments), $(dir)performances.json)
 performance_tables=$(foreach dir, $(non_excluded_experiments), $(dir)performances.tsv)
 experiment_models=$(foreach dir, $(non_excluded_experiments), $(dir)models/model-final.ckpt.index)
+
 # representation_files=$(foreach dir, $(non_excluded_experiments), \
 # 	$(dir)representations/original_repr_train.csv \
 # 	$(dir)representations/fair_networks_repr_train.csv \

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import glob
-import matplotlib
 import json
 import re
 import os
@@ -53,19 +52,29 @@ def results_score(summary):
 
     return perf_y + perf_s
 
-def parse_epoch(s):
+def match_performance(s):
     pattern = re.compile(r'.*performances(\d+)\.json')
     match = pattern.match(s)
-    if re.match(r'.*performancesfinal\.json', s):
-        return 3000
+
+    if match:
+        try:
+            return (True, int(match[1]))
+        except TypeError:
+            return (True, int(match.groups()[0]))
+
     if match == None:
-        return None
+        match = re.match(r'.*performancesfinal\.json', s)
+        return (True, 3000)
 
-    return int(match.group(1))
+    return (False, None)
 
+def parse_epoch(s):
+    return match_performance(s)[1]
 
 def pareto_set(dirname):
     files = glob.glob(os.path.join(dirname, 'performances*.json'))
+    filter( lambda x: match_performance(x)[0], files )
+
     files.sort(key=parse_epoch)
 
     performances = []
@@ -77,7 +86,11 @@ def pareto_set(dirname):
 
         with open(fname, 'r') as f:
             results = json.load(f)
-
+        try:
+            temp = results['performances']
+        except KeyError:
+            print(colored('{} has no performances. Skipping.'.format(fname), 'red'))
+            continue
         summary = results_summary(results)
         performances.append({
             'score': results_score(summary), 
@@ -120,6 +133,7 @@ def print_summary(result):
 
 results = []
 for dirname in sys.argv[1:]:
+    print(dirname)
     result = pareto_set(dirname)
     if result == None:
         continue

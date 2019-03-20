@@ -8,6 +8,7 @@ import logging
 import tarfile
 import pickle
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 
 from tqdm import tqdm
 
@@ -42,7 +43,7 @@ class YaleBDataset(DatasetBase):
 
     def files_to_retrieve(self):
         return [ 
-            ("https://datacloud.di.unito.it/index.php/s/DNT284LEqNiFR3c/download",
+            ("https://datacloud.di.unito.it/index.php/s/ZNE76RWzNw2YQtp/download",
              "{}/yale_dataset.tar.gz".format(self.workingdir))
             ]
 
@@ -135,18 +136,16 @@ class YaleBDataset(DatasetBase):
         An alternative to load_all where the dataset has already been separated into 
         train and test files.
         """
-        (train_xs, train_ys, train_s), (test_xs, test_ys,
-                                        test_s) = self.load_data_separate_paths(self.train_path(), self.test_path())
+        (train_xs, train_ys, train_s), (test_xs, test_ys,test_s) = self.load_data_separate_paths(self.train_path(), self.test_path())
 
+
+        train_xs, val_xs, train_ys, val_ys, train_s, val_s = train_test_split(train_xs, train_ys, train_s, stratify=train_ys, test_size=0.2)
+        
         self._traindata = (train_xs, train_ys, train_s)
-        self._valdata = (np.zeros([1, train_xs.shape[1]]),
-                         np.zeros([1, train_ys.shape[1]]),
-                         np.zeros([1, train_s.shape[1]]))
-
+        self._valdata = (val_xs, val_ys, val_s)
         self._testdata = (test_xs, test_ys, test_s)
 
-        self._train_dataset = tf.data.Dataset.from_tensor_slices(
-            self._traindata)
+        self._train_dataset = tf.data.Dataset.from_tensor_slices(self._traindata)
         self._val_dataset = tf.data.Dataset.from_tensor_slices(self._valdata)
         self._test_dataset = tf.data.Dataset.from_tensor_slices(self._testdata)
 

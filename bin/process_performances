@@ -12,12 +12,7 @@ cwd = os.path.dirname(config_file)
 preference_file = os.path.join(cwd, 'performances.json')
 num_epochs = subprocess.check_output(
     ['fair_networks', config_file, '--get-info=epoch', '--log-level=ERROR'])
-try:
-    commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD'], encoding='utf8')
-except TypeError:
-    # python 3.5 support
-    commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-
+commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf8')
 
 with open(preference_file, "r") as file:
     results = json.load(file)

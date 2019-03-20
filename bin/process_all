@@ -37,6 +37,12 @@ def process_result(results_path, out_file, exp_name):
 
 
 def process_dir(exp_dir, out_file):
+    finaljson_exist = os.path.exists(os.path.join(exp_dir, "performancesfinal.json"))
+    
+    if not os.path.isdir(exp_dir) or finaljson_exist:
+        print("Directory {} already contains results. Skipping...".format(exp_dir))
+        return
+
     model_dir = exp_dir + '/models'
     glob_str = model_dir  + '/*ckpt*'
     ckpt_list = glob.glob(glob_str)
