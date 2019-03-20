@@ -53,6 +53,15 @@ def results_score(summary):
     return perf_y + perf_s
 
 def match_performance(s):
+    """
+    Matches the given string to see if it is the name of a file containing
+    a performance evaluation at a given epoch.
+
+    Returns a tuple (match, epoch): 
+        - match is a boolean specifying if the string matches the expected format. 
+        - epoch is the epoch to which the performances refer to (or None if the 
+          string does not match).
+    """
     pattern = re.compile(r'.*performances(\d+)\.json')
     match = pattern.match(s)
     
@@ -67,9 +76,25 @@ def match_performance(s):
 
 
 def parse_epoch(s):
+    """
+    Given the name of a file containing a performance evaluation at a 
+    given epoch, returns the epoch to which the name refers to.
+    """
     return match_performance(s)[1]
 
 def pareto_set(dirname):
+    """
+    Given a directory name, it analyses the set of performance files in that
+    directory (there should be one file for each one of the epochs under study).
+
+    It returns the pareto set of the performances evaluated as the sum of the
+    two objectives: 1) % of gain on the y variable w.r.t. the base line (majority 
+    class) and 2) % of gain in unpredictability of s w.r.t. the base line (the
+    original representation of the data).
+
+    The two objectives are equally weighted, thus the pareto set is the set of
+    experiments (epochs) for which obj1 + obj2 is maximal.
+    """
     files = glob.glob(os.path.join(dirname, 'performances*.json'))
     filter( lambda x: match_performance(x)[0], files )
 
@@ -101,6 +126,9 @@ def pareto_set(dirname):
 
 
 def print_summary(result):
+    """
+    Prints a summary of the given result
+    """
     _, elem = result
     fst, *rest = list(elem)
 
@@ -121,6 +149,9 @@ def print_summary(result):
     print(colored(perfs, 'grey'))
     print()
 
+
+# Main
+
 results = []
 for dirname in sys.argv[1:]:
     results.append(pareto_set(dirname))
@@ -132,8 +163,6 @@ results.sort(key=get_score, reverse=True)
 for result in results:
     print_summary(result)
     
-
-# print(list(map(lambda el: el['score'], performances)))
 
 
 
