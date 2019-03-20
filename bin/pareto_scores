@@ -57,10 +57,7 @@ def match_performance(s):
     match = pattern.match(s)
 
     if match:
-        try:
-            return (True, int(match[1]))
-        except TypeError:
-            return (True, int(match.groups()[0]))
+        return (True, int(match.groups()[0]))
 
     if match == None:
         match = re.match(r'.*performancesfinal\.json', s)
