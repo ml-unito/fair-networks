@@ -14,7 +14,7 @@ num_epochs = subprocess.check_output(
     ['fair_networks', config_file, '--get-info=epoch', '--log-level=ERROR'])
 
 
-commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD']).encode('utf8')
+commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf8')
 
 with open(preference_file, "r") as file:
     results = json.load(file)
