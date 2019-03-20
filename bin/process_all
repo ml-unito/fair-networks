@@ -3,6 +3,9 @@ import sys
 import glob
 import subprocess
 import os
+import json
+import fcntl 
+import numpy as np
 from termcolor import colored
 from joblib import Parallel, delayed
 import multiprocessing
@@ -14,7 +17,26 @@ def parse_num_epochs(num_epochs, granularity=100):
     except ValueError:
         return num_epochs, True
 
-def process_dir(exp_dir):
+def process_result(results_path, out_file, exp_name):
+    with open(results_path, 'r') as f:
+        experiment = json.load(f)['performances']
+
+    model_keys = list(experiment['fair_networks_repr'].keys())
+    fair_results = [experiment['fair_networks_repr'][key] for key in model_keys]
+    random_result = experiment['random_networks_repr'][model_keys[0]]
+    original_results = [experiment['original_repr'][key] for key in model_keys]
+    
+    y_gap = [original_result['y']['val'] - fair_result['y']['val'] for fair_result, original_result in zip(fair_results, original_results)] 
+    s_gap = [np.abs(random_result['s']['val'] - fair_result['s']['val']) for fair_result in fair_results]
+    total_gap = min(y_gap) + min(s_gap)
+
+    with open(out_file, 'a') as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        f.write('{},{},{},{}\n'.format(exp_name, min(y_gap), min(s_gap), total_gap))
+        fcntl.flock(f, fcntl.LOCK_UN)
+
+
+def process_dir(exp_dir, out_file):
     finaljson_exist = os.path.exists(os.path.join(exp_dir, "performancesfinal.json"))
     
     if not os.path.isdir(exp_dir) or finaljson_exist:
@@ -30,6 +52,7 @@ def process_dir(exp_dir):
     performances_path = exp_dir + '/performances.tsv'
     subprocess.check_output(['touch', all_performances_path])
     config_path = exp_dir + '/config.json'
+    results_path = exp_dir + '/performances.json'
     subprocess.call('bin/random_networks {} -E representations/random_networks_repr'.format(config_path), shell=True)
     subprocess.call('copy_original_representation {} -E representations/original_repr'.format(config_path), shell=True)
 
@@ -42,18 +65,29 @@ def process_dir(exp_dir):
         subprocess.call('fair_networks {} -E representations/fair_networks_repr -i {}'.format(config_path, ckpt),
                         shell=True)
         subprocess.call('test_representations {}'.format(exp_dir), shell=True)
+        try:
+            process_result(results_path, out_file, exp_dir + '_' + str(num_epochs))
+        except Exception:
+            print(colored("Error in process_result. Probable cause: representations with NaNs. Check performances.json.", "red"))
+            subprocess.call('fair_networks {} -i {} -g variables'.format(config_path, ckpt),
+                        shell=True)
+            continue
         subprocess.call('process_performances {} > {}'.format(config_path, performances_path), shell=True)
         subprocess.call('printf "Epochs {}" >> {}'.format(num_epochs, all_performances_path), shell=True)
         subprocess.call('cat {} >> {}'.format(performances_path, all_performances_path), shell=True)
         subprocess.call('printf "====\n\n" >> {}'.format(all_performances_path), shell=True)
         subprocess.check_output(['mv', performances_path, 
                                 exp_dir + '/performances{}.tsv'.format(num_epochs)])
-        subprocess.check_output(['mv', exp_dir + '/performances.json', 
+        subprocess.check_output(['mv', results_path, 
                                 exp_dir + '/performances{}.json'.format(num_epochs)])
 
+if len(sys.argv) != 3:
+    print('Wrong number of arguments.\nUsage: process_all [experiment_dir] [output_file_path]')
+
 exp_main_dir = sys.argv[1]
+out_file = sys.argv[2]
+subprocess.call('printf "epochs,y_gap,s_gap,total_gap\n" >> {}'.format(out_file), shell=True)
 all_exp_dirs = glob.glob(exp_main_dir + '/*')
 num_cores = 10
 executor = Parallel(n_jobs=num_cores)
-executor(delayed(process_dir)(exp_dir) for exp_dir in all_exp_dirs)
-#subprocess.call('make')
+executor(delayed(process_dir)(exp_dir, out_file) for exp_dir in all_exp_dirs)

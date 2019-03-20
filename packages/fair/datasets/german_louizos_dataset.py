@@ -1,6 +1,7 @@
 from .dataset_base import DatasetBase
 import pandas
 import os.path
+import logging
 
 class GermanLouizosDataset(DatasetBase):
     DOWNLOAD_PATH = 'data/german-full-louizos.csv'
@@ -41,7 +42,7 @@ class GermanLouizosDataset(DatasetBase):
 
     def prepare_all(self):
         if os.path.isfile(self.dataset_path()):
-            print("German-louizos dataset already exist. Using existing version.")
+            logging.info("German-louizos dataset already exist. Using existing version.")
             return
 
         ds = pandas.read_csv(GermanLouizosDataset.DOWNLOAD_PATH, sep=',')

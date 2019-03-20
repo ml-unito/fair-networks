@@ -64,16 +64,15 @@ def match_performance(s):
     """
     pattern = re.compile(r'.*performances(\d+)\.json')
     match = pattern.match(s)
-    
+
     if match:
-        return (True, int(match[1]))
+        return (True, int(match.groups()[0]))
 
     if match == None:
         match = re.match(r'.*performancesfinal\.json', s)
         return (True, 3000)
 
     return (False, None)
-
 
 def parse_epoch(s):
     """
@@ -104,9 +103,16 @@ def pareto_set(dirname):
     for fname in files:
         epoch = parse_epoch(fname)
 
+        if epoch == None:
+            continue
+
         with open(fname, 'r') as f:
             results = json.load(f)
-
+        try:
+            temp = results['performances']
+        except KeyError:
+            print(colored('{} has no performances. Skipping.'.format(fname), 'red'))
+            continue
         summary = results_summary(results)
         performances.append({
             'score': results_score(summary), 
@@ -116,7 +122,8 @@ def pareto_set(dirname):
             })
 
     if len(performances) == 0:
-        raise Exception("No performances found for dir: {}".format(dirname))
+        print("No performances found for dir: {}".format(dirname))
+        return None
 
     def get_score(el): return el['score']
 
@@ -154,6 +161,10 @@ def print_summary(result):
 
 results = []
 for dirname in sys.argv[1:]:
+    print(dirname)
+    result = pareto_set(dirname)
+    if result == None:
+        continue
     results.append(pareto_set(dirname))
 
 def get_score(result): return result[0]
