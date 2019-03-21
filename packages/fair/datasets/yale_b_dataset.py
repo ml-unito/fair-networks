@@ -137,7 +137,7 @@ class YaleBDataset(DatasetBase):
         An alternative to load_all where the dataset has already been separated into 
         train and test files.
         """
-        (train_xs, train_ys, train_s), (test_xs, test_ys,test_s) = self.load_data_separate_paths(self.train_path(), self.test_path())
+        (train_xs, train_ys, train_s), (val_xs, val_ys,val_s) = self.load_data_separate_paths(self.train_path(), self.test_path())
 
         # train_selector = (np.argmax(train_s, axis=1) != 4)
         # val_selector = (np.argmax(train_s, axis=1) == 4)
@@ -146,7 +146,7 @@ class YaleBDataset(DatasetBase):
         # train_ys, val_ys = train_ys[train_selector], train_ys[val_selector]
         # train_s, val_s = train_s[train_selector], train_s[val_selector]
 
-        val_xs, val_ys, val_ts = (np.zeros([1, train_xs.shape[1]]),
+        test_xs, test_ys, test_s = (np.zeros([1, train_xs.shape[1]]),
                                   np.zeros([1, train_ys.shape[1]]),
                                   np.zeros([1, train_s.shape[1]]))
 
