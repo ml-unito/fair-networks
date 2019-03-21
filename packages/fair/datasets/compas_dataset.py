@@ -23,15 +23,15 @@ class CompasDataset(DatasetBase):
         return ["race", "sex", "age_cat", "c_charge_degree", "two_year_recid"]
 
     def dataset_path(self):
-        return "%s/compas-violent-preprocessed.csv" % (self.workingdir)
+        return "%s/compas-preprocessed.csv" % (self.workingdir)
 
     def sep(self):
         return ','
 
     def files_to_retrieve(self):
         return [
-            ('https://datacloud.di.unito.it/index.php/s/Y6xd9AtKC8bnPtc/download',
-             '%s/compas-violent-preprocessed.data' % self.workingdir),
+            ('https://datacloud.di.unito.it/index.php/s/erSb2yj8zQnwzaQ/download',
+             '%s/compas-preprocessed.csv' % self.workingdir),
         ]
 
     def sensible_columns(self):
@@ -44,5 +44,4 @@ class CompasDataset(DatasetBase):
         if os.path.isfile(self.dataset_path()):
             logging.info("Compas dataset already exist. Using existing version.")
             return
-        
 
