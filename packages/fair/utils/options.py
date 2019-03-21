@@ -9,6 +9,7 @@ from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
 from fair.datasets.synth_easy3_dataset import SynthEasy3Dataset
 from fair.datasets.synth_easy4_dataset import SynthEasy4Dataset
 from fair.datasets.yale_b_dataset import YaleBDataset
+from fair.datasets.compas_dataset import CompasDataset
 
 import argparse
 import textwrap
@@ -171,7 +172,7 @@ class Options:
     DATASETS = {'adult': AdultDataset, 'bank': BankMarketingDataset,
                 'german': GermanDataset, 'german-louizos': GermanLouizosDataset, 'synth': SynthDataset,
                 'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset,
-                'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset}
+                'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset, 'compas': CompasDataset}
 
 
     def __init__(self, args):
@@ -328,7 +329,7 @@ class Options:
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=[
-                                'adult', 'bank', 'german', 'german-louizos', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3'], 
+                                'adult', 'bank', 'german', 'german-louizos', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3', 'compas'], 
                                 help="dataset to be loaded")
 
     def _parse_hidden_units(self, spec):
