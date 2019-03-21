@@ -9,6 +9,7 @@ import tarfile
 import pickle
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
 
 from tqdm import tqdm
 
@@ -138,8 +139,18 @@ class YaleBDataset(DatasetBase):
         """
         (train_xs, train_ys, train_s), (test_xs, test_ys,test_s) = self.load_data_separate_paths(self.train_path(), self.test_path())
 
+        # train_selector = (np.argmax(train_s, axis=1) != 4)
+        # val_selector = (np.argmax(train_s, axis=1) == 4)
 
-        train_xs, val_xs, train_ys, val_ys, train_s, val_s = train_test_split(train_xs, train_ys, train_s, stratify=train_ys, test_size=0.2)
+        # train_xs, val_xs = train_xs[train_selector], train_xs[val_selector]
+        # train_ys, val_ys = train_ys[train_selector], train_ys[val_selector]
+        # train_s, val_s = train_s[train_selector], train_s[val_selector]
+
+        val_xs, val_ys, val_ts = (np.zeros([1, train_xs.shape[1]]),
+                                  np.zeros([1, train_ys.shape[1]]),
+                                  np.zeros([1, train_s.shape[1]]))
+
+        # train_xs, val_xs, train_ys, val_ys, train_s, val_s = train_test_split(train_xs, train_ys, train_s, test_size=0.2)
         
         self._traindata = (train_xs, train_ys, train_s)
         self._valdata = (val_xs, val_ys, val_s)
