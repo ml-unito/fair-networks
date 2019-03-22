@@ -10,7 +10,7 @@ from termcolor import colored
 
 
 
-def results_summary(results):
+def results_summary(results, classifier='lr'):
     """ Returns a dictionary containing the results on the validation set of the
         logistic regression classifier. 
         
@@ -24,13 +24,13 @@ def results_summary(results):
     pps: (++s) best possible performances (results on the random representations)
     mms: (--s) worst possible performances (results on the original representations)
     """
-    fny = results['performances']['fair_networks_repr']['lr']['y']['val']
-    ppy = results['performances']['original_repr']['lr']['y']['val']
-    mmy = results['performances']['random_networks_repr']['lr']['y']['val']
+    fny = results['performances']['fair_networks_repr'][classifier]['y']['val']
+    ppy = results['performances']['original_repr'][classifier]['y']['val']
+    mmy = results['performances']['random_networks_repr'][classifier]['y']['val']
 
-    fns = results['performances']['fair_networks_repr']['lr']['s']['val']
-    pps = results['performances']['random_networks_repr']['lr']['s']['val']
-    mms = results['performances']['original_repr']['lr']['s']['val']
+    fns = results['performances']['fair_networks_repr'][classifier]['s']['val']
+    pps = results['performances']['random_networks_repr'][classifier]['s']['val']
+    mms = results['performances']['original_repr'][classifier]['s']['val']
 
     return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms }
 
@@ -81,6 +81,25 @@ def parse_epoch(s):
     """
     return match_performance(s)[1]
 
+def average_summaries(summary_list):
+    """
+    Given a list of summaries, average their results. This is useful
+    if you want to get the best models according to multiple classifiers.
+    
+    Note that this method iterates on the keys found in the very first summary
+    dict, and there is no explicit check for dictionary key correspondance.
+    """
+    key_list = summary_list[0].keys()
+    avg_summary = {}
+
+    for key in key_list:
+        tmp_value = 0
+        for summary in summary_list:
+            tmp_value += summary[key]
+        avg_summary[key] = tmp_value / len(summary_list)
+
+    return avg_summary
+
 def pareto_set(dirname):
     """
     Given a directory name, it analyses the set of performance files in that
@@ -113,10 +132,13 @@ def pareto_set(dirname):
         except KeyError:
             print(colored('{} has no performances. Skipping.'.format(fname), 'red'))
             continue
-        summary = results_summary(results)
+        summary_lr = results_summary(results, classifier='lr')
+        summary_forest = results_summary(results, classifier='forest')
+        avg_score = (results_score(summary_lr) + results_score(summary_forest)) / 2
+        avg_summary = average_summaries([summary_forest, summary_lr])
         performances.append({
-            'score': results_score(summary), 
-            'summary': summary, 
+            'score': avg_score, 
+            'summary': avg_summary, 
             'file': fname, 
             'epoch': epoch
             })
