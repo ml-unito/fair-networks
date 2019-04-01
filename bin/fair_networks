@@ -9,9 +9,13 @@ import sklearn.svm as svm
 from termcolor import colored
 import logging
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
 from fair.fn.model import Model
 from fair.utils.options import Options
 from fair.fn.fair_networks_training import FairNetworksTraining
+from fair.utils.discrimination_measures import discrimination
 
 
 
@@ -58,6 +62,44 @@ def print_processed_data(opts, session, model, dataset):
     to_path = opts.eval_data_path+'_test.csv'
     logging.info(colored("Saving data representations onto {}".format(to_path), "green"))
     pandas.DataFrame(result_test, columns=header_test).to_csv(to_path, index=False)
+
+def print_discrimination_measures(opts, session, model, dataset):
+    train_xs, train_ys, train_s = dataset.train_all_data()
+    train_hs, _ = process_data(session, model, train_xs, train_ys, train_s)
+    test_xs, test_ys, test_s = dataset.test_all_data()
+    test_hs, _ = process_data(session, model, test_xs, test_ys, test_s)
+
+    # discard one hot encoding
+    train_ys = train_ys[:, 0]
+    train_s = train_s[:, 0]
+    test_ys = test_ys[:, 0]
+    test_s = test_s[:, 0]
+
+    lr = LogisticRegression()
+
+    lr.fit(train_hs, train_ys)
+    lr_y_pred = lr.predict(test_hs)
+
+    lr = LogisticRegression() # reset the model
+    
+    lr.fit(train_hs, train_s)
+    lr_s_pred = lr.predict(test_hs)
+
+    rf = RandomForestClassifier()
+
+    rf.fit(train_hs, train_ys)
+    rf_y_pred = rf.predict(test_hs)
+
+    rf = RandomForestClassifier() # reset the model
+
+    rf.fit(train_hs, train_s)
+    rf_s_pred = rf.predict(test_hs)
+    
+    lr_discrim = discrimination(lr_y_pred, test_s)
+    rf_discrim = discrimination(rf_y_pred, test_s)
+    
+    print('Lr discrim: {} Rf discrim: {}'.format(lr_discrim, rf_discrim))
+
 
 
 def process_data(session, model, xs, ys, s):
@@ -167,6 +209,8 @@ elif opts.eval_data_path != None:
     print_processed_data(opts, session, model, opts.dataset)
 elif opts.get_info != None:
     print_model_information(opts, session, model, opts.get_info)
+elif opts.discrimination == True:
+    print_discrimination_measures(opts, session, model, opts.dataset)
 else:
     fnt = FairNetworksTraining(opts, session, model, saver, writer)
     fnt.training_loop()

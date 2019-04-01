@@ -23,7 +23,7 @@ class CompasDataset(DatasetBase):
         return ["race", "sex", "age_cat", "c_charge_degree", "two_year_recid"]
 
     def dataset_path(self):
-        return "%s/compas-violent-preprocessed.csv" % (self.workingdir)
+        return "%s/compas-preprocessed.csv" % (self.workingdir)
 
     def sep(self):
         return ','
@@ -31,7 +31,7 @@ class CompasDataset(DatasetBase):
     def files_to_retrieve(self):
         return [
             ('https://datacloud.di.unito.it/index.php/s/Y6xd9AtKC8bnPtc/download',
-             '%s/compas-violent-preprocessed.data' % self.workingdir),
+             '%s/compas-preprocessed.data' % self.workingdir),
         ]
 
     def sensible_columns(self):

@@ -219,6 +219,7 @@ class Options:
 
         self.var_loss = result.var_loss
         self.get_info = None if result.get_info == 'none' else result.get_info
+        self.discrimination = result.discrimination
 
         return result
 
@@ -318,6 +319,8 @@ class Options:
                             help="Use the s_loss variance (instead of the mean) to train the common layers.")
         parser.add_argument('-v', '--verbose', type=bool, default=False,
                             help="Print additional information onto the console (it is equivalent to --log-level=DEBUG)")
+        parser.add_argument('-D', '--discrimination', type=bool, default=False,
+                            help="Print discrimination measures instead of training.")
         parser.add_argument('--kernel-initializer', choices=list(self.INITIALIZERS.keys()),
                             help="Sets the initializer for the kernel term, defaults to glorot_uniform if not given or set to 'default'")
         parser.add_argument('--bias-initializer', choices=list(self.INITIALIZERS.keys()),

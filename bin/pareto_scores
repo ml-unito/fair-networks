@@ -47,7 +47,10 @@ def results_score(summary):
      Performances on s are computed in the opposite direction since the best possible
      performance are a lower number w.r.t. the best possible performances.
      """
-    perf_y =  (summary['fny']-summary['mmy'])/(summary['ppy'] - summary['mmy'])
+    try:
+        perf_y =  (summary['fny']-summary['mmy'])/(summary['ppy'] - summary['mmy'])
+    except ZeroDivisionError:
+        perf_y = 1
     perf_s = (summary['mms']-summary['fns'])/(summary['mms'] - summary['pps'])
 
     return perf_y + perf_s

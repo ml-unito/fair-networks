@@ -61,6 +61,10 @@ def process_dir(exp_dir, out_file):
         num_epochs, check = parse_num_epochs(num_epochs)
         if not check:
             continue
+        performance_tmp = exp_dir + '/performances{}.tsv'.format(num_epochs)
+        if os.path.exists(performance_tmp):
+            print(colored('Found {}. Skipping.'.format(performance_tmp), "yellow"))
+            continue
         print(colored('Processing model trained for {} epochs'.format(num_epochs), "green"))
         subprocess.call('fair_networks {} -E representations/fair_networks_repr -i {}'.format(config_path, ckpt),
                         shell=True)
