@@ -96,10 +96,13 @@ def average_summaries(summary_list):
     avg_summary = {}
 
     for key in key_list:
-        tmp_value = 0
+        tmp_value = []
         for summary in summary_list:
-            tmp_value += summary[key]
-        avg_summary[key] = tmp_value / len(summary_list)
+            tmp_value.append(summary[key])
+        if key == 'fns':
+            avg_summary[key] = max(tmp_value)
+        else:
+            avg_summary[key] = sum(tmp_value) / len(summary_list)
 
     return avg_summary
 
@@ -152,7 +155,7 @@ def pareto_set(dirname):
 
     def get_score(el): return el['score']
 
-    performances.sort(key=get_score)
+    performances.sort(key=get_score, reverse=True)
     perf_grouped = itertools.groupby(performances, key=get_score)
     return next(perf_grouped)
 
