@@ -24,22 +24,27 @@ import argparse
 import sys
 # workaround for importing stuff from parent dir. here the assumption is
 # that you should be running this code from the main fair-networks directory.
-sys.path.insert(0, 'code')
+sys.path.insert(0, 'packages')
 
 try:
-    from bank_marketing_dataset import BankMarketingDataset
-    from adult_dataset import AdultDataset
-    from synth_dataset import SynthDataset
-except ValueError:
+    from fair.datasets.bank_marketing_dataset import BankMarketingDataset
+    from fair.datasets.adult_dataset import AdultDataset
+    from fair.datasets.synth_dataset import SynthDataset
+    from fair.datasets.german_louizos_dataset import GermanLouizosDataset
+    from fair.datasets.default_dataset import DefaultDataset
+    from fair.datasets.compas_dataset import CompasDataset                                                                                                                             
+except ValueError as e:
     print('Please run this script from the main fair-networks folder, like so: python code/vfae/train.py [args]')
+    print(e)
     sys.exit(1)
-except ModuleNotFoundError:
+except ModuleNotFoundError as e:
     print('Please run this script from the main fair-networks folder, like so: python code/vfae/train.py [args]')
+    print(e)
     sys.exit(1)
 
 
 def main(args):
-    dataset = datasets[args.dataset]()
+    dataset = datasets[args.dataset]('./data')
     train_xs, train_ys, train_s = dataset.train_all_data()
 
     struct = create_vfae_struct(args.lr, len(train_xs[0]))
@@ -156,6 +161,6 @@ if __name__ == '__main__':
     datasets = { 'adult': AdultDataset, 'bank': BankMarketingDataset, 'synth': SynthDataset }
     parser = argparse.ArgumentParser(description='Train a VFAE.')
     parser.add_argument('--lr', metavar='lr', type=float, default=1e-4, help='The model learning rate')
-    parser.add_argument('dataset', choices=['adult', 'bank', 'synth'], help="dataset to be loaded")
+    parser.add_argument('dataset', choices=['adult', 'bank', 'synth', 'default', 'german-louizos', 'compas'], help="dataset to be loaded")
     args = parser.parse_args()
     main(args)

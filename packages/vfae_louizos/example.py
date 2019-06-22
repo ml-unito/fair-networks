@@ -89,13 +89,14 @@ def main(args, use_MMD=True, use_s=True, random_seed=12345):
     N, dim_x = x_train.shape
     dim_y = np.unique(y_train).shape[0]
     dim_s = np.unique(s_train).shape[0]
-    batch_size = 128
+    batch_size = 100
     prior_y = np.bincount(y_train) / float(y_train.shape[0])
 
-    vfae = VFAE(N, dim_x, dim_s, dim_y, batch_size=batch_size, dim_h_en_z1=[200], dim_h_en_z2=[100], dim_h_de_z1=[100],
-                dim_h_de_x=[200], dim_h_clf=[], dim_z1=50, dim_z2=50, L=1, iterations=1, nonlinearity='softplus',
+    vfae = VFAE(N, dim_x, dim_s, dim_y, batch_size=batch_size, dim_h_en_z1=[args.z1_enc], dim_h_en_z2=[args.z2_enc], 
+                dim_h_de_z1=[args.z2_dec],
+                dim_h_de_x=[args.z2_dec], dim_h_clf=[], dim_z1=50, dim_z2=50, L=1, iterations=args.epochs, nonlinearity='softplus',
                 use_MMD=use_MMD, kernel_MMD='rbf_fourier', lambda_reg=20., supervised_rate=1., type_rec='binary',
-                normalization='l2', regularization='l2', weight_decay=None, dropout_rate=0., learningRate=0.002,
+                normalization='l2', regularization='l2', weight_decay=None, dropout_rate=0., learningRate=0.001,
                 prior_y=prior_y, use_s=use_s, log_txt='adult.txt', random_seed=random_seed, optim_alg='adamax',
                 beta1=0.9, beta2=0.999, polyak=True, beta3=0.9)
 
@@ -144,7 +145,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a VFAE.')
     parser.add_argument('--lr', metavar='lr', type=float, default=1e-4, help='The model learning rate')
     parser.add_argument('dataset', choices=['adult', 'bank', 'synth', 'default', 'german', 'compas'], help="dataset to be loaded")
+    parser.add_argument('--beta', metavar='beta', type=float, default=1e-2, help='The model learning rate')
+    parser.add_argument('--z1-enc', metavar='z1-enc', type=int, default=1e-4, help='The encoder size for z1')
+    parser.add_argument('--z2-enc', metavar='z2-enc', type=int, default=1e-4, help='The encoder size for z2')
+    parser.add_argument('--z1-dec', metavar='z1-dec', type=int, default=1e-4, help='The decoder size for z1')
+    parser.add_argument('--z2-dec', metavar='z2-dec', type=int, default=1e-4, help='The decoder size for z2')
+    parser.add_argument('--epochs', metavar='epochs', type=int, default=200, help='Number of epochs')
+
     args = parser.parse_args()
     args.dataset = datasets[args.dataset]
-    old_main()
     main(args)
