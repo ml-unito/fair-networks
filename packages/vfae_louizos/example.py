@@ -23,6 +23,15 @@ def discrimination(preds, corr_prob, stest, dim_s):
     disc_p /= tot_comb
     return disc, disc_p
 
+def discrimination_noprob(y_pred, s_test, dim_s):
+    disc, tot_comb = 0, 0
+    for sval0, sval1 in combinations(range(dim_s), 2):
+        y0 = y_pred[s_test == sval0]
+        y1 = y_pred[s_test == sval1]
+        disc += np.abs(np.mean(y0) - np.mean(y1))
+        tot_comb += 1
+    disc /= tot_comb
+    return disc
 
 def accuracy_rf_lr(xtrain, ytrain, xtest, ytest):
     # random forest acc

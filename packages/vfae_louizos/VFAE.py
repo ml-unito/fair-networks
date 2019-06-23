@@ -1,8 +1,8 @@
 import theano
 import theano.tensor as T
-import blocks as blk
-from optimizer import AdaM, AdaMax
-import generate_params as gpm
+import vfae_louizos.blocks as blk
+from vfae_louizos.optimizer import AdaM, AdaMax
+import vfae_louizos.generate_params as gpm
 import time
 import numpy as np
 import os

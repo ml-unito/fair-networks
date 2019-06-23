@@ -19,6 +19,7 @@ RANDOM_SEED=42
 from fair.fn.model import Model
 from fair.utils.options import Options
 from sklearn.metrics import confusion_matrix
+from vfae_louizos.example import discrimination_noprob
 
 # Reads representations from experiments in the given directory (must be the root of the 
 # experiments directory, the one containg the config.json file) and writes a "perfomrances.json"
@@ -124,8 +125,11 @@ def test_performances(klass, kargs, datasets):
     acc_s_val = accuracy(pred_s_val, s_val)
     acc_s_test = accuracy(pred_s_test, s_test)
 
+    s_dim = max(s_train) + 1
+    discrimination_s = discrimination_noprob(pred_y_test, s_test, s_dim)
+
     return  {
-        "s": {"train": acc_s_train, "val": acc_s_val, "test": acc_s_test},
+        "s": {"train": acc_s_train, "val": acc_s_val, "test": acc_s_test, "discr": discrimination_s},
         "y": {"train": acc_y_train, "val": acc_y_val, "test": acc_y_test}
         }
 
