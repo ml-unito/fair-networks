@@ -30,7 +30,7 @@ class CompasDataset(DatasetBase):
 
     def files_to_retrieve(self):
         return [
-            ('https://datacloud.di.unito.it/index.php/s/erSb2yj8zQnwzaQ/download',
+            ('https://datacloud.di.unito.it/index.php/s/wHE5XZ3SKJTjTMX',
              '%s/compas-preprocessed.csv' % self.workingdir),
         ]
 
