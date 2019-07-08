@@ -35,3 +35,66 @@ Upon convergence one evaluates the accuracy of the network in predicting $y$ and
 
 -  if the accuracy on $s$ is low enough, one can conclude that there is not enough information on the last layer of $\theta_0$ to predict $s$;
 - if the accuracy on $y$ is still good enough, we obtained a good enough classifier whose prediction does not depend on $s$ nor any information about $s$ that can be reconstructed from $X$.
+
+## Install Instructions
+
+Run the following commands:
+
+```bash
+git clone https://github.com/ml-unito/fair-networks
+cd fair-networks
+export PYTHONPATH="packages/:$PYTHONPATH"
+export PATH="bin:$PATH" # put the preceeding two lines in your ~/.bashrc for ease of use
+virtualenv venv --python=python3.6
+source venv/bin/activate
+pip3 install -r requirements.txt
+pip install theano
+mkdir experiments/first
+```
+
+Then create a file ```experiments/first/config.json``` containing the following:
+
+```json
+{
+    "learning_rate": 0.01,
+    "schedule": "m30:c10",
+    "hidden_layers": "50",
+    "class_layers": "50",
+    "sensible_layers": "50",
+    "fairness_importance": 0.5,
+    "dataset": "default",
+    "batch_size": 128,
+    "noise_type": "sigmoid_sep",
+    "dataset_base_path": "../../data",
+    "model_dir": "models/",
+    "eval_data": null,
+    "eval_stats": false,
+    "random_seed": 42,
+    "output": null,
+    "resume_ckpt": null,
+    "checkpoint": "models/model.ckpt",
+    "save_model_schedule": "3000:100"
+}
+```
+
+Lastly, to perform the experiment and print results run:
+
+```bash
+fair_networks experiments/first/config.json
+make
+cat experiments/first/performances.tsv
+```
+
+Many parameters in ```config.json``` are self explanatory, but a non-exhaustive list follows:
+
+```schedule```: how many epochs the network will be trained for. The expected syntax is ```m[num_epochs]:c[ignored value]```
+```hidden_layers```: how many layers and how many neurons should be included in the hidden layers of the network. There is no need to set the input size here. The expected syntax is ```[number of neurons in first layer:in second layer:...]```
+```dataset```: a string describing the dataset you would like to work on
+
+## Adding a dataset
+
+Dataset wrappers included with the code are provided in the package ```packages/fair/datasets/```. 
+Writing your own wrapper code for a new dataset should be easy enough by looking at any one of the other wrappers. 
+You will also need to add some argument handling code in ```packages/fair/utils/options.py```.
+Preprocessing functionalities are provided in ```packages/fair/datasets/dataset_base.py``` and should work for your own .csv file. 
+Note that you can either provide a download path for the data or put it in the ```data/``` folder.
