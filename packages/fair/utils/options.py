@@ -11,7 +11,7 @@ from fair.datasets.synth_easy4_dataset import SynthEasy4Dataset
 from fair.datasets.yale_b_dataset import YaleBDataset
 from fair.datasets.compas_dataset import CompasDataset
 from fair.datasets.default_dataset import DefaultDataset
-
+from fair.datasets.fake_news_dataset import FakeNewsDataset
 import argparse
 import textwrap
 import os
@@ -174,7 +174,7 @@ class Options:
                 'german': GermanDataset, 'german-louizos': GermanLouizosDataset, 'synth': SynthDataset,
                 'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset,
                 'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset, 'compas': CompasDataset,
-                'default': DefaultDataset}
+                'default': DefaultDataset, 'fakenews': FakeNewsDataset}
 
 
     def __init__(self, args):
