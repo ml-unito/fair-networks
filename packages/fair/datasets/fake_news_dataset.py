@@ -31,7 +31,7 @@ class FakeNewsDataset(DatasetBase):
         self.load_all()
 
     def name(self):
-        return "Default"
+        return "FakeNews"
 
     def all_columns(self):
         l = ['f'+str(i) for i in range(0, 33334)]
