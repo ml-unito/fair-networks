@@ -24,15 +24,17 @@ def results_summary(results):
     pps: (++s) best possible performances (results on the random representations)
     mms: (--s) worst possible performances (results on the original representations)
     """
-    fny = results['performances']['fair_networks_repr']['lr']['y']['val']
-    ppy = results['performances']['original_repr']['lr']['y']['val']
-    mmy = results['performances']['random_networks_repr']['lr']['y']['val']
+    fny = results['performances']['fair_networks_repr']['forest']['y']['val']
+    ppy = results['performances']['original_repr']['forest']['y']['val']
+    mmy = results['performances']['random_networks_repr']['forest']['y']['val']
 
-    fns = results['performances']['fair_networks_repr']['lr']['s']['val']
-    pps = results['performances']['random_networks_repr']['lr']['s']['val']
-    mms = results['performances']['original_repr']['lr']['s']['val']
+    fns = results['performances']['fair_networks_repr']['forest']['s']['val']
+    pps = results['performances']['random_networks_repr']['forest']['s']['val']
+    mms = results['performances']['original_repr']['forest']['s']['val']
 
-    return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms }
+    mi  = results['performances']['fair_networks_repr']['mine']['s']['val']
+
+    return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms, 'mi': mi}
 
 def results_score(summary):
     """ Returns an evaluation of the performances summarized by the summary parameter.
@@ -143,13 +145,13 @@ def print_summary(result):
         fname = colored(fst['file'], 'green'),
         size = len(rest) + 1)
 
-    perfs = "\tfny: {} ++y: {:6.4} --y: {:6.4} fns: {} ++s: {:6.4} --s: {:6.4}".format(
+    perfs = "\tfny: {} ++y: {:6.4} --y: {:6.4} fns: {} ++s: {:6.4} --s: {:6.4} mi: {:6.6}".format(
             colored("{:6.4}".format(fst['summary']['fny']), 'white') ,
             fst['summary']['ppy'],
             fst['summary']['mmy'],
             colored("{:6.4}".format(fst['summary']['fns']), 'white'),
             fst['summary']['pps'],
-            fst['summary']['mms'])
+            fst['summary']['mms'], fst['summary']['mi'])
 
     print(summary)
     print(colored(perfs, 'grey'))
