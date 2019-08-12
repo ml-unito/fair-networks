@@ -116,7 +116,7 @@ class Model:
         with tf.name_scope("h_loss"):
             #self.h_loss = self.y_loss + self.fairness_importance * (tf.math.pow(self.s_mean_loss - self.h_random_mean, 2)
                                                                  #+  tf.math.pow(self.s_var_loss - self.h_random_var, 2))
-            self.h_loss = self.y_loss - \
+            self.h_loss = self.y_loss + \
                 (self.fairness_importance * self.s_mean_loss)
             self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
             self.h_val_loss_stat = tf.summary.scalar("h_val_loss", self.h_loss)
