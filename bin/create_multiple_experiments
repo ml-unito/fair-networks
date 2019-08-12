@@ -22,10 +22,11 @@ def parse_spec_file(spec_file_path):
         fairnesses = specs['fairnesses']
         batch_sizes = specs['batch_sizes']
         noise_types = specs['noise_types']
-        specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types)
-        for spec in specs:
-            print(spec)
-            break
+        try:
+            random_seeds = specs['random_seeds']
+            specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types, random_seeds)
+        except KeyError:
+            specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types)
     return specs
     
 def create_experiments(specs, experiment_prefix):
@@ -52,7 +53,7 @@ def fill_dictionary(d):
     return d
 
 def create_experiment_json(experiment_spec):
-    lr, schedule, architecture, dataset, fairness, batch_size, noise_type = experiment_spec
+    lr, schedule, architecture, dataset, fairness, batch_size, noise_type, random_seed = experiment_spec
     d = {}
     d['learning_rate'] = lr
     d['schedule'] = schedule
@@ -64,6 +65,7 @@ def create_experiment_json(experiment_spec):
     d['dataset'] = dataset
     d['batch_size'] = batch_size
     d['noise_type'] = noise_type
+    d['random_seed'] = random_seed
     d = fill_dictionary(d)
     return d
 
