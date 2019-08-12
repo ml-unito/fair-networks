@@ -12,6 +12,7 @@ import sys
 import json
 import traceback
 import re
+import logging
 from termcolor import colored
 
 RANDOM_SEED=42
@@ -20,6 +21,7 @@ from fair.fn.model import Model
 from fair.utils.options import Options
 from sklearn.metrics import confusion_matrix
 from vfae_louizos.example import discrimination_noprob
+from mi_estimation.MINE import MINE
 
 # Reads representations from experiments in the given directory (must be the root of the 
 # experiments directory, the one containg the config.json file) and writes a "perfomrances.json"
@@ -53,6 +55,7 @@ def eval_accuracies_on_representation(train_path, val_path, test_path):
 
     # h_train, h_test, s_train, s_test, y_train, y_test = ms.train_test_split(h_columns, s_columns, y_columns, random_state=RANDOM_SEED)
     
+    mine_performances = estimate_mi_mine(h_train, s_train, h_val, s_val, h_test, s_test) # needs one-hot encodings, so it should be called here
 
     y_train = np.argmax(y_train, axis=1)
     y_val = np.argmax(y_val, axis=1)
@@ -63,6 +66,7 @@ def eval_accuracies_on_representation(train_path, val_path, test_path):
     
     datasets = (h_train, h_val, h_test, y_train, y_val, y_test, s_train, s_val, s_test)
 
+
     if 'random' in train_path:
         return get_majority_predictions(datasets)
 
@@ -71,7 +75,24 @@ def eval_accuracies_on_representation(train_path, val_path, test_path):
     results["tree"] = test_performances(klass=tree.DecisionTreeClassifier, kargs={"random_state":RANDOM_SEED, "max_depth":4}, datasets=datasets )
     results["lr"] = test_performances(klass=lm.LogisticRegression, kargs={"random_state": RANDOM_SEED, "solver":"lbfgs"}, datasets=datasets)
     results["forest"] = test_performances(klass=ens.RandomForestClassifier, kargs={"random_state": RANDOM_SEED}, datasets=datasets)
+    results["mine"] = mine_performances
+
     return results
+
+def estimate_mi_mine(h_train, s_train, h_val, s_val, h_test, s_test):
+    mine = MINE(np.vstack([h_train, h_val, h_test]), np.vstack([s_train, s_val, s_test]))
+    mine.train()
+    mi_train = mine.estimate(h_train, s_train)
+    mi_val   = mine.estimate(h_val, s_val)
+    mi_test  = mine.estimate(h_test, s_test)
+    mine.close_session()
+    return {
+        "s": {"train": float(mi_train), "val": float(mi_val), "test": float(mi_test), "discr": 0.0},
+        "y": {"train": 0.0, "val": 0.0, "test": 0.0}
+        }
+
+def estimate_mi_bins(h_train, s_train, h_val, s_val, h_test, s_test):
+    pass
 
 def get_majority_predictions(datasets):
     h_train, h_val, h_test, y_train, y_val, y_test, s_train, s_val, s_test = datasets
@@ -92,10 +113,16 @@ def get_majority_predictions(datasets):
         "y": {"train": acc_y_train, "val": acc_y_val, "test": acc_y_test}
         }
 
+    result_mine = {
+        "s": {"train": 0.0, "val": 0.0, "test": 0.0},
+        "y": {"train": 0.0, "val": 0.0, "test": 0.0}
+        }
+
     results["svc"]    = result
     results["tree"]   = result
     results["lr"]     = result
     results["forest"] = result
+    results["mine"] = result_mine
     return results
 
 
@@ -216,5 +243,5 @@ except:
     }
 
 output_path = os.path.join(dir, "performances.json")
-with open(output_path, "w") as file:
-    file.write(json.dumps(results, indent=4))
+with open(output_path, "w") as f:
+    f.write(json.dumps(results, indent=4))

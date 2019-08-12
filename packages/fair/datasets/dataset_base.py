@@ -22,6 +22,7 @@ class DatasetBase:
         self.workingdir = workingdir
         self.download_all()
         self.prepare_all()
+        self.load_all()
 
     def name(self):
         return
