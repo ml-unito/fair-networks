@@ -82,7 +82,7 @@ def eval_accuracies_on_representation(train_path, val_path, test_path):
 def estimate_mi_mine(h_train, s_train, h_val, s_val, h_test, s_test):
     mine = MINE(np.vstack([h_train, h_val, h_test]), np.vstack([s_train, s_val, s_test]))
     mine.train()
-    mi_train = mine.estimate(h_train, s_train)
+    mi_train = mine.estimate(np.vstack([h_train, h_val, h_test]), np.vstack([h_train, h_val, h_test]))
     mi_val   = mine.estimate(h_val, s_val)
     mi_test  = mine.estimate(h_test, s_test)
     mine.close_session()
