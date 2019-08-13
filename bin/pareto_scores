@@ -7,10 +7,12 @@ import os
 import sys
 import itertools
 from termcolor import colored
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+import numpy as np
 
 
-
-def results_summary(results):
+def results_summary(results, classifier_id='forest'):
     """ Returns a dictionary containing the results on the validation set of the
         logistic regression classifier. 
         
@@ -24,13 +26,13 @@ def results_summary(results):
     pps: (++s) best possible performances (results on the random representations)
     mms: (--s) worst possible performances (results on the original representations)
     """
-    fny = results['performances']['fair_networks_repr']['forest']['y']['val']
-    ppy = results['performances']['original_repr']['forest']['y']['val']
-    mmy = results['performances']['random_networks_repr']['forest']['y']['val']
+    fny = results['performances']['fair_networks_repr'][classifier_id]['y']['val']
+    ppy = results['performances']['original_repr'][classifier_id]['y']['val']
+    mmy = results['performances']['random_networks_repr'][classifier_id]['y']['val']
 
-    fns = results['performances']['fair_networks_repr']['forest']['s']['val']
-    pps = results['performances']['random_networks_repr']['forest']['s']['val']
-    mms = results['performances']['original_repr']['forest']['s']['val']
+    fns = results['performances']['fair_networks_repr'][classifier_id]['s']['val']
+    pps = results['performances']['random_networks_repr'][classifier_id]['s']['val']
+    mms = results['performances']['original_repr'][classifier_id]['s']['val']
 
     mi  = results['performances']['fair_networks_repr']['mine']['s']['val']
 
@@ -83,7 +85,7 @@ def parse_epoch(s):
     """
     return match_performance(s)[1]
 
-def pareto_set(dirname):
+def pareto_set(dirname, regression_study=False):
     """
     Given a directory name, it analyses the set of performance files in that
     directory (there should be one file for each one of the epochs under study).
@@ -132,6 +134,36 @@ def pareto_set(dirname):
     perf_grouped = itertools.groupby(performances, key=get_score)
     return next(perf_grouped)
 
+def regression_study(results):
+    """
+    Given a directory name, get results for the s classifier and the mutual information estimator;
+    then plot them one against each other in a regression study.
+    """
+    noise_s_perfs = []
+    noise_mi_perfs = []
+    nonoise_s_perfs = []
+    nonoise_mi_perfs = []
+    for result in results:
+        exp_name = result['file']
+        # order of if statements matters. 'nonoise' will be matched by looking for 'noise'
+        if 'nonoise' in exp_name:
+            nonoise_s_perfs.append(result['summary'['fns']])
+            nonoise_mi_perfs.append(result['summary']['mi'])
+        elif 'noise' in exp_name:
+            noise_s_perfs.append(result['summary'['fns']])
+            noise_mi_perfs.append(result['summary']['mi'])
+        else:
+            print(colored('Warning: file {} did not match noise, nonoise'.format(result['file']), 'yellow'))
+    lr = LinearRegression()
+    all_mi_data = np.hstack([nonoise_mi_perfs, noise_mi_perfs])
+    all_s_data = np.hstack([nonoise_s_perfs, noise_s_perfs])
+    lr.fit(all_mi_data, all_s_data)
+    pred_s = lr.predict(all_mi_data)
+    plt.plot(all_mi_data, pred_s, '--', color='black', linewidth='2')
+    plt.scatter(nonoise_mi_perfs, nonoise_s_perfs, c='orange')
+    plt.scatter(noise_mi_perfs, noise_s_perfs, c='cyan')
+    plt.savefig('regression.png')
+    
 
 def print_summary(result):
     """
@@ -161,7 +193,9 @@ def print_summary(result):
 # Main
 
 results = []
-for dirname in sys.argv[1:]:
+regression_study = bool(sys.argv[1])
+print(colored('Regression study: {}'.format(regression_study), 'green'))
+for dirname in sys.argv[2:]:
     print(dirname)
     result = pareto_set(dirname)
     if result == None:
@@ -172,8 +206,11 @@ def get_score(result): return result[0]
 
 results.sort(key=get_score, reverse=True)
 
-for result in results:
-    print_summary(result)
+if regression_study == True:
+    regression_study(results)
+else:
+    for result in results:
+        print_summary(result)
     
 
 
