@@ -15,3 +15,4 @@ representations/
 ICML2019
 .commit-id
 *.log
+.keep

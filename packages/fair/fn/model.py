@@ -185,12 +185,15 @@ class Model:
             if layer_type == 'n':
                 initializer = layer[3]
                 in_layer, variables = self._build_layer_noise(in_layer, initializer, i+1)
+            elif layer_type == 'w':
+                initializer = layer[3]
+                in_layer, variables = self._build_layer(in_layer, "hidden-whiteout", layer, i+1, whiteout=True)
             else:
                 in_layer, variables = self._build_layer(in_layer, "hidden", layer, i+1)
             hidden_variables.extend(variables)
         return in_layer, hidden_variables
 
-    def _build_layer(self, in_layer, layer_name, layer, index):
+    def _build_layer(self, in_layer, layer_name, layer, index, whiteout=False):
         layer_variables = []
 
         _, num_nodes, activation, initializers = layer
@@ -206,6 +209,15 @@ class Model:
                 w = tf.get_variable("kernel")
                 b = tf.get_variable("bias")
                 layer_variables.extend([w, b])
+
+            if whiteout:
+                with tf.variable_scope("%s-layer-%d-noiseparams" % (layer_name, index+1), reuse=True):
+                    gaussian_noise = tf.random.normal(tf.shape(w))
+                    w_abs = tf.math.abs(w)
+                    gamma = 1
+                    _lambda = 1
+                    whiteout_term = gaussian_noise * (tf.math.pow(w_abs, -gamma) + _lambda)
+                    w = w + whiteout_term
 
         return in_layer, layer_variables
 
@@ -235,7 +247,24 @@ class Model:
             variables.extend([alpha, w_beta])
         return out, variables
 
+    def _build_layer_whiteout(self, in_layer, initializer, index):
+        layer_variables = []
 
+        _, num_nodes, activation, initializers = layer
+        with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
+            in_layer = tf.layers.dense(in_layer, 
+                            num_nodes, activation=activation, 
+                            kernel_initializer=initializers[0](), 
+                            bias_initializer=initializers[1](), 
+                            name='%s-layer-%d' % (layer_name, index+1)
+                        )
+
+            with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
+                w = tf.get_variable("kernel")
+                b = tf.get_variable("bias")
+                layer_variables.extend([w, b])
+
+        return in_layer, layer_variables
 
     def _create_train_steps(self, optimizer):
         h_grads_vars_s = optimizer.compute_gradients(

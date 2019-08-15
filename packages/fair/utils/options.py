@@ -153,7 +153,7 @@ class Options:
             used only epochs > 1000. Before this treshold a model is saved every 10 epochs.
     """
 
-    HIDDEN_LAYER_SPEC_REGEXP = r'^([nslrieh])?(\d+)?$'
+    HIDDEN_LAYER_SPEC_REGEXP = r'^([wnslrieh])?(\d+)?$'
 
     INITIALIZERS = {
         'constant': tf.initializers.constant,
@@ -379,6 +379,11 @@ class Options:
         if match.group(1) == 'n':
             return None
 
+        if match.group(1) == 'w':
+            # if we want a whiteout layer, it is going to have sigmoids. this is not ideal,
+            # but sigmoids are all we are using in the paper-reported experiments.
+            return tf.nn.sigmoid 
+
         raise ParseError(
             'Error in parsing layer specification for element:' + spec + '. This is a bug.')
 
@@ -412,6 +417,8 @@ class Options:
             return 'n'
         elif spec == 'i':
             return 'i'
+        elif spec[0] == 'w':
+            return 'w'
         else:
             return None
 
