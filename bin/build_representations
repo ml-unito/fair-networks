@@ -1,4 +1,19 @@
 #!/usr/bin/env python
+
+"""Builds representations of dataset examples using learnt NN models
+
+This script reads an experiment configuration from the given directory,
+reads the models built in the experiments and use them to create new
+datasets where the examples are described using the representations built
+by the learnt models. 
+
+Presently it assumes that the models to be used are: fair_networks, 
+random_networks, and the identity model (i.e., the model returning the 
+original representation).
+
+Usage: build_representations <config directory>
+"""
+
 import os
 import sys
 from termcolor import colored
@@ -12,6 +27,9 @@ def extract_model_path(config_path):
     config = json.loads(config_string)
     return config["checkpoint"]
 
+if len(sys.argv) == 1 or sys.argv[1] == '-h':
+    print(__doc__)
+    exit(1)
 
 experiments_path = sys.argv[1]
 approaches = ['fair_networks', 'random_networks', 'copy_original_representation']

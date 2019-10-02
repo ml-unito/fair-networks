@@ -8,7 +8,6 @@ import sys
 import itertools
 from termcolor import colored
 import matplotlib.pyplot as plt
-plt.style.use('ggplot')
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from sklearn.preprocessing import MinMaxScaler
@@ -148,7 +147,7 @@ def regression_study(results, scaling=False):
     nonoise_mi_perfs = []
     for result in results:
         _, elem = result
-        fst, *rest = list(elem)
+        fst, *_ = list(elem)
         exp_name = fst['file']
         # order of if statements matters. 'nonoise' will be matched by looking for 'noise'
         if 'nonoise' in exp_name:
