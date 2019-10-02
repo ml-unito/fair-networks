@@ -8,6 +8,7 @@ import pandas
 import sklearn.svm as svm
 from termcolor import colored
 import logging
+import os
 
 from fair.fn.model import Model
 from fair.utils.options import Options
@@ -36,6 +37,7 @@ def print_stats(session, model, dataset):
     model.print_confusion_matrix(session, feed_dict = test_feed)
 
 def print_processed_data(opts, session, model, dataset):
+    os.makedirs(os.sep.join(opts.eval_data_path.split(os.sep)[:-1]), exist_ok=True)
     train_xs, train_ys, train_s = dataset.train_all_data()
     result, header = process_data(session, model, train_xs, train_ys, train_s)
 

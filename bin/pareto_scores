@@ -7,10 +7,15 @@ import os
 import sys
 import itertools
 from termcolor import colored
+import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
 
 
-
-def results_summary(results):
+def results_summary(results, classifier_id='forest'):
     """ Returns a dictionary containing the results on the validation set of the
         logistic regression classifier. 
         
@@ -24,15 +29,17 @@ def results_summary(results):
     pps: (++s) best possible performances (results on the random representations)
     mms: (--s) worst possible performances (results on the original representations)
     """
-    fny = results['performances']['fair_networks_repr']['lr']['y']['val']
-    ppy = results['performances']['original_repr']['lr']['y']['val']
-    mmy = results['performances']['random_networks_repr']['lr']['y']['val']
+    fny = results['performances']['fair_networks_repr'][classifier_id]['y']['val']
+    ppy = results['performances']['original_repr'][classifier_id]['y']['val']
+    mmy = results['performances']['random_networks_repr'][classifier_id]['y']['val']
 
-    fns = results['performances']['fair_networks_repr']['lr']['s']['val']
-    pps = results['performances']['random_networks_repr']['lr']['s']['val']
-    mms = results['performances']['original_repr']['lr']['s']['val']
+    fns = results['performances']['fair_networks_repr'][classifier_id]['s']['val']
+    pps = results['performances']['random_networks_repr'][classifier_id]['s']['val']
+    mms = results['performances']['original_repr'][classifier_id]['s']['val']
 
-    return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms }
+    mi  = results['performances']['fair_networks_repr']['mine']['s']['train']
+
+    return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms, 'mi': mi}
 
 def results_score(summary):
     """ Returns an evaluation of the performances summarized by the summary parameter.
@@ -81,7 +88,7 @@ def parse_epoch(s):
     """
     return match_performance(s)[1]
 
-def pareto_set(dirname):
+def pareto_set(dirname, regression_study=False):
     """
     Given a directory name, it analyses the set of performance files in that
     directory (there should be one file for each one of the epochs under study).
@@ -120,7 +127,6 @@ def pareto_set(dirname):
             'file': fname, 
             'epoch': epoch
             })
-
     if len(performances) == 0:
         print("No performances found for dir: {}".format(dirname))
         return None
@@ -129,9 +135,91 @@ def pareto_set(dirname):
 
     performances.sort(key=get_score, reverse=True)
     perf_grouped = itertools.groupby(performances, key=get_score)
-    perf_grouped = [ (k,list(v)) for k,v in perf_grouped]
-    return perf_grouped
+    return next(perf_grouped)
 
+def regression_study(results, scaling=False):
+    """
+    Given a directory name, get results for the s classifier and the mutual information estimator;
+    then plot them one against each other in a regression study.
+    """
+    noise_s_perfs = []
+    noise_mi_perfs = []
+    nonoise_s_perfs = []
+    nonoise_mi_perfs = []
+    for result in results:
+        _, elem = result
+        fst, *rest = list(elem)
+        exp_name = fst['file']
+        # order of if statements matters. 'nonoise' will be matched by looking for 'noise'
+        if 'nonoise' in exp_name:
+            nonoise_mi_perf = fst['summary']['mi']
+            if not np.isnan(nonoise_mi_perf):
+                nonoise_s_perfs.append(fst['summary']['fns'])
+                nonoise_mi_perfs.append(fst['summary']['mi'])
+        elif 'noise' in exp_name:
+            noise_mi_perf = fst['summary']['mi']
+            if not np.isnan(noise_mi_perf):
+                noise_s_perfs.append(fst['summary']['fns'])
+                noise_mi_perfs.append(fst['summary']['mi'])
+        else:
+            print(colored('Warning: file {} did not match noise, nonoise'.format(result['file']), 'yellow'))
+
+    #model = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
+    #model = LinearRegression()
+    model = SVR(kernel='linear', C=10, gamma='auto', degree=2, epsilon=.1,
+               coef0=1)
+    # prepare and concat data
+    nonoise_mi_perfs = np.array(nonoise_mi_perfs)
+    nonoise_s_perfs  = np.array(nonoise_s_perfs)
+    noise_mi_perfs   = np.array(noise_mi_perfs)
+    noise_s_perfs    = np.array(noise_s_perfs)
+    all_mi_data = np.hstack([nonoise_mi_perfs, noise_mi_perfs])
+    all_s_data = np.hstack([nonoise_s_perfs, noise_s_perfs])
+    # sort and reshape data
+    sorted_idx = np.argsort(all_mi_data)
+    all_mi_data = all_mi_data[sorted_idx].reshape(-1, 1)
+    all_s_data = all_s_data[sorted_idx].reshape(-1, 1)
+    # scale
+    if scaling:
+        mi_scaler = MinMaxScaler()
+        all_mi_data = mi_scaler.fit_transform(all_mi_data)
+        s_scaler = MinMaxScaler()
+        all_s_data = s_scaler.fit_transform(all_s_data)
+    # train and plot
+    model.fit(all_mi_data, all_s_data)
+    pred_s = model.predict(all_mi_data).reshape(-1, 1)
+    if scaling: # revert scaling to plot, if necessary
+        s_line_data = s_scaler.inverse_transform(pred_s)
+        mi_line_data = mi_scaler.inverse_transform(all_mi_data)
+        s_nonoise_scatter_data = s_scaler.inverse_transform(nonoise_s_perfs.reshape(-1, 1))
+        s_noise_scatter_data = s_scaler.inverse_transform(noise_s_perfs.reshape(-1, 1))
+        mi_nonoise_scatter_data = mi_scaler.inverse_transform(nonoise_mi_perfs.reshape(-1, 1))
+        mi_noise_scatter_data = mi_scaler.inverse_transform(noise_mi_perfs.reshape(-1, 1))
+    else:
+        s_line_data = pred_s
+        mi_line_data = all_mi_data
+        s_nonoise_scatter_data = nonoise_s_perfs.reshape(-1, 1)        
+        s_noise_scatter_data = noise_s_perfs.reshape(-1, 1)
+        mi_nonoise_scatter_data = nonoise_mi_perfs.reshape(-1, 1)
+        mi_noise_scatter_data = noise_mi_perfs.reshape(-1, 1)
+    # plot regression line
+    plt.plot(mi_line_data, s_line_data, '--', color='black', linewidth='2')
+    # plot nonoise performance
+    nonoise_scatter = plt.scatter(mi_nonoise_scatter_data, 
+                      s_nonoise_scatter_data,
+                      c='orange', marker='*', alpha=0.5,
+                      label='Adversarial Strategy')
+    # plot noise performance
+    noise_scatter = plt.scatter(mi_noise_scatter_data,
+                    s_noise_scatter_data, marker='x',
+                    c='cyan', alpha=0.5,
+                    label='Adversarial Strategy with Noise Module')
+    plt.ylim(0.35, 1.05)
+    plt.xlabel('I(X\'; S) (MINE-estimated, nats)')
+    plt.ylabel('Classifier accuracy on sensible variable')
+    plt.legend(['Regression Line', nonoise_scatter._label, noise_scatter._label])
+    plt.savefig('regression.png')
+    
 
 def print_summary(result):
     """
@@ -145,44 +233,39 @@ def print_summary(result):
         fname = colored(fst['file'], 'green'),
         size = len(rest) + 1)
 
-    perfs = "\tfny: {} ++y: {:6.4} --y: {:6.4} fns: {} ++s: {:6.4} --s: {:6.4}".format(
+    perfs = "\tfny: {} ++y: {:6.4} --y: {:6.4} fns: {} ++s: {:6.4} --s: {:6.4} mi: {:6.6}".format(
             colored("{:6.4}".format(fst['summary']['fny']), 'white') ,
-            fst['summary']['ppy' ],
+            fst['summary']['ppy'],
             fst['summary']['mmy'],
             colored("{:6.4}".format(fst['summary']['fns']), 'white'),
             fst['summary']['pps'],
-            fst['summary']['mms'])
+            fst['summary']['mms'], fst['summary']['mi'])
 
     print(summary)
     print(colored(perfs, 'grey'))
     print()
 
-def print_details(result):
-    performances = [(perf['score'], perf['epoch']) for _, performances in result for perf in performances]
-
-    performances.sort(key=lambda x: x[1])
-    for perf in performances:
-        print( "{} {}".format(perf[1], perf[0]))
-
 
 # Main
 
 results = []
-for dirname in sys.argv[1:]:
-    print(dirname)
+do_regression = bool(sys.argv[1])
+print(colored('do_regression: {}'.format(do_regression), 'green'))
+for dirname in sys.argv[2:]:
     result = pareto_set(dirname)
     if result == None:
         continue
-    results.append(result)
+    results.append(pareto_set(dirname))
 
-def get_score(result): return result[0][0]
+def get_score(result): return result[0]
 
 results.sort(key=get_score, reverse=True)
 
-for result in results:
-    print_summary(result[0])
-    print_details(result)
-
+if do_regression:
+    regression_study(results)
+else:
+    for result in results:
+        print_summary(result)
     
 
 

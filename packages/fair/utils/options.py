@@ -10,7 +10,8 @@ from fair.datasets.synth_easy3_dataset import SynthEasy3Dataset
 from fair.datasets.synth_easy4_dataset import SynthEasy4Dataset
 from fair.datasets.yale_b_dataset import YaleBDataset
 from fair.datasets.compas_dataset import CompasDataset
-
+from fair.datasets.default_dataset import DefaultDataset
+from fair.datasets.fake_news_dataset import FakeNewsDataset
 import argparse
 import textwrap
 import os
@@ -152,7 +153,7 @@ class Options:
             used only epochs > 1000. Before this treshold a model is saved every 10 epochs.
     """
 
-    HIDDEN_LAYER_SPEC_REGEXP = r'^([nslrieh])?(\d+)?$'
+    HIDDEN_LAYER_SPEC_REGEXP = r'^([wnslrieh])?(\d+)?$'
 
     INITIALIZERS = {
         'constant': tf.initializers.constant,
@@ -172,7 +173,8 @@ class Options:
     DATASETS = {'adult': AdultDataset, 'bank': BankMarketingDataset,
                 'german': GermanDataset, 'german-louizos': GermanLouizosDataset, 'synth': SynthDataset,
                 'synth-easy': SynthEasyDataset, 'synth-easy2': SynthEasy2Dataset, 'synth-easy3': SynthEasy3Dataset,
-                'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset, 'compas': CompasDataset}
+                'yale': YaleBDataset, 'synth-easy4': SynthEasy4Dataset, 'compas': CompasDataset,
+                'default': DefaultDataset, 'fakenews': FakeNewsDataset}
 
 
     def __init__(self, args):
@@ -329,7 +331,7 @@ class Options:
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=[
-                                'adult', 'bank', 'german', 'german-louizos', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3', 'compas'], 
+                                'adult', 'bank', 'german', 'german-louizos', 'synth', 'synth-easy', 'synth-easy2', 'synth-easy3', 'compas', 'default'], 
                                 help="dataset to be loaded")
 
     def _parse_hidden_units(self, spec):
@@ -377,6 +379,11 @@ class Options:
         if match.group(1) == 'n':
             return None
 
+        if match.group(1) == 'w':
+            # if we want a whiteout layer, it is going to have sigmoids. this is not ideal,
+            # but sigmoids are all we are using in the paper-reported experiments.
+            return tf.nn.sigmoid 
+
         raise ParseError(
             'Error in parsing layer specification for element:' + spec + '. This is a bug.')
 
@@ -410,6 +417,8 @@ class Options:
             return 'n'
         elif spec == 'i':
             return 'i'
+        elif spec[0] == 'w':
+            return 'w'
         else:
             return None
 

@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 
 class DatasetBase:
-    def __init__(self, workingdir):
+    def __init__(self, workingdir, existing_split=False):
         """
         Downloads and load into memory the dataset.
         """
