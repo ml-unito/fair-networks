@@ -16,3 +16,6 @@ ICML2019
 .commit-id
 *.log
 .keep
+*.json
+*.tsv
+.DS_Store
