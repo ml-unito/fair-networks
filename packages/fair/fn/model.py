@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
 import time
 import sys
@@ -46,14 +46,14 @@ class Model:
 
     def print_weight(self, session, index, variables=None):
         if variables == None:
-            variables = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
+            variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
 
         var = variables[index]
         var_value = session.run(var)
         print("var[{}]={}".format(var.name, var_value))
 
     def print_weights(self, session):
-        variables = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
+        variables = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES)
         for index in range(len(variables)):
             self.print_weight(session, index, variables)
 
@@ -72,14 +72,14 @@ class Model:
         self.fairness_importance = tf.Variable(
             options.fairness_importance, name="fairness_importance")
 
-        self.epoch = tf.compat.v1.get_variable(
+        self.epoch = tf.get_variable(
             "epoch", shape=[1], initializer=tf.zeros_initializer)
         self.inc_epoch = self.epoch.assign(self.epoch + 1)
 
-        self.x     = tf.compat.v1.placeholder(tf.float32, shape=[None, num_features], name="x")
-        self.noise = tf.compat.v1.placeholder(tf.float32, shape=[None, num_features], name="noise")
-        self.y     = tf.compat.v1.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
-        self.s     = tf.compat.v1.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
+        self.x     = tf.placeholder(tf.float32, shape=[None, num_features], name="x")
+        self.noise = tf.placeholder(tf.float32, shape=[None, num_features], name="noise")
+        self.y     = tf.placeholder(tf.float32, shape=[None, num_y_labels], name="y")
+        self.s     = tf.placeholder(tf.float32, shape=[None, num_s_labels], name="s")
 
         self.h_random_mean, self.h_random_var = estimate_mean_and_variance(num_features)
 
@@ -92,22 +92,22 @@ class Model:
         self.model_last_hidden_layer = h_layer
 
         with tf.name_scope("s_out"):
-            self.s_out = tf.compat.v1.layers.dense(s_layer, num_s_labels, activation=None,
-                                         kernel_initializer=tf.compat.v1.truncated_normal_initializer(), name="s_out")
+            self.s_out = tf.layers.dense(s_layer, num_s_labels, activation=None,
+                                         kernel_initializer=tf.truncated_normal_initializer(), name="s_out")
 
         with tf.name_scope("y_out"):
-            self.y_out = tf.compat.v1.layers.dense(y_layer, num_y_labels, activation=None,
-                                         kernel_initializer=tf.compat.v1.truncated_normal_initializer(), name="y_out")
+            self.y_out = tf.layers.dense(y_layer, num_y_labels, activation=None,
+                                         kernel_initializer=tf.truncated_normal_initializer(), name="y_out")
 
         with tf.name_scope("y_loss"):
             self.y_loss = tf.reduce_mean(
-                tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
+                tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.y, logits=self.y_out))
             self.y_train_loss_stat = tf.summary.scalar("y_train_softmax_loss", self.y_loss)
             self.y_val_loss_stat = tf.summary.scalar("y_val_softmax_loss", self.y_loss)
 
         with tf.name_scope("s_loss"):
             mean_kld, var_kld = tf.nn.moments(
-                tf.compat.v1.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
+                tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.s, logits=self.s_out), 0)
             self.s_var_loss = var_kld
             self.s_mean_loss = mean_kld
             self.s_train_loss_stat = tf.summary.scalar("s_train_softmax_loss", self.s_mean_loss)
@@ -137,30 +137,30 @@ class Model:
             self.s_val_accuracy_stat = tf.summary.scalar("s_val_accuracy", self.s_accuracy)
 
         with tf.name_scope("svc_accuracies"):
-            self.s_svc_accuracy = tf.compat.v1.placeholder(tf.float32)
-            self.y_svc_accuracy = tf.compat.v1.placeholder(tf.float32)
+            self.s_svc_accuracy = tf.placeholder(tf.float32)
+            self.y_svc_accuracy = tf.placeholder(tf.float32)
             self.s_svc_accuracy_stat = tf.summary.scalar("s_svc_accuracy", self.s_svc_accuracy)
             self.y_svc_accuracy_stat = tf.summary.scalar("y_svc_accuracy", self.y_svc_accuracy)
 
         with tf.name_scope("y_confusion_matrix"):
             predicted = tf.argmax(self.y_out, 1)
             actual = tf.argmax(self.y, 1)
-            TP = tf.compat.v1.count_nonzero(predicted * actual)
-            TN = tf.compat.v1.count_nonzero((predicted - 1) * (actual - 1))
-            FP = tf.compat.v1.count_nonzero(predicted * (actual - 1))
-            FN = tf.compat.v1.count_nonzero((predicted - 1) * actual)
+            TP = tf.count_nonzero(predicted * actual)
+            TN = tf.count_nonzero((predicted - 1) * (actual - 1))
+            FP = tf.count_nonzero(predicted * (actual - 1))
+            FN = tf.count_nonzero((predicted - 1) * actual)
             self.confusion_matrix = (TP, TN, FP, FN)
 
-        self.y_variables = [self.class_layers_variables, tf.compat.v1.get_collection(
-            tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
-        self.s_variables = [self.sensible_layers_variables, tf.compat.v1.get_collection(
-            tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
+        self.y_variables = [self.class_layers_variables, tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, "y_out")]
+        self.s_variables = [self.sensible_layers_variables, tf.get_collection(
+            tf.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
         self.h_train_step, self.y_train_step, self.s_train_step = self._create_train_steps_alt(optimizer)
 
-        self.train_stats = tf.compat.v1.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat,
+        self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat,
                                              self.s_train_accuracy_stat, self.h_train_loss_stat])
-        self.val_stats = tf.compat.v1.summary.merge([self.y_val_loss_stat, self.y_val_accuracy_stat, self.s_val_loss_stat,
+        self.val_stats = tf.summary.merge([self.y_val_loss_stat, self.y_val_accuracy_stat, self.s_val_loss_stat,
                                             self.s_val_accuracy_stat, self.h_val_loss_stat])
 
         return self
@@ -198,20 +198,20 @@ class Model:
 
         _, num_nodes, activation, initializers = layer
         with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
-            in_layer = tf.compat.v1.layers.dense(in_layer, 
+            in_layer = tf.layers.dense(in_layer, 
                             num_nodes, activation=activation, 
                             kernel_initializer=initializers[0](), 
                             bias_initializer=initializers[1](), 
                             name='%s-layer-%d' % (layer_name, index+1)
                         )
 
-            with tf.compat.v1.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
-                w = tf.compat.v1.get_variable("kernel")
-                b = tf.compat.v1.get_variable("bias")
+            with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
+                w = tf.get_variable("kernel")
+                b = tf.get_variable("bias")
                 layer_variables.extend([w, b])
 
             if whiteout:
-                with tf.compat.v1.variable_scope("%s-layer-%d-noiseparams" % (layer_name, index+1), reuse=True):
+                with tf.variable_scope("%s-layer-%d-noiseparams" % (layer_name, index+1), reuse=True):
                     gaussian_noise = tf.random.normal(tf.shape(w))
                     w_abs = tf.math.abs(w)
                     gamma = 1
@@ -224,12 +224,12 @@ class Model:
     def _build_layer_noise(self, in_layer, initializer, index):
         variables = []
 
-        with tf.compat.v1.variable_scope("%s-layer-%d" % ('noise', index)):
-            alpha = tf.compat.v1.get_variable("alpha", dtype=tf.float32, 
+        with tf.variable_scope("%s-layer-%d" % ('noise', index)):
+            alpha = tf.get_variable("alpha", dtype=tf.float32, 
                             shape=[in_layer.get_shape()[1]], 
                             initializer=initializer[0]())
 
-            w_beta = tf.compat.v1.get_variable("w-beta", dtype=tf.float32, 
+            w_beta = tf.get_variable("w-beta", dtype=tf.float32, 
                             shape=[in_layer.get_shape()[1]], 
                             initializer=initializer[1]())
 
@@ -252,7 +252,7 @@ class Model:
 
         _, num_nodes, activation, initializers = layer
         with tf.name_scope("%s-layer-%d" % (layer_name, index+1)):
-            in_layer = tf.compat.v1.layers.dense(in_layer, 
+            in_layer = tf.layers.dense(in_layer, 
                             num_nodes, activation=activation, 
                             kernel_initializer=initializers[0](), 
                             bias_initializer=initializers[1](), 
@@ -260,8 +260,8 @@ class Model:
                         )
 
             with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
-                w = tf.compat.v1.get_variable("kernel")
-                b = tf.compat.v1.get_variable("bias")
+                w = tf.get_variable("kernel")
+                b = tf.get_variable("bias")
                 layer_variables.extend([w, b])
 
         return in_layer, layer_variables

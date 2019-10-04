@@ -1,5 +1,5 @@
-import tensorflow as tf
-import tensorflow.contrib.layers as layers
+import tensorflow.compat.v1 as tf
+import tensorflow.compat.v1.contrib.layers as layers
 import math
 import numpy as np
 

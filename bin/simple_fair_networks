@@ -7,7 +7,7 @@ from fair.datasets.adult_dataset import AdultDataset
 from fair.datasets.synth_easy2_dataset import SynthEasy2Dataset
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import time
 import pandas
 import sklearn.svm as svm

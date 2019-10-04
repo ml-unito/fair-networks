@@ -2,7 +2,7 @@
 
 import sys
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import time
 import pandas
 import sklearn.svm as svm
@@ -132,7 +132,7 @@ def print_model_information(options, session, model, requested_info):
 # main
 # --------------------------------------------------------------------------------
 
-tf.compat.v1.disable_eager_execution()
+tf.disable_eager_execution()
 
 opts = Options(sys.argv)
 
@@ -141,7 +141,7 @@ logging.info(colored("{} [params: {}]".format(
     colored(" ".join(sys.argv[1:]), "white"), "green"))
 )
 
-tf.random.set_seed(opts.random_seed)
+tf.set_random_seed(opts.random_seed)
 np.random.seed(opts.random_seed)
 
 logging.info(colored("Initialized system based on config:", "green"))
@@ -150,7 +150,7 @@ opts.print_config()
 logging.info(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
 opts.dataset.print_stats()
 
-optimizer = tf.optimizers.Adam(opts.learning_rate)
+optimizer = tf.train.AdamOptimizer(opts.learning_rate)
 model = Model(opts, optimizer)
 
 session = tf.Session()

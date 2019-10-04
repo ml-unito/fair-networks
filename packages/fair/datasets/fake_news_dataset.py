@@ -1,7 +1,7 @@
 import csv
 import requests
 import os.path
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
 import zipfile
 import pandas

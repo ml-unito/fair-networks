@@ -17,7 +17,7 @@ import textwrap
 import os
 import json
 import re
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from copy import copy, deepcopy
 from termcolor import colored
 from pathlib import Path
@@ -162,10 +162,11 @@ class Options:
         'identity': tf.initializers.identity,
         'ones': tf.initializers.ones,
         'orthogonal': tf.initializers.orthogonal,
-        'random_normal': tf.initializers.RandomNormal,
-        'random_uniform': tf.initializers.RandomUniform,
-        'truncated_normal': tf.initializers.TruncatedNormal,
-        'variance_scaling': tf.initializers.VarianceScaling,
+        'random_normal': tf.initializers.random_normal,
+        'random_uniform': tf.initializers.random_uniform,
+        'truncated_normal': tf.initializers.truncated_normal,
+        'uniform_unit_scaling': tf.initializers.uniform_unit_scaling,
+        'variance_scaling': tf.initializers.variance_scaling,
         'zeros': tf.initializers.zeros
     }
 
