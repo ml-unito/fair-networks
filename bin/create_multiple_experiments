@@ -1,9 +1,27 @@
 #!/usr/bin/env python
 
+"""Create Multiple Experiments configuration files
+
+Creates configuration files for learning experiments for the 
+fair_networks script. Files are created so to perform a grid
+search through the parameter space specified by a template 
+config file. The template file will contain several values
+for several parameters and this script will explode that template
+into a set of configuration files so that there will be one
+configuration file for each possible combination of the given
+parameters.
+
+
+Inputs:
+  -- path to the json file with the template to be exploded
+  -- path to the folder that will contain the experiments
+"""
+
 import os
 import sys
 import json
 import datetime
+import logging
 from itertools import product
 
 from exputils.creation import check_and_create
@@ -22,11 +40,14 @@ def parse_spec_file(spec_file_path):
         fairnesses = specs['fairnesses']
         batch_sizes = specs['batch_sizes']
         noise_types = specs['noise_types']
+
         try:
             random_seeds = specs['random_seeds']
             specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types, random_seeds)
         except KeyError:
-            specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types)
+            logging.warning("KeyError while parsing spec_file. Reverting to version without the random_seeds")
+            specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types, [42])
+
     return specs
     
 def create_experiments(specs, experiment_prefix):
@@ -37,6 +58,7 @@ def create_experiments(specs, experiment_prefix):
         with open(json_path, 'w') as json_file:
             json.dump(json_dict, json_file, indent=4)
         experiment_name = '{}_{}_{}'.format(experiment_prefix, i, timestamp)
+        print("creating: {}".format(experiment_name))
         check_and_create(json_path, experiment_name)
     os.remove('/tmp/config.json')
 
