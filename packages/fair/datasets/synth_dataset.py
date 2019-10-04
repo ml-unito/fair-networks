@@ -3,7 +3,7 @@ import pandas
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import numpy as np
 
 class SynthDataset(DatasetBase):
