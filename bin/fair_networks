@@ -132,7 +132,7 @@ def print_model_information(options, session, model, requested_info):
 # main
 # --------------------------------------------------------------------------------
 
-tf.disable_eager_execution()
+tf.disable_v2_behavior()
 
 opts = Options(sys.argv)
 
