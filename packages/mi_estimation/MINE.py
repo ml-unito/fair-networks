@@ -25,10 +25,10 @@ class MINE():
         y_conc = tf.concat([self.y_in, y_shuffle], axis=0)
         
         # propagate the forward pass
-        layerx = layers.linear(x_conc, self.hidden_neurons)
-        layery = layers.linear(y_conc, self.hidden_neurons)
+        layerx = layers.dense(x_conc, self.hidden_neurons, activation=None)
+        layery = layers.dense(y_conc, self.hidden_neurons, activation=None)
         layer2 = tf.nn.relu(layerx + layery)
-        self.output = layers.linear(layer2, 1)
+        self.output = layers.dense(layer2, 1, activation=None)
         
         # split in T_xy and T_x_y predictions
         N_samples = tf.shape(self.x_in)[0]
