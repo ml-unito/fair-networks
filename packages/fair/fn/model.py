@@ -156,7 +156,7 @@ class Model:
         self.s_variables = [self.sensible_layers_variables, tf.compat.v1.get_collection(
             tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, "s_out")]
 
-        self.h_train_step, self.y_train_step, self.s_train_step = self._create_train_steps(optimizer)
+        self.h_train_step, self.y_train_step, self.s_train_step = self._create_train_steps_alt(optimizer)
 
         self.train_stats = tf.compat.v1.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat, self.s_train_loss_stat,
                                              self.s_train_accuracy_stat, self.h_train_loss_stat])
@@ -283,4 +283,25 @@ class Model:
         h_train_step = tf.group(h_s_step, h_y_step)
         y_train_step = optimizer.apply_gradients(y_grads)
         s_train_step = optimizer.apply_gradients(s_grads)
+        return h_train_step, y_train_step, s_train_step
+
+    def _create_train_steps_alt(self, optimizer):
+        """
+        An alternative way of creating training steps which works in the following way:
+        1. the gradients for y_vars and h_vars are computed normally and the parameters are updated
+        2. the gradients for s_vars and h_vars are computed and reverted (for h_vars) and the parameters are updated
+        This assumes that the steps are called in the following order: y_step, s_step. h_step is a no_op and
+        does not matter.
+        """
+        y_grads = optimizer.compute_gradients(
+            self.y_loss, var_list=self.y_variables.extend(self.hidden_layers_variables))
+        s_grads = optimizer.compute_gradients(
+            self.s_mean_loss, var_list=self.s_variables.extend(self.hidden_layers_variables))
+        h_grads = optimizer.compute_gradients(self.s_mean_loss, var_list=self.hidden_layers_variables)
+        h_grads = [(self.fairness_importance * -gv[0], gv[1]) for gv in h_grads]
+        h_step_tmp = optimizer.apply_gradients(h_grads)
+        y_train_step = optimizer.apply_gradients(y_grads)
+        s_train_step = optimizer.apply_gradients(s_grads)
+        s_train_step = tf.group(s_train_step, h_step_tmp)
+        h_train_step = tf.no_op()
         return h_train_step, y_train_step, s_train_step
