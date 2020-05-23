@@ -221,6 +221,18 @@ class Model:
 
         return in_layer, layer_variables
 
+    def _build_layer_conv_2d(self, in_layer, parameters):
+        layer_variables = []
+        layer = tf.layers.conv2d(in_layer, parameters['n_filters'], parameters['kernel_size'],
+                                 strides=parameters['strides'], kernel_initializer=parameters['kernel_initializer'](),
+                                 name='{}-conv-{}'.format(parameters['name'], parameters['index']+1))
+        
+        with tf.variable_scope('{}-conv-{}'.format(parameters['name'], parameters['index']+1), reuse=True):
+                w = tf.get_variable("kernel")
+                b = tf.get_variable("bias")
+                layer_variables.extend([w, b]) 
+        return layer, layer_variables
+
     def _build_layer_noise(self, in_layer, initializer, index):
         variables = []
 
