@@ -194,7 +194,8 @@ class Options:
         parser = argparse.ArgumentParser(description=PARAMS_DESCRIPTION, formatter_class=argparse.RawDescriptionHelpFormatter)
         self._configure_parser(parser, checkpoint_already_given='checkpoint' in config_opts,
                                dataset_already_given='dataset' in config_opts)
-
+        # it is important to retrieve this value before _try_update_opts. dirty workaround, sorry
+        self.is_ddc = config_opts['ddc']
         result = self._try_update_opts(config_opts, parser.parse_args(argv[1:]))
 
         self._set_logging(result)
@@ -328,6 +329,7 @@ class Options:
                             help="Choose the type of activation used after the noise layer.")
         parser.add_argument('--log-level', choices=["DEBUG", "INFO", "WARNING", "ERROR"], default="INFO")
         parser.add_argument('--log-file', type=str, help="Specifies the file to save logs, defaults to stdout")
+        parser.add_argument('--ddc', action='store_const', default=False, const=True, help='Employ the deep domain confusion model.')
 
         if not dataset_already_given:
             parser.add_argument('dataset', choices=[

@@ -24,7 +24,7 @@ __check_defined = \
       $(error Undefined $1$(if $2, ($2))))
 
 
-main_dir=experiments
+main_dir=ddc_exp
 experiment_dirs=$(sort $(dir $(wildcard $(main_dir)/*/)))
 excluded_experiment_dirs=$(sort $(dir $(wildcard $(main_dir)/_*/)))
 

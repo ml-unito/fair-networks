@@ -49,20 +49,15 @@ class FairNetworksTraining:
                 noise = self.train_noise[noise_batch_start:(noise_batch_start+len(xs))]
                 noise_batch_start += len(xs)
 
-                self.session.run(self.model.s_train_step, feed_dict = { 
-                    self.model.x:xs, 
-                    self.model.s:s, 
-                    self.model.noise:noise })
-                self.session.run(self.model.y_train_step, feed_dict = { 
-                    self.model.x:xs, 
-                    self.model.y:ys,
-                    self.model.noise:noise })
-                self.session.run(self.model.h_train_step, feed_dict = { 
-                    self.model.x:xs, 
-                    self.model.y:ys, 
-                    self.model.s:s, 
-                    self.model.noise:noise })
+                step_list = self.model.get_steps()
 
+                for step in step_list:
+
+                    self.session.run(step, feed_dict = {
+                        self.model.x:xs,
+                        self.model.s:s,
+                        self.model.y:ys,
+                        self.model.noise:noise })
 
             except tf.errors.OutOfRangeError:
                 break
@@ -93,30 +88,16 @@ class FairNetworksTraining:
         self.save_model("final")
 
     def log_losses(self, epoch):
-        nn_y_loss = self.session.run(self.model.y_loss, feed_dict = {
-            self.model.x: self.val_xs, 
-            self.model.y: self.val_ys,
-            self.model.noise: self.val_noise
-            })
-        nn_s_loss = self.session.run(self.model.s_mean_loss, feed_dict = {
-            self.model.x: self.val_xs, 
-            self.model.s: self.val_s,
-            self.model.noise: self.val_noise
-            })
-        nn_h_loss = self.session.run(self.model.h_loss, feed_dict = {
-            self.model.x: self.val_xs, 
-            self.model.s: self.val_s, 
-            self.model.y: self.val_ys,
-            self.model.noise: self.val_noise})
-
-        nn_y_accuracy = self.session.run(self.model.y_accuracy, feed_dict = {
-            self.model.x: self.val_xs,
-            self.model.y: self.val_ys,
-            self.model.noise: self.val_noise
-            })
-
-        logging.info('Stats on the validation set -- Epoch {:4} y loss: {:07.6f} s loss: {:07.6f} h loss: {:07.6f} y accuracy: {:07.6f}'.format(
-                        epoch, nn_y_loss, nn_s_loss, nn_h_loss, nn_y_accuracy))
+        feed_dict = {self.model.x: self.val_xs,
+                     self.model.s: self.val_s,
+                     self.model.y: self.val_ys,
+                     self.model.noise: self.val_noise}
+        loggables = self.model.get_loggables()
+        s = 'Stats on the validation set -- Epoch {:4} '.format(epoch)
+        for name, tensor in loggables.items():
+            loggable_value = self.session.run(tensor, feed_dict = feed_dict)
+            s += '{}: {} '.format(name, loggable_value)
+        logging.info(s)
 
     def log_stats_classifier(self, epoch, classifier=LogisticRegression):
         train_repr = self.session.run(self.model.model_last_hidden_layer, feed_dict = {

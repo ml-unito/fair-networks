@@ -40,10 +40,12 @@ def parse_spec_file(spec_file_path):
         fairnesses = specs['fairnesses']
         batch_sizes = specs['batch_sizes']
         noise_types = specs['noise_types']
+        ddc = specs['ddc']
 
         try:
             random_seeds = specs['random_seeds']
-            specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types, random_seeds)
+            specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types,
+                            random_seeds, ddc)
         except KeyError:
             logging.warning("KeyError while parsing spec_file. Reverting to version without the random_seeds")
             specs = product(learning_rates, schedules, architectures, datasets, fairnesses, batch_sizes, noise_types, [42])
@@ -75,7 +77,7 @@ def fill_dictionary(d):
     return d
 
 def create_experiment_json(experiment_spec):
-    lr, schedule, architecture, dataset, fairness, batch_size, noise_type, random_seed = experiment_spec
+    lr, schedule, architecture, dataset, fairness, batch_size, noise_type, random_seed, ddc = experiment_spec
     d = {}
     d['learning_rate'] = lr
     d['schedule'] = schedule
@@ -88,6 +90,7 @@ def create_experiment_json(experiment_spec):
     d['batch_size'] = batch_size
     d['noise_type'] = noise_type
     d['random_seed'] = random_seed
+    d['ddc'] = ddc
     d = fill_dictionary(d)
     return d
 

@@ -70,7 +70,7 @@ class Model:
         self.noise_type = options.noise_type
 
         self.fairness_importance = tf.Variable(
-            options.fairness_importance, name="fairness_importance")
+            options.fairness_importance, name="fairness_importance", trainable=False)
 
         self.epoch = tf.get_variable(
             "epoch", shape=[1], initializer=tf.zeros_initializer)
@@ -116,7 +116,7 @@ class Model:
         with tf.name_scope("h_loss"):
             #self.h_loss = self.y_loss + self.fairness_importance * (tf.math.pow(self.s_mean_loss - self.h_random_mean, 2)
                                                                  #+  tf.math.pow(self.s_var_loss - self.h_random_var, 2))
-            self.h_loss = self.y_loss - \
+            self.h_loss = self.y_loss + \
                 (self.fairness_importance * self.s_mean_loss)
             self.h_train_loss_stat = tf.summary.scalar("h_train_loss", self.h_loss)
             self.h_val_loss_stat = tf.summary.scalar("h_val_loss", self.h_loss)
@@ -178,7 +178,7 @@ class Model:
 
         return in_layer, variables
 
-    def _build_hidden_layers(self, in_layer, hidden_layers):
+    def _build_hidden_layers(self, in_layer, hidden_layers, reuse=False):
         hidden_variables = []
         for i, layer in enumerate(hidden_layers):
             layer_type = layer[0]
@@ -187,13 +187,14 @@ class Model:
                 in_layer, variables = self._build_layer_noise(in_layer, initializer, i+1)
             elif layer_type == 'w':
                 initializer = layer[3]
-                in_layer, variables = self._build_layer(in_layer, "hidden-whiteout", layer, i+1, whiteout=True)
+                in_layer, variables = self._build_layer(in_layer, "hidden-whiteout", layer, i+1, whiteout=True,
+                                                        reuse=reuse)
             else:
-                in_layer, variables = self._build_layer(in_layer, "hidden", layer, i+1)
+                in_layer, variables = self._build_layer(in_layer, "hidden", layer, i+1, reuse=reuse)
             hidden_variables.extend(variables)
         return in_layer, hidden_variables
 
-    def _build_layer(self, in_layer, layer_name, layer, index, whiteout=False):
+    def _build_layer(self, in_layer, layer_name, layer, index, whiteout=False, reuse=False):
         layer_variables = []
 
         _, num_nodes, activation, initializers = layer
@@ -202,7 +203,8 @@ class Model:
                             num_nodes, activation=activation, 
                             kernel_initializer=initializers[0](), 
                             bias_initializer=initializers[1](), 
-                            name='%s-layer-%d' % (layer_name, index+1)
+                            name='%s-layer-%d' % (layer_name, index+1),
+                            reuse=reuse
                         )
 
             with tf.variable_scope("%s-layer-%d" % (layer_name, index+1), reuse=True):
@@ -305,10 +307,11 @@ class Model:
         This assumes that the steps are called in the following order: y_step, s_step. h_step is a no_op and
         does not matter.
         """
+
         y_grads = optimizer.compute_gradients(
-            self.y_loss, var_list=self.y_variables.extend(self.hidden_layers_variables))
+            self.y_loss, var_list=self.y_variables + self.hidden_layers_variables)
         s_grads = optimizer.compute_gradients(
-            self.s_mean_loss, var_list=self.s_variables.extend(self.hidden_layers_variables))
+            self.s_mean_loss, var_list=self.s_variables + self.hidden_layers_variables)
         h_grads = optimizer.compute_gradients(self.s_mean_loss, var_list=self.hidden_layers_variables)
         h_grads = [(self.fairness_importance * -gv[0], gv[1]) for gv in h_grads]
         h_step_tmp = optimizer.apply_gradients(h_grads)
@@ -317,3 +320,9 @@ class Model:
         s_train_step = tf.group(s_train_step, h_step_tmp)
         h_train_step = tf.no_op()
         return h_train_step, y_train_step, s_train_step
+
+    def get_steps(self):
+        return [self.y_train_step, self.s_train_step, self.h_train_step]
+
+    def get_loggables(self):
+        return {'y_loss': self.y_loss, 's_loss': self.s_mean_loss, 'h_loss': self.h_loss, 'y_acc': self.y_accuracy}

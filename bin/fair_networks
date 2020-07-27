@@ -11,6 +11,7 @@ import logging
 import os
 
 from fair.fn.model import Model
+from deep_domain_confusion.model import DDCModel
 from fair.utils.options import Options
 from fair.fn.fair_networks_training import FairNetworksTraining
 
@@ -88,7 +89,7 @@ def init_model(opts, session, saver, writer):
         graph_fairness_importance = session.run(
             tf.get_default_graph().get_tensor_by_name("fairness_importance:0"))
 
-        if graph_fairness_importance != opts.fairness_importance:
+        if graph_fairness_importance - opts.fairness_importance > 1e-8:
             print(colored("Warning:", "yellow") +
                   "Fairness importance changed by the options, but it is part of the model.")
             print("graph: {} opts: {}".format(graph_fairness_importance, opts.fairness_importance))
@@ -151,7 +152,10 @@ logging.info(colored("Loaded dataset %s" % opts.dataset.name(), "green"))
 opts.dataset.print_stats()
 
 optimizer = tf.train.AdamOptimizer(opts.learning_rate)
-model = Model(opts, optimizer)
+if opts.is_ddc:
+    model = DDCModel(opts, optimizer)
+else:
+    model = Model(opts, optimizer)
 
 session = tf.Session()
 saver = tf.train.Saver()
@@ -173,6 +177,4 @@ elif opts.get_info != None:
 else:
     fnt = FairNetworksTraining(opts, session, model, saver, writer)
     fnt.training_loop()
-
-
 

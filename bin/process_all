@@ -39,14 +39,14 @@ def process_result(results_path, out_file, exp_name):
 def process_dir(exp_dir, out_file):
     finaljson_exist = os.path.exists(os.path.join(exp_dir, "performancesfinal.json"))
     
-    if not os.path.isdir(exp_dir) or finaljson_exist:
-        print("Directory {} already contains results. Skipping...".format(exp_dir))
-        return
+    #if not os.path.isdir(exp_dir) or finaljson_exist:
+    #    print("Directory {} already contains results. Skipping...".format(exp_dir))
+    #    return
 
     model_dir = exp_dir + '/models'
     glob_str = model_dir  + '/*ckpt*'
     ckpt_list = glob.glob(glob_str)
-    ckpt_list = ['.'.join(ckpt.split('.')[:-1]) for ckpt in ckpt_list]
+    ckpt_list = list(set(['.'.join(ckpt.split('.')[:-1]) for ckpt in ckpt_list]))
     print(colored('Processing {} performances in {}'.format(len(ckpt_list), exp_dir), "yellow"))
     all_performances_path = exp_dir + '/all_performances.tsv'
     performances_path = exp_dir + '/performances.tsv'
@@ -90,4 +90,7 @@ subprocess.call('printf "epochs,y_gap,s_gap,total_gap\n" >> {}'.format(out_file)
 all_exp_dirs = glob.glob(exp_main_dir + '/*')
 num_cores = 10
 executor = Parallel(n_jobs=num_cores)
-executor(delayed(process_dir)(exp_dir, out_file) for exp_dir in all_exp_dirs)
+#executor(delayed(process_dir)(exp_dir, out_file) for exp_dir in all_exp_dirs)
+
+for exp_dir in all_exp_dirs:
+    process_dir(exp_dir, out_file)

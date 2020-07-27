@@ -1,6 +1,6 @@
 from sklearn.svm import SVC
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from functools import partial
 
 
@@ -86,13 +86,17 @@ def maximum_mean_discrepancy(x, y, kernel=gaussian_kernel_matrix):
     """
     with tf.name_scope('MaximumMeanDiscrepancy'):
         # \E{ K(x, x) } + \E{ K(y, y) } - 2 \E{ K(x, y) }
-        cost = tf.reduce_mean(kernel(x, x))
-        cost += tf.reduce_mean(kernel(y, y))
-        cost -= 2 * tf.reduce_mean(kernel(x, y))
+        num_samples_x = tf.cast(tf.shape(x)[0], tf.float32)
+        num_samples_y = tf.cast(tf.shape(y)[0], tf.float32)
+        cost_x = tf.reduce_sum(kernel(x, x)) / ((num_samples_x) * (num_samples_x - 1))
+        cost_y = tf.reduce_sum(kernel(y, y)) / ((num_samples_y) * (num_samples_y - 1))
+        cost_diff = -2 * (tf.reduce_sum(kernel(x, y)) / (num_samples_x * num_samples_y))
+
+        cost = cost_x + cost_y + cost_diff
 
         # We do not allow the loss to become negative.
         cost = tf.where(cost > 0, cost, 0, name='value')
-    return cost
+    return cost, cost_x, cost_y, cost_diff
 
 
 def mmd_loss(source_samples, target_samples, weight, scope=None):
@@ -114,15 +118,9 @@ def mmd_loss(source_samples, target_samples, weight, scope=None):
     gaussian_kernel = partial(
         gaussian_kernel_matrix, sigmas=tf.constant(sigmas))
 
-    loss_value = maximum_mean_discrepancy(
+    loss_value, loss_x, loss_y, loss_diff = maximum_mean_discrepancy(
         source_samples, target_samples, kernel=gaussian_kernel)
-    loss_value = tf.maximum(1e-4, loss_value) * weight
-    assert_op = tf.Assert(tf.is_finite(loss_value), [loss_value])
-    with tf.control_dependencies([assert_op]):
-        tag = 'MMD Loss'
-        if scope:
-          tag = scope + tag
-        tf.summary.scalar(tag, loss_value)
-        tf.losses.add_loss(loss_value)
+    loss_value = tf.multiply(loss_value, weight)
+    loss_value = tf.where(loss_value > 0, loss_value, 0, name="extra_where")
 
-    return loss_value
+    return loss_value, loss_x, loss_y, loss_diff
