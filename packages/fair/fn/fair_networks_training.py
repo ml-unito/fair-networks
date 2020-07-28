@@ -4,6 +4,7 @@ import numpy as np
 from termcolor import colored
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
+from numpy.random import randint
 import logging
 
 
@@ -66,6 +67,7 @@ class FairNetworksTraining:
     def training_loop(self):
         epoch = int(self.session.run(self.model.epoch)[0])
         logging.info("Starting training loop from epoch: {}".format(epoch))
+        self.session.graph.finalize()
 
         while epoch < self.options.schedule.num_epochs:
             self.run_epoch_batched()
@@ -122,20 +124,53 @@ class FairNetworksTraining:
         return y_val_acc, s_val_acc
 
     def updateTensorboardStats(self, epoch):
-        stat_des = self.session.run(self.model.train_stats, feed_dict = { 
-            self.model.x:self.train_xs, 
-            self.model.y:self.train_ys, 
-            self.model.s: self.train_s,
-            self.model.noise: self.train_noise })
+        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE, report_tensor_allocations_upon_oom=True)
+        run_metadata = tf.RunMetadata()
+        self.writer.add_run_metadata(run_metadata, 'step%d' % epoch)
+
+        cut_dataset = 2000 # estimated "dataset too big" tensor, only relevant for ddc. can be changed
+        num_examples = self.train_xs.shape[0]
+        if num_examples > cut_dataset and self.options.is_ddc:
+            random_idx = randint(0, num_examples, cut_dataset)
+            xs = self.train_xs[random_idx, :]
+            ys = self.train_ys[random_idx, :]
+            s = self.train_s[random_idx, :]
+            noise = self.train_noise[random_idx, :]
+        else:
+            xs = self.train_xs
+            ys = self.train_ys
+            s = self.train_s
+            noise = self.train_noise
+        stat_des = self.session.run(self.model.train_stats, feed_dict = {
+            self.model.x: xs,
+            self.model.y: ys,
+            self.model.s: s,
+            self.model.noise: noise},
+            options=run_options, run_metadata=run_metadata)
 
         self.writer.add_summary(stat_des, global_step = epoch)
 
-        stat_des = self.session.run(self.model.val_stats, feed_dict = { 
-            self.model.x:self.val_xs, 
-            self.model.y:self.val_ys, 
-            self.model.s: self.val_s,
-            self.model.noise: self.val_noise })
+        num_examples = self.val_xs.shape[0]
+        if num_examples > cut_dataset and self.options.is_ddc:  # estimated "dataset too big" tensor. can be changed
+            random_idx = randint(0, num_examples, cut_dataset)
+            xs = self.val_xs[random_idx, :]
+            ys = self.val_ys[random_idx, :]
+            s = self.val_s[random_idx, :]
+            noise = self.val_noise[random_idx, :]
+        else:
+            xs = self.val_xs
+            ys = self.val_ys
+            s = self.val_s
+            noise = self.val_noise
+        stat_des = self.session.run(self.model.val_stats, feed_dict={
+            self.model.x: xs,
+            self.model.y: ys,
+            self.model.s: s,
+            self.model.noise: noise},
+            options=run_options, run_metadata=run_metadata)
+
         self.writer.add_summary(stat_des, global_step = epoch)
+
 
 
     def save_model(self, epoch):

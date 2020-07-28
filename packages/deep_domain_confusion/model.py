@@ -35,6 +35,8 @@ class DDCModel(Model):
 
         h_layer, self.hidden_layers_variables = self._build_hidden_layers(self.x, options.hidden_layers)
 
+        self.model_last_hidden_layer = h_layer
+
         h_layer_source = tf.boolean_mask(h_layer, s0_mask)
         h_layer_target = tf.boolean_mask(h_layer, s1_mask)
 
@@ -72,6 +74,9 @@ class DDCModel(Model):
         self.train_stats = tf.summary.merge([self.y_train_loss_stat, self.y_train_accuracy_stat,
                                              self.mmd_train_loss_stat, self.mmd_x, self.mmd_y, self.mmd_diff])
         self.val_stats = tf.summary.merge([self.y_val_loss_stat, self.y_val_accuracy_stat, self.mmd_val_loss_stat])
+
+
+
 
     def get_steps(self):
         return [self.train_step]
