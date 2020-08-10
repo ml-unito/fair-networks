@@ -14,7 +14,7 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 
 
-def results_summary(results, classifier_id='forest'):
+def results_summary(results, classifier_id='forest', mine=False):
     """ Returns a dictionary containing the results on the validation set of the
         logistic regression classifier. 
         
@@ -36,9 +36,12 @@ def results_summary(results, classifier_id='forest'):
     pps = results['performances']['random_networks_repr'][classifier_id]['s']['val']
     mms = results['performances']['original_repr'][classifier_id]['s']['val']
 
-    mi  = results['performances']['fair_networks_repr']['mine']['s']['train']
+    if mine:
+        mi  = results['performances']['fair_networks_repr']['mine']['s']['train']
+        return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms, 'mi': mi}
 
-    return { 'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms, 'mi': mi}
+    else:
+        return {'fny': fny, 'ppy': ppy, 'mmy': mmy, 'fns': fns, 'pps': pps, 'mms': mms}
 
 def results_score(summary):
     """ Returns an evaluation of the performances summarized by the summary parameter.
@@ -87,7 +90,7 @@ def parse_epoch(s):
     """
     return match_performance(s)[1]
 
-def pareto_set(dirname, regression_study=False):
+def pareto_set(dirname, regression_study=False, mine=False):
     """
     Given a directory name, it analyses the set of performance files in that
     directory (there should be one file for each one of the epochs under study).
@@ -119,7 +122,7 @@ def pareto_set(dirname, regression_study=False):
         except KeyError:
             print(colored('{} has no performances. Skipping.'.format(fname), 'red'))
             continue
-        summary = results_summary(results)
+        summary = results_summary(results, mine=mine)
         performances.append({
             'score': results_score(summary), 
             'summary': summary, 
@@ -249,8 +252,9 @@ def print_summary(result):
 
 results = []
 do_regression = bool(sys.argv[1])
+mine = bool(sys.argv[2])
 print(colored('do_regression: {}'.format(do_regression), 'green'))
-for dirname in sys.argv[2:]:
+for dirname in sys.argv[3:]:
     result = pareto_set(dirname)
     if result == None:
         continue

@@ -90,7 +90,7 @@ subprocess.call('printf "epochs,y_gap,s_gap,total_gap\n" >> {}'.format(out_file)
 all_exp_dirs = glob.glob(exp_main_dir + '/*')
 num_cores = 10
 executor = Parallel(n_jobs=num_cores)
-#executor(delayed(process_dir)(exp_dir, out_file) for exp_dir in all_exp_dirs)
+executor(delayed(process_dir)(exp_dir, out_file) for exp_dir in all_exp_dirs)
 
-for exp_dir in all_exp_dirs:
-    process_dir(exp_dir, out_file)
+#for exp_dir in all_exp_dirs:
+#    process_dir(exp_dir, out_file)
