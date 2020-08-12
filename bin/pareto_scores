@@ -251,8 +251,8 @@ def print_summary(result):
 # Main
 
 results = []
-do_regression = bool(sys.argv[1])
-mine = bool(sys.argv[2])
+do_regression = sys.argv[1].lower() == 'true'
+mine = sys.argv[2].lower() == 'true'
 print(colored('do_regression: {}'.format(do_regression), 'green'))
 for dirname in sys.argv[3:]:
     result = pareto_set(dirname)
